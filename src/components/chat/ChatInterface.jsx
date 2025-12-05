@@ -1,0 +1,549 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Send,
+  Paperclip,
+  Mic,
+  Phone,
+  Video,
+  FileText,
+  X,
+  Check,
+  CheckCheck,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import api from '../../utils/axios';
+
+/**
+ * ChatInterface
+ *
+ * - Uses HTTP to load initial messages
+ * - Uses Socket.io for REAL-TIME:
+ *   - joinChat (rooms)
+ *   - sendMessage (text)
+ *   - newMessage (broadcast)
+ *   - typing (with isTyping flag)
+ *   - messageRead
+ *   - agentOnline / agentOffline
+ *
+ * Attachments UI is present, but real-time send is focused on text messages for now.
+ */
+
+const ChatInterface = ({ chatSession, currentUser, socket }) => {
+  const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUser, setTypingUser] = useState(null);
+  const [attachments, setAttachments] = useState([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [otherUserOnline, setOtherUserOnline] = useState(false);
+  const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const chatContainerRef = useRef(null);
+
+  useEffect(() => {
+    // Load existing messages via REST
+    loadMessages();
+  }, [chatSession?._id]);
+
+  // Calculate otherUser outside useEffect
+  const otherUser = chatSession?.customer?._id?.toString() === currentUser?._id?.toString()
+    ? chatSession?.agent
+    : chatSession?.customer;
+
+  useEffect(() => {
+    if (!socket || !chatSession?._id || !currentUser?._id) return;
+
+    // Join chat room - this also triggers AI greeting on first join (backend)
+    socket.emit('joinChat', chatSession._id);
+
+    const handleNewMessage = message => {
+      if (!message || !chatSession?._id) return;
+      const messageChatId = message.chatSession?.toString?.() || message.chatSession?._id?.toString?.();
+      if (messageChatId !== chatSession._id.toString()) return;
+      // Check if message already exists to avoid duplicates
+      setMessages(prev => {
+        const exists = prev.some(msg => msg._id === message._id);
+        if (exists) return prev;
+        return [...prev, message];
+      });
+    };
+
+    const handleError = (error) => {
+      console.error('Socket error:', error);
+      alert(error.message || 'An error occurred');
+    };
+
+    const handleTypingEvent = data => {
+      if (data.chatSessionId !== chatSession._id) return;
+      const dataUserId = data.userId?.toString();
+      const currentUserId = currentUser._id?.toString() || currentUser.id?.toString();
+      if (dataUserId === currentUserId) return;
+      setIsTyping(!!data.isTyping);
+      setTypingUser(data.userName || 'User');
+    };
+
+    const handleMessageReadEvent = data => {
+      setMessages(prev =>
+        prev.map(msg =>
+          msg._id === data.messageId ? { ...msg, isRead: true, readAt: data.readAt } : msg
+        )
+      );
+    };
+
+    const handleAgentOnline = data => {
+      const agentId = data.agentId?.toString();
+      const otherUserId = otherUser?._id?.toString();
+      if (agentId && otherUserId && agentId === otherUserId) {
+        setOtherUserOnline(true);
+      }
+    };
+
+    const handleAgentOffline = data => {
+      const agentId = data.agentId?.toString();
+      const otherUserId = otherUser?._id?.toString();
+      if (agentId && otherUserId && agentId === otherUserId) {
+        setOtherUserOnline(false);
+      }
+    };
+
+    socket.on('newMessage', handleNewMessage);
+    socket.on('typing', handleTypingEvent);
+    socket.on('messageRead', handleMessageReadEvent);
+    socket.on('agentOnline', handleAgentOnline);
+    socket.on('agentOffline', handleAgentOffline);
+    socket.on('error', handleError);
+    socket.on('tokenBalanceUpdate', (data) => {
+      // Update token balance if needed
+      console.log('Token balance updated:', data);
+    });
+
+    return () => {
+      socket.off('newMessage', handleNewMessage);
+      socket.off('typing', handleTypingEvent);
+      socket.off('messageRead', handleMessageReadEvent);
+      socket.off('agentOnline', handleAgentOnline);
+      socket.off('agentOffline', handleAgentOffline);
+      socket.off('error', handleError);
+      socket.emit('leaveChat', chatSession._id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket, chatSession?._id, currentUser?._id, otherUser?._id]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
+
+  const loadMessages = async () => {
+    if (!chatSession?._id || !currentUser) return;
+    try {
+      // Use appropriate API based on user role
+      const endpoint = currentUser.role === 'customer' 
+        ? `/customer/chat-session/${chatSession._id}`
+        : `/agent/chat-session/${chatSession._id}`;
+      const response = await api.get(endpoint);
+      setMessages(response.data.messages || []);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      // Try alternative endpoint if first fails
+      try {
+        const response = await api.get(`/chat/sessions/${chatSession._id}/messages`);
+        setMessages(response.data.messages || []);
+      } catch (err) {
+        console.error('Error loading messages from alternative endpoint:', err);
+      }
+    }
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleSend = async e => {
+    e.preventDefault();
+    if (!inputMessage.trim() && attachments.length === 0) return;
+    if (!socket || !chatSession?._id) {
+      alert('Socket not connected. Please refresh the page.');
+      return;
+    }
+
+    try {
+      // Send TEXT via Socket.io for real-time
+      if (inputMessage.trim()) {
+        socket.emit('sendMessage', {
+          chatSessionId: chatSession._id,
+          content: inputMessage.trim(),
+          messageType: 'text',
+        });
+        setInputMessage('');
+        
+        // Stop typing state
+        socket.emit('typing', {
+          chatSessionId: chatSession._id,
+          isTyping: false,
+          userId: currentUser._id || currentUser.id,
+          userName: currentUser.name,
+        });
+      }
+
+      // Handle attachments via HTTP if needed
+      if (attachments.length > 0) {
+        console.warn('Attachments will be sent via HTTP API');
+        // TODO: Implement attachment upload
+        setAttachments([]);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message. Please try again.');
+    }
+  };
+
+  const handleTypingStart = () => {
+    if (!socket || !chatSession?._id || !currentUser) return;
+    socket.emit('typing', {
+      chatSessionId: chatSession._id,
+      isTyping: true,
+      userId: currentUser._id || currentUser.id,
+      userName: currentUser.name,
+    });
+  };
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    const newAttachments = files.map(file => ({
+      file,
+      type: file.type.startsWith('image/') ? 'image' : 
+            file.type.startsWith('audio/') ? 'audio' : 'file',
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+    }));
+    setAttachments(prev => [...prev, ...newAttachments]);
+  };
+
+  const removeAttachment = (index) => {
+    setAttachments(prev => {
+      const newAttachments = [...prev];
+      if (newAttachments[index].preview) {
+        URL.revokeObjectURL(newAttachments[index].preview);
+      }
+      newAttachments.splice(index, 1);
+      return newAttachments;
+    });
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      const chunks = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const audioFile = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
+        setAttachments(prev => [...prev, {
+          file: audioFile,
+          type: 'audio',
+          preview: URL.createObjectURL(blob),
+        }]);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      alert('Microphone access denied');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const formatTime = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    const now = new Date();
+    const diff = now - d;
+    const minutes = Math.floor(diff / 60000);
+    
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (d.toDateString() === now.toDateString()) {
+      return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  useEffect(() => {
+    // Initial online state from chatSession if present (fallback false)
+    if (otherUser && typeof otherUser.isOnline === 'boolean') {
+      setOtherUserOnline(otherUser.isOnline);
+    } else if (otherUser && otherUser.role === 'agent') {
+      // For agents, check online status
+      setOtherUserOnline(otherUser.isOnline || false);
+    }
+  }, [otherUser]);
+
+  return (
+    <div className="flex flex-col h-full bg-gray-50">
+      {/* Chat Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="relative">
+            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+              {otherUser?.name?.charAt(0) || 'U'}
+            </div>
+            {otherUserOnline && (
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+            )}
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900">{otherUser?.name || 'User'}</h3>
+            <p className="text-sm text-gray-500">
+              {otherUserOnline ? 'Online' : 'Offline'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <Phone className="w-5 h-5 text-gray-600" />
+          </button>
+          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <Video className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+      </div>
+
+      {/* Messages Container */}
+      <div 
+        ref={chatContainerRef}
+        className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+        style={{ scrollBehavior: 'smooth' }}
+      >
+        {messages.map((message, index) => {
+          const senderId =
+            typeof message.sender === 'object' ? message.sender._id : message.sender;
+          const isOwn = senderId?.toString() === currentUser?._id?.toString();
+          const showAvatar = index === 0 || messages[index - 1].sender !== message.sender;
+          const showTime = index === messages.length - 1 || 
+            new Date(messages[index + 1].createdAt) - new Date(message.createdAt) > 300000;
+
+          return (
+            <motion.div
+              key={message._id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`flex ${isOwn ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mt-4' : 'mt-1'}`}
+            >
+              <div className={`flex items-end space-x-2 max-w-[70%] ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                {!isOwn && showAvatar && (
+                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                    {otherUser?.name?.charAt(0) || 'U'}
+                  </div>
+                )}
+                <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                  <div
+                    className={`rounded-2xl px-4 py-2 ${
+                      isOwn
+                        ? 'bg-blue-500 text-white rounded-br-sm'
+                        : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
+                    }`}
+                  >
+                    {message.attachments && message.attachments.length > 0 && (
+                      <div className="space-y-2 mb-2">
+                        {message.attachments.map((att, idx) => (
+                          <div key={idx}>
+                            {att.type === 'image' && (
+                              <img
+                                src={att.url || att.preview}
+                                alt="Attachment"
+                                className="max-w-xs rounded-lg"
+                              />
+                            )}
+                            {att.type === 'audio' && (
+                              <audio controls className="w-full">
+                                <source src={att.url || att.preview} />
+                              </audio>
+                            )}
+                            {att.type === 'file' && (
+                              <a
+                                href={att.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center space-x-2 text-blue-500 hover:text-blue-600"
+                              >
+                                <FileText className="w-4 h-4" />
+                                <span>{att.name}</span>
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {message.content && (
+                      <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                    )}
+                  </div>
+                  {showTime && (
+                    <div className={`flex items-center space-x-1 mt-1 text-xs text-gray-500 ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                      <span>{formatTime(message.createdAt)}</span>
+                      {isOwn && (
+                        <span>
+                          {message.read ? (
+                            <CheckCheck className="w-4 h-4 text-blue-500" />
+                          ) : (
+                            <Check className="w-4 h-4 text-gray-400" />
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+
+        {/* Typing Indicator */}
+        <AnimatePresence>
+          {isTyping && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center space-x-2"
+            >
+              <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold">
+                {typingUser?.charAt(0) || 'U'}
+              </div>
+              <div className="bg-white rounded-2xl rounded-bl-sm px-4 py-2 border border-gray-200">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Attachments Preview */}
+      {attachments.length > 0 && (
+        <div className="px-6 py-2 bg-gray-100 border-t border-gray-200">
+          <div className="flex space-x-2 overflow-x-auto">
+            {attachments.map((att, index) => (
+              <div key={index} className="relative flex-shrink-0">
+                {att.type === 'image' && att.preview && (
+                  <div className="relative w-20 h-20 rounded-lg overflow-hidden">
+                    <img src={att.preview} alt="Preview" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => removeAttachment(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+                {att.type === 'audio' && (
+                  <div className="relative w-48 bg-white rounded-lg p-2 border border-gray-200">
+                    <audio controls className="w-full">
+                      <source src={att.preview} />
+                    </audio>
+                    <button
+                      onClick={() => removeAttachment(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Input Area */}
+      <form onSubmit={handleSend} className="bg-white border-t border-gray-200 px-6 py-4">
+        <div className="flex items-end space-x-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <Paperclip className="w-5 h-5 text-gray-600" />
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,audio/*,.pdf,.doc,.docx"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          
+          <div className="flex-1 relative">
+            <textarea
+              value={inputMessage}
+              onChange={(e) => {
+                setInputMessage(e.target.value);
+                handleTypingStart();
+              }}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend(e);
+                }
+              }}
+              placeholder="Type a message..."
+              className="w-full px-4 py-3 pr-20 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              rows={1}
+              style={{ minHeight: '48px', maxHeight: '120px' }}
+            />
+            <div className="absolute right-2 bottom-2 flex items-center space-x-1">
+              {isRecording ? (
+                <button
+                  type="button"
+                  onClick={stopRecording}
+                  className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startRecording}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <Mic className="w-5 h-5 text-gray-600" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={!inputMessage.trim() && attachments.length === 0}
+            className="p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          >
+            <Send className="w-5 h-5" />
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default ChatInterface;
+
