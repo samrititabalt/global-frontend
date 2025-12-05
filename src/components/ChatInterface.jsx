@@ -254,14 +254,14 @@ const ChatInterface = ({ chatSessionId, chatSession, onMessageSent }) => {
               >
                 {message.messageType === 'image' && message.fileUrl && (
                   <img
-                    src={`http://localhost:5000${message.fileUrl}`}
+                    src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${message.fileUrl}`}
                     alt="Shared"
                     className="max-w-full rounded mb-2"
                   />
                 )}
                 {message.messageType === 'file' && (
                   <a
-                    href={`http://localhost:5000${message.fileUrl}`}
+                    href={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${message.fileUrl}`}
                     download
                     className="flex items-center space-x-2 text-blue-400 hover:text-blue-300"
                   >
@@ -271,7 +271,7 @@ const ChatInterface = ({ chatSessionId, chatSession, onMessageSent }) => {
                 )}
                 {message.messageType === 'audio' && (
                   <audio controls className="w-full">
-                    <source src={`http://localhost:5000${message.fileUrl}`} />
+                    <source src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${message.fileUrl}`} />
                   </audio>
                 )}
                 {message.content && (
