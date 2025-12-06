@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { FiMessageSquare, FiClock, FiCheckCircle } from 'react-icons/fi';
-import api from '../../utils/axios';
+import { customerAPI } from '../../services/api';
 
 const CustomerDashboard = () => {
   const [services, setServices] = useState([]);
@@ -19,8 +19,8 @@ const CustomerDashboard = () => {
   const loadData = async () => {
     try {
       const [servicesRes, chatsRes] = await Promise.all([
-        api.get('/customer/services'),
-        api.get('/customer/chat-sessions')
+        customerAPI.getServices(),
+        customerAPI.getChatSessions()
       ]);
       setServices(servicesRes.data.services);
       setChatSessions(chatsRes.data.chatSessions);
@@ -44,7 +44,7 @@ const CustomerDashboard = () => {
     }
 
     try {
-      const response = await api.post('/customer/request-service', {
+      const response = await customerAPI.requestService({
         serviceId: selectedService._id,
         subService: selectedSubService
       });

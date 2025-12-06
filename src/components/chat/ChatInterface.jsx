@@ -9,9 +9,12 @@ import {
   X,
   Check,
   CheckCheck,
+  PhoneOff,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/axios';
+import { chatAPI } from '../../services/api';
+import { useWebRTC } from '../../hooks/useWebRTC';
 
 /**
  * ChatInterface
@@ -35,11 +38,29 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const [typingUser, setTypingUser] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [otherUserOnline, setOtherUserOnline] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const audioInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const chatContainerRef = useRef(null);
+  const audioRef = useRef(null);
+
+  // WebRTC for voice calls
+  const {
+    isCallActive,
+    isCallIncoming,
+    isCallOutgoing,
+    callStatus,
+    remoteStream,
+    localStream,
+    startCall,
+    acceptCall,
+    rejectCall,
+    endCall,
+  } = useWebRTC(socket, chatSession?._id, currentUser?._id || currentUser?.id);
 
   useEffect(() => {
     // Load existing messages via REST
@@ -168,8 +189,46 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     }
 
     try {
+      // Send attachments first if any
+      if (attachments.length > 0) {
+        setIsUploading(true);
+        for (const attachment of attachments) {
+          const formData = new FormData();
+          formData.append('chatSessionId', chatSession._id);
+          if (inputMessage.trim()) {
+            formData.append('content', inputMessage.trim());
+          }
+
+          // Append file based on type
+          if (attachment.type === 'image') {
+            formData.append('image', attachment.file);
+          } else if (attachment.type === 'audio') {
+            formData.append('audio', attachment.file);
+          } else {
+            formData.append('file', attachment.file);
+          }
+
+          try {
+            const response = await chatAPI.uploadFile(formData);
+            if (response.data.success && response.data.message) {
+              // Message will be added via socket event
+              setMessages(prev => {
+                const exists = prev.some(msg => msg._id === response.data.message._id);
+                if (exists) return prev;
+                return [...prev, response.data.message];
+              });
+            }
+          } catch (error) {
+            console.error('Error uploading file:', error);
+            alert(error.response?.data?.message || 'Failed to upload file');
+          }
+        }
+        setAttachments([]);
+        setIsUploading(false);
+      }
+
       // Send TEXT via Socket.io for real-time
-      if (inputMessage.trim()) {
+      if (inputMessage.trim() && attachments.length === 0) {
         socket.emit('sendMessage', {
           chatSessionId: chatSession._id,
           content: inputMessage.trim(),
@@ -184,17 +243,14 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           userId: currentUser._id || currentUser.id,
           userName: currentUser.name,
         });
-      }
-
-      // Handle attachments via HTTP if needed
-      if (attachments.length > 0) {
-        console.warn('Attachments will be sent via HTTP API');
-        // TODO: Implement attachment upload
-        setAttachments([]);
+      } else if (inputMessage.trim() && attachments.length > 0) {
+        // Clear input after attachments are sent
+        setInputMessage('');
       }
     } catch (error) {
       console.error('Error sending message:', error);
       alert('Failed to send message. Please try again.');
+      setIsUploading(false);
     }
   };
 
@@ -208,15 +264,18 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     });
   };
 
-  const handleFileSelect = (e) => {
+  const handleFileSelect = (e, type = 'file') => {
     const files = Array.from(e.target.files);
     const newAttachments = files.map(file => ({
       file,
-      type: file.type.startsWith('image/') ? 'image' : 
-            file.type.startsWith('audio/') ? 'audio' : 'file',
-      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+      type: type === 'image' ? 'image' : 
+            type === 'audio' ? 'audio' : 'file',
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : 
+               file.type.startsWith('audio/') ? URL.createObjectURL(file) : null,
     }));
     setAttachments(prev => [...prev, ...newAttachments]);
+    // Reset input
+    e.target.value = '';
   };
 
   const removeAttachment = (index) => {
@@ -313,12 +372,23 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <Phone className="w-5 h-5 text-gray-600" />
-          </button>
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <Video className="w-5 h-5 text-gray-600" />
-          </button>
+          {!isCallActive ? (
+            <button
+              onClick={startCall}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Start voice call"
+            >
+              <Phone className="w-5 h-5 text-gray-600" />
+            </button>
+          ) : (
+            <button
+              onClick={endCall}
+              className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              title="End call"
+            >
+              <PhoneOff className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -357,20 +427,21 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                         : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
                     }`}
                   >
-                    {message.attachments && message.attachments.length > 0 && (
+                    {(message.attachments && message.attachments.length > 0) || message.fileUrl ? (
                       <div className="space-y-2 mb-2">
-                        {message.attachments.map((att, idx) => (
+                        {message.attachments && message.attachments.map((att, idx) => (
                           <div key={idx}>
                             {att.type === 'image' && (
                               <img
-                                src={att.url || att.preview}
-                                alt="Attachment"
-                                className="max-w-xs rounded-lg"
+                                src={att.url}
+                                alt={att.fileName || 'Attachment'}
+                                className="max-w-xs rounded-lg cursor-pointer"
+                                onClick={() => window.open(att.url, '_blank')}
                               />
                             )}
                             {att.type === 'audio' && (
                               <audio controls className="w-full">
-                                <source src={att.url || att.preview} />
+                                <source src={att.url} />
                               </audio>
                             )}
                             {att.type === 'file' && (
@@ -381,13 +452,42 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                                 className="flex items-center space-x-2 text-blue-500 hover:text-blue-600"
                               >
                                 <FileText className="w-4 h-4" />
-                                <span>{att.name}</span>
+                                <span>{att.fileName || 'File'}</span>
                               </a>
                             )}
                           </div>
                         ))}
+                        {/* Legacy fileUrl support */}
+                        {!message.attachments && message.fileUrl && (
+                          <div>
+                            {message.messageType === 'image' && (
+                              <img
+                                src={message.fileUrl}
+                                alt={message.fileName || 'Image'}
+                                className="max-w-xs rounded-lg cursor-pointer"
+                                onClick={() => window.open(message.fileUrl, '_blank')}
+                              />
+                            )}
+                            {message.messageType === 'audio' && (
+                              <audio controls className="w-full">
+                                <source src={message.fileUrl} />
+                              </audio>
+                            )}
+                            {message.messageType === 'file' && (
+                              <a
+                                href={message.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center space-x-2 text-blue-500 hover:text-blue-600"
+                              >
+                                <FileText className="w-4 h-4" />
+                                <span>{message.fileName || 'File'}</span>
+                              </a>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    ) : null}
                     {message.content && (
                       <p className="whitespace-pre-wrap break-words">{message.content}</p>
                     )}
@@ -474,22 +574,109 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
         </div>
       )}
 
+      {/* Call Incoming Modal */}
+      <AnimatePresence>
+        {isCallIncoming && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              className="bg-white rounded-2xl p-8 text-center max-w-md"
+            >
+              <h3 className="text-2xl font-bold mb-2">Incoming Call</h3>
+              <p className="text-gray-600 mb-6">{otherUser?.name || 'User'}</p>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={rejectCall}
+                  className="p-4 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                >
+                  <PhoneOff className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={acceptCall}
+                  className="p-4 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors"
+                >
+                  <Phone className="w-6 h-6" />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Active Call UI */}
+      {isCallActive && callStatus === 'connected' && (
+        <div className="bg-blue-500 text-white px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+            <span>Call in progress with {otherUser?.name || 'User'}</span>
+          </div>
+          <button
+            onClick={endCall}
+            className="p-2 bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+          >
+            <PhoneOff className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Audio elements for WebRTC */}
+      {remoteStream && (
+        <audio
+          ref={audioRef}
+          autoPlay
+          playsInline
+          srcObject={remoteStream}
+        />
+      )}
+
       {/* Input Area */}
       <form onSubmit={handleSend} className="bg-white border-t border-gray-200 px-6 py-4">
         <div className="flex items-end space-x-2">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <Paperclip className="w-5 h-5 text-gray-600" />
-          </button>
+          <div className="flex space-x-1">
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Upload image"
+            >
+              <FileText className="w-5 h-5 text-gray-600" />
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Upload file"
+            >
+              <Paperclip className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
+          <input
+            ref={imageInputRef}
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={(e) => handleFileSelect(e, 'image')}
+            className="hidden"
+          />
           <input
             ref={fileInputRef}
             type="file"
             multiple
-            accept="image/*,audio/*,.pdf,.doc,.docx"
-            onChange={handleFileSelect}
+            accept=".pdf,.doc,.docx,.txt"
+            onChange={(e) => handleFileSelect(e, 'file')}
+            className="hidden"
+          />
+          <input
+            ref={audioInputRef}
+            type="file"
+            accept="audio/*"
+            onChange={(e) => handleFileSelect(e, 'audio')}
             className="hidden"
           />
           
@@ -534,10 +721,14 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
 
           <button
             type="submit"
-            disabled={!inputMessage.trim() && attachments.length === 0}
+            disabled={(!inputMessage.trim() && attachments.length === 0) || isUploading}
             className="p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
-            <Send className="w-5 h-5" />
+            {isUploading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
           </button>
         </div>
       </form>

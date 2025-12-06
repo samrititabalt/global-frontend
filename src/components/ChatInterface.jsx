@@ -7,7 +7,7 @@ import InfiniteScroll from 'react-infinite-scroll-component';
 import api from '../utils/axios';
 
 const ChatInterface = ({ chatSessionId, chatSession, onMessageSent }) => {
-  const socket = useSocket();
+  const { socket, isConnected } = useSocket();
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
