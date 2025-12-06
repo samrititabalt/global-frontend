@@ -21,6 +21,7 @@ import api from '../../utils/axios';
 import { chatAPI } from '../../services/api';
 import { useWebRTC } from '../../hooks/useWebRTC';
 import MessageItem from './MessageItem';
+import VoiceNote from './VoiceNote';
 
 /**
  * ChatInterface
@@ -44,6 +45,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const [typingUser, setTypingUser] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [otherUserOnline, setOtherUserOnline] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState(null);
@@ -412,10 +414,14 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     });
   };
 
+  const recordingIntervalRef = useRef(null);
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
       const chunks = [];
 
       mediaRecorder.ondataavailable = (e) => {
@@ -425,20 +431,61 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
       mediaRecorder.onstop = async () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
         const audioFile = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
-        setAttachments(prev => [...prev, {
-          file: audioFile,
-          type: 'audio',
-          preview: URL.createObjectURL(blob),
-        }]);
+        
+        // Get duration from blob
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        
+        audio.onloadedmetadata = () => {
+          setAttachments(prev => [...prev, {
+            file: audioFile,
+            type: 'audio',
+            preview: audioUrl,
+            duration: audio.duration || recordingTime,
+          }]);
+        };
+        
+        // Fallback if metadata doesn't load quickly
+        setTimeout(() => {
+          if (audio.duration) {
+            // Already handled by onloadedmetadata
+          } else {
+            setAttachments(prev => {
+              // Check if already added
+              const exists = prev.some(att => att.preview === audioUrl);
+              if (!exists) {
+                return [...prev, {
+                  file: audioFile,
+                  type: 'audio',
+                  preview: audioUrl,
+                  duration: recordingTime,
+                }];
+              }
+              return prev;
+            });
+          }
+        }, 1000);
+        
         stream.getTracks().forEach(track => track.stop());
+        setRecordingTime(0);
+        if (recordingIntervalRef.current) {
+          clearInterval(recordingIntervalRef.current);
+          recordingIntervalRef.current = null;
+        }
       };
 
       mediaRecorder.start();
       mediaRecorderRef.current = mediaRecorder;
       setIsRecording(true);
+      setRecordingTime(0);
+      
+      // Start recording timer
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
     } catch (error) {
       console.error('Error starting recording:', error);
-      alert('Microphone access denied');
+      alert('Microphone access denied. Please allow microphone access to record voice notes.');
     }
   };
 
@@ -446,7 +493,17 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
     }
+  };
+
+  const formatRecordingTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const formatTime = (date) => {
@@ -795,13 +852,14 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                   </div>
                 )}
                 {att.type === 'audio' && (
-                  <div className="relative w-48 bg-white rounded-lg p-2 border border-gray-200">
-                    <audio controls className="w-full">
-                      <source src={att.preview} />
-                    </audio>
+                  <div className="relative w-64 bg-white rounded-lg p-3 border border-gray-200">
+                    <VoiceNote 
+                      url={att.preview} 
+                      isOwn={false}
+                    />
                     <button
                       onClick={() => removeAttachment(index)}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 z-10"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -1013,20 +1071,30 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
               rows={1}
               style={{ minHeight: '48px', maxHeight: '120px' }}
             />
-            <div className="absolute right-2 bottom-2 flex items-center space-x-1">
+            <div className="absolute right-2 bottom-2 flex items-center space-x-2">
               {isRecording ? (
-                <button
-                  type="button"
-                  onClick={stopRecording}
-                  className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                >
-                  <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                </button>
+                <>
+                  <div className="flex items-center space-x-2 px-3 py-1.5 bg-red-50 rounded-lg border border-red-200">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium text-red-600">
+                      {formatRecordingTime(recordingTime)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={stopRecording}
+                    className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-lg"
+                    title="Stop recording"
+                  >
+                    <div className="w-4 h-4 bg-white rounded-sm"></div>
+                  </button>
+                </>
               ) : (
                 <button
                   type="button"
                   onClick={startRecording}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Record voice note"
                 >
                   <Mic className="w-5 h-5 text-gray-600" />
                 </button>

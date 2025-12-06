@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { X, Check, Edit, Trash2, Reply, MoreVertical, FileText } from 'lucide-react';
 import { useSwipe } from '../../hooks/useSwipe';
 import { useLongPress } from '../../hooks/useLongPress';
+import VoiceNote from './VoiceNote';
 
 const MessageItem = ({
   message,
@@ -105,9 +106,11 @@ const MessageItem = ({
                 />
               )}
               {att.type === 'audio' && (
-                <audio controls className="w-full">
-                  <source src={att.url} />
-                </audio>
+                <VoiceNote 
+                  url={att.url} 
+                  isOwn={isOwn}
+                  duration={att.duration}
+                />
               )}
               {att.type === 'file' && (
                 <a
@@ -133,9 +136,10 @@ const MessageItem = ({
                 />
               )}
               {message.messageType === 'audio' && (
-                <audio controls className="w-full">
-                  <source src={message.fileUrl} />
-                </audio>
+                <VoiceNote 
+                  url={message.fileUrl} 
+                  isOwn={isOwn}
+                />
               )}
               {message.messageType === 'file' && (
                 <a
