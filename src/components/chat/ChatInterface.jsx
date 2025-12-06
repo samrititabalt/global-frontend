@@ -143,6 +143,24 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
       }
     };
 
+    const handleUserOnline = data => {
+      if (!data || !otherUser) return;
+      const dataUserId = data.userId?.toString();
+      const otherUserId = otherUser._id?.toString();
+      if (dataUserId === otherUserId) {
+        setOtherUserOnline(true);
+      }
+    };
+
+    const handleUserOffline = data => {
+      if (!data || !otherUser) return;
+      const dataUserId = data.userId?.toString();
+      const otherUserId = otherUser._id?.toString();
+      if (dataUserId === otherUserId) {
+        setOtherUserOnline(false);
+      }
+    };
+
     const handleMessageEdited = (editedMessage) => {
       if (!editedMessage || !chatSession?._id) return;
       const messageChatId = editedMessage.chatSession?.toString?.() || editedMessage.chatSession?._id?.toString?.();
@@ -172,6 +190,8 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     socket.on('messageRead', handleMessageReadEvent);
     socket.on('agentOnline', handleAgentOnline);
     socket.on('agentOffline', handleAgentOffline);
+    socket.on('userOnline', handleUserOnline);
+    socket.on('userOffline', handleUserOffline);
     socket.on('messageEdited', handleMessageEdited);
     socket.on('messageDeleted', handleMessageDeleted);
     socket.on('error', handleError);
@@ -186,6 +206,8 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
       socket.off('messageRead', handleMessageReadEvent);
       socket.off('agentOnline', handleAgentOnline);
       socket.off('agentOffline', handleAgentOffline);
+      socket.off('userOnline', handleUserOnline);
+      socket.off('userOffline', handleUserOffline);
       socket.off('messageEdited', handleMessageEdited);
       socket.off('messageDeleted', handleMessageDeleted);
       socket.off('error', handleError);
@@ -502,14 +524,27 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   };
 
   useEffect(() => {
-    // Initial online state from chatSession if present (fallback false)
-    if (otherUser && typeof otherUser.isOnline === 'boolean') {
-      setOtherUserOnline(otherUser.isOnline);
-    } else if (otherUser && otherUser.role === 'agent') {
-      // For agents, check online status
-      setOtherUserOnline(otherUser.isOnline || false);
+    // Initial online state from chatSession if present
+    if (otherUser) {
+      // Check if user has isOnline property
+      if (typeof otherUser.isOnline === 'boolean') {
+        setOtherUserOnline(otherUser.isOnline);
+      } else {
+        // Default to false if not set
+        setOtherUserOnline(false);
+      }
+    } else {
+      setOtherUserOnline(false);
     }
   }, [otherUser]);
+
+  // Update online status when socket connects
+  useEffect(() => {
+    if (socket && socket.connected && otherUser) {
+      // Request current online status
+      // The status will be updated via socket events
+    }
+  }, [socket, otherUser]);
 
   // Close menu when clicking outside
   useEffect(() => {
