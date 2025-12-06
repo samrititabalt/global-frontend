@@ -329,6 +329,21 @@ export const chatAPI = {
    * @returns {Promise} Response with updated message
    */
   markMessageAsRead: (messageId) => api.put(`/chat/message/${messageId}/read`),
+
+  /**
+   * Edit a message
+   * @param {string} messageId - Message ID
+   * @param {Object} data - { content }
+   * @returns {Promise} Response with updated message
+   */
+  editMessage: (messageId, data) => api.put(`/chat/message/${messageId}`, data),
+
+  /**
+   * Delete a message
+   * @param {string} messageId - Message ID
+   * @returns {Promise} Response with deleted message
+   */
+  deleteMessage: (messageId) => api.delete(`/chat/message/${messageId}`),
 };
 
 // ============================================================================

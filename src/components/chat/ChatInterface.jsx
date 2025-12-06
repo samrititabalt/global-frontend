@@ -10,6 +10,9 @@ import {
   Check,
   CheckCheck,
   PhoneOff,
+  Edit,
+  Trash2,
+  MoreVertical,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/axios';
@@ -40,13 +43,18 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [otherUserOnline, setOtherUserOnline] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editContent, setEditContent] = useState('');
+  const [openMenuMessageId, setOpenMenuMessageId] = useState(null);
   const messagesEndRef = useRef(null);
+  const menuRef = useRef(null);
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
   const audioInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const chatContainerRef = useRef(null);
   const audioRef = useRef(null);
+  const editInputRef = useRef(null);
 
   // WebRTC for voice calls
   const {
@@ -128,11 +136,37 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
       }
     };
 
+    const handleMessageEdited = (editedMessage) => {
+      if (!editedMessage || !chatSession?._id) return;
+      const messageChatId = editedMessage.chatSession?.toString?.() || editedMessage.chatSession?._id?.toString?.();
+      if (messageChatId !== chatSession._id.toString()) return;
+      
+      setMessages(prev =>
+        prev.map(msg =>
+          msg._id === editedMessage._id ? editedMessage : msg
+        )
+      );
+    };
+
+    const handleMessageDeleted = (deletedMessage) => {
+      if (!deletedMessage || !chatSession?._id) return;
+      const messageChatId = deletedMessage.chatSession?.toString?.() || deletedMessage.chatSession?._id?.toString?.();
+      if (messageChatId !== chatSession._id.toString()) return;
+      
+      setMessages(prev =>
+        prev.map(msg =>
+          msg._id === deletedMessage._id ? deletedMessage : msg
+        )
+      );
+    };
+
     socket.on('newMessage', handleNewMessage);
     socket.on('typing', handleTypingEvent);
     socket.on('messageRead', handleMessageReadEvent);
     socket.on('agentOnline', handleAgentOnline);
     socket.on('agentOffline', handleAgentOffline);
+    socket.on('messageEdited', handleMessageEdited);
+    socket.on('messageDeleted', handleMessageDeleted);
     socket.on('error', handleError);
     socket.on('tokenBalanceUpdate', (data) => {
       // Update token balance if needed
@@ -145,6 +179,8 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
       socket.off('messageRead', handleMessageReadEvent);
       socket.off('agentOnline', handleAgentOnline);
       socket.off('agentOffline', handleAgentOffline);
+      socket.off('messageEdited', handleMessageEdited);
+      socket.off('messageDeleted', handleMessageDeleted);
       socket.off('error', handleError);
       socket.emit('leaveChat', chatSession._id);
     };
@@ -341,6 +377,67 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  const handleEditMessage = (message) => {
+    setEditingMessageId(message._id);
+    setEditContent(message.content || '');
+    setOpenMenuMessageId(null); // Close menu when starting to edit
+    setTimeout(() => {
+      editInputRef.current?.focus();
+    }, 100);
+  };
+
+  const handleSaveEdit = async (messageId) => {
+    if (!editContent.trim()) {
+      setEditingMessageId(null);
+      return;
+    }
+
+    try {
+      const response = await chatAPI.editMessage(messageId, {
+        content: editContent.trim(),
+      });
+
+      if (response.data.success) {
+        setMessages(prev =>
+          prev.map(msg =>
+            msg._id === messageId ? response.data.message : msg
+          )
+        );
+        setEditingMessageId(null);
+        setEditContent('');
+      }
+    } catch (error) {
+      console.error('Error editing message:', error);
+      alert(error.response?.data?.message || 'Failed to edit message');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditContent('');
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    if (!window.confirm('Are you sure you want to delete this message?')) {
+      return;
+    }
+
+    try {
+      const response = await chatAPI.deleteMessage(messageId);
+
+      if (response.data.success) {
+        setMessages(prev =>
+          prev.map(msg =>
+            msg._id === messageId ? response.data.message : msg
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      alert(error.response?.data?.message || 'Failed to delete message');
+    }
+  };
+
   useEffect(() => {
     // Initial online state from chatSession if present (fallback false)
     if (otherUser && typeof otherUser.isOnline === 'boolean') {
@@ -350,6 +447,31 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
       setOtherUserOnline(otherUser.isOnline || false);
     }
   }, [otherUser]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpenMenuMessageId(null);
+      }
+    };
+
+    if (openMenuMessageId) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openMenuMessageId]);
+
+  const toggleMessageMenu = (messageId) => {
+    if (openMenuMessageId === messageId) {
+      setOpenMenuMessageId(null);
+    } else {
+      setOpenMenuMessageId(messageId);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
@@ -419,15 +541,74 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                     {otherUser?.name?.charAt(0) || 'U'}
                   </div>
                 )}
-                <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                <div 
+                  className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} relative group`}
+                >
+                  {/* 3 Dots Menu Button - Always visible for own messages */}
+                  {isOwn && !message.isDeleted && editingMessageId !== message._id && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleMessageMenu(message._id);
+                      }}
+                      className={`absolute ${isOwn ? 'right-full mr-1' : 'left-full ml-1'} top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-100 rounded-full transition-colors z-10 ${
+                        openMenuMessageId === message._id ? 'bg-gray-100' : 'opacity-0 group-hover:opacity-100'
+                      }`}
+                      title="More options"
+                    >
+                      <MoreVertical className="w-4 h-4 text-gray-500" />
+                    </button>
+                  )}
+
+                  {/* Edit/Delete Menu */}
+                  <AnimatePresence>
+                    {isOwn && !message.isDeleted && openMenuMessageId === message._id && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                        ref={menuRef}
+                        className={`absolute ${isOwn ? 'right-full mr-2' : 'left-full ml-2'} top-0 flex flex-col bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-30 min-w-[140px]`}
+                      >
+                        {/* Only show edit for text messages */}
+                        {message.messageType === 'text' && !message.attachments?.length && !message.fileUrl && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditMessage(message);
+                            }}
+                            className="px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center space-x-3 text-sm text-gray-700 w-full"
+                          >
+                            <Edit className="w-4 h-4" />
+                            <span>Edit</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteMessage(message._id);
+                            setOpenMenuMessageId(null);
+                          }}
+                          className="px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center space-x-3 text-sm text-red-600 w-full"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                   <div
                     className={`rounded-2xl px-4 py-2 ${
-                      isOwn
+                      message.isDeleted
+                        ? 'bg-gray-200 text-gray-500 italic'
+                        : isOwn
                         ? 'bg-blue-500 text-white rounded-br-sm'
                         : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
                     }`}
                   >
-                    {(message.attachments && message.attachments.length > 0) || message.fileUrl ? (
+                    {/* Show attachments only if message is not deleted */}
+                    {!message.isDeleted && ((message.attachments && message.attachments.length > 0) || message.fileUrl) ? (
                       <div className="space-y-2 mb-2">
                         {message.attachments && message.attachments.map((att, idx) => (
                           <div key={idx}>
@@ -488,16 +669,58 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                         )}
                       </div>
                     ) : null}
-                    {message.content && (
+                    {message.isDeleted ? (
+                      <div className="flex items-center space-x-2">
+                        <X className="w-4 h-4" />
+                        <span className="text-sm">This message was deleted</span>
+                      </div>
+                    ) : editingMessageId === message._id ? (
+                      <div className="space-y-2">
+                        <textarea
+                          ref={editInputRef}
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSaveEdit(message._id);
+                            } else if (e.key === 'Escape') {
+                              handleCancelEdit();
+                            }
+                          }}
+                          className="w-full px-2 py-1 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                          rows={2}
+                        />
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleSaveEdit(message._id)}
+                            className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : message.content ? (
                       <p className="whitespace-pre-wrap break-words">{message.content}</p>
-                    )}
+                    ) : null}
                   </div>
                   {showTime && (
-                    <div className={`flex items-center space-x-1 mt-1 text-xs text-gray-500 ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                    <div className={`flex items-center space-x-1 mt-1 text-xs ${message.isDeleted ? 'text-gray-400' : 'text-gray-500'} ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
                       <span>{formatTime(message.createdAt)}</span>
-                      {isOwn && (
+                      {message.isEdited && !message.isDeleted && (
+                        <span className="italic text-gray-400" title={`Edited at ${formatTime(message.editedAt)}`}>
+                          Edited
+                        </span>
+                      )}
+                      {isOwn && !message.isDeleted && (
                         <span>
-                          {message.read ? (
+                          {message.isRead ? (
                             <CheckCheck className="w-4 h-4 text-blue-500" />
                           ) : (
                             <Check className="w-4 h-4 text-gray-400" />
