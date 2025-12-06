@@ -791,15 +791,6 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                           Edited
                         </span>
                       )}
-                      {isOwn && !message.isDeleted && (
-                        <span>
-                          {message.isRead ? (
-                            <CheckCheck className="w-4 h-4 text-blue-500" />
-                          ) : (
-                            <Check className="w-4 h-4 text-gray-400" />
-                          )}
-                        </span>
-                      )}
                     </div>
                   )}
                 </div>

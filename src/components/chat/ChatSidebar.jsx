@@ -38,10 +38,46 @@ const ChatSidebar = ({ chatSessions, currentChatId, onNewChat }) => {
 
   const getChatPreview = (chat) => {
     if (chat.lastMessage) {
+      // Check for audio messages (voice notes)
+      const hasAudio = chat.lastMessage.attachments?.some(att => att.type === 'audio') || 
+                       chat.lastMessage.messageType === 'audio';
+      
+      if (hasAudio) {
+        return '🎤 Voice chat';
+      }
+      
+      // Check for other attachments
       if (chat.lastMessage.attachments && chat.lastMessage.attachments.length > 0) {
+        const attachmentType = chat.lastMessage.attachments[0].type;
+        if (attachmentType === 'image') {
+          return '📷 Image';
+        } else if (attachmentType === 'file') {
+          return '📎 File';
+        }
         return '📎 Attachment';
       }
-      return chat.lastMessage.content || 'No message';
+      
+      // Check for fileUrl (legacy attachment format)
+      if (chat.lastMessage.fileUrl) {
+        if (chat.lastMessage.messageType === 'image') {
+          return '📷 Image';
+        } else if (chat.lastMessage.messageType === 'audio') {
+          return '🎤 Voice chat';
+        } else if (chat.lastMessage.messageType === 'file') {
+          return '📎 File';
+        }
+        return '📎 Attachment';
+      }
+      
+      // Show message content if available
+      if (chat.lastMessage.content) {
+        // Truncate long messages
+        return chat.lastMessage.content.length > 50 
+          ? chat.lastMessage.content.substring(0, 50) + '...'
+          : chat.lastMessage.content;
+      }
+      
+      return 'No message';
     }
     return 'No messages yet';
   };

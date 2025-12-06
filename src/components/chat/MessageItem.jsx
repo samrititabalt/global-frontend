@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { X, Check, Edit, Trash2, Reply, MoreVertical, FileText } from 'lucide-react';
+import { X, Check, Edit, Trash2, Reply, MoreVertical, FileText, CheckCheck } from 'lucide-react';
 import { useSwipe } from '../../hooks/useSwipe';
 import { useLongPress } from '../../hooks/useLongPress';
 import VoiceNote from './VoiceNote';
@@ -197,6 +197,29 @@ const MessageItem = ({
       ) : message.content ? (
         <p className="whitespace-pre-wrap break-words">{message.content}</p>
       ) : null}
+
+      {/* Message Footer: Time, Status Ticks, and Labels */}
+      <div className={`flex items-center justify-end mt-1 space-x-1 text-xs ${isOwn ? 'text-white/70' : 'text-gray-500'}`}>
+        {/* Edited Label */}
+        {message.isEdited && !message.isDeleted && (
+          <span className="italic">
+            Edited
+          </span>
+        )}
+        
+        {/* Message Status Ticks (WhatsApp style) - Only for own messages */}
+        {isOwn && !message.isDeleted && (
+          <div className="flex items-center ml-1">
+            {message.isRead ? (
+              // Double blue tick - Message read (light blue on blue background)
+              <CheckCheck className="w-4 h-4 text-blue-200" fill="currentColor" />
+            ) : (
+              // Double gray tick - Message delivered but not read (white/60 on blue background)
+              <CheckCheck className="w-4 h-4 text-white/60" />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
