@@ -13,11 +13,14 @@ import {
   Edit,
   Trash2,
   MoreVertical,
+  Reply,
+  CornerDownLeft,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/axios';
 import { chatAPI } from '../../services/api';
 import { useWebRTC } from '../../hooks/useWebRTC';
+import MessageItem from './MessageItem';
 
 /**
  * ChatInterface
@@ -46,8 +49,12 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [openMenuMessageId, setOpenMenuMessageId] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [selectedMessages, setSelectedMessages] = useState(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const messagesEndRef = useRef(null);
   const menuRef = useRef(null);
+  const replyPreviewRef = useRef(null);
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
   const audioInputRef = useRef(null);
@@ -199,7 +206,18 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
         ? `/customer/chat-session/${chatSession._id}`
         : `/agent/chat-session/${chatSession._id}`;
       const response = await api.get(endpoint);
-      setMessages(response.data.messages || []);
+      // Ensure replyTo is populated
+      const messagesWithReplies = (response.data.messages || []).map(msg => {
+        if (msg.replyTo && typeof msg.replyTo === 'string') {
+          // If replyTo is just an ID, find the message in the list
+          const repliedMessage = response.data.messages.find(m => m._id === msg.replyTo);
+          if (repliedMessage) {
+            msg.replyTo = repliedMessage;
+          }
+        }
+        return msg;
+      });
+      setMessages(messagesWithReplies);
     } catch (error) {
       console.error('Error loading messages:', error);
       // Try alternative endpoint if first fails
@@ -234,6 +252,9 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           if (inputMessage.trim()) {
             formData.append('content', inputMessage.trim());
           }
+          if (replyingTo) {
+            formData.append('replyTo', replyingTo._id);
+          }
 
           // Append file based on type
           if (attachment.type === 'image') {
@@ -261,6 +282,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
         }
         setAttachments([]);
         setIsUploading(false);
+        setReplyingTo(null);
       }
 
       // Send TEXT via Socket.io for real-time
@@ -269,8 +291,10 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           chatSessionId: chatSession._id,
           content: inputMessage.trim(),
           messageType: 'text',
+          replyTo: replyingTo?._id || null,
         });
         setInputMessage('');
+        setReplyingTo(null);
         
         // Stop typing state
         socket.emit('typing', {
@@ -282,12 +306,51 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
       } else if (inputMessage.trim() && attachments.length > 0) {
         // Clear input after attachments are sent
         setInputMessage('');
+        setReplyingTo(null);
       }
     } catch (error) {
       console.error('Error sending message:', error);
       alert('Failed to send message. Please try again.');
       setIsUploading(false);
     }
+  };
+
+  const handleReply = (message) => {
+    setReplyingTo(message);
+    setOpenMenuMessageId(null);
+    // Scroll to input
+    setTimeout(() => {
+      replyPreviewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+  };
+
+  const cancelReply = () => {
+    setReplyingTo(null);
+  };
+
+  const toggleMessageSelection = (messageId) => {
+    setSelectedMessages(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+      }
+      if (newSet.size === 0) {
+        setIsSelectionMode(false);
+      }
+      return newSet;
+    });
+  };
+
+  const handleLongPress = (message) => {
+    setIsSelectionMode(true);
+    toggleMessageSelection(message._id);
+  };
+
+  const exitSelectionMode = () => {
+    setIsSelectionMode(false);
+    setSelectedMessages(new Set());
   };
 
   const handleTypingStart = () => {
@@ -587,6 +650,16 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
+                            handleReply(message);
+                          }}
+                          className="px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center space-x-3 text-sm text-gray-700 w-full"
+                        >
+                          <Reply className="w-4 h-4" />
+                          <span>Reply</span>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
                             handleDeleteMessage(message._id);
                             setOpenMenuMessageId(null);
                           }}
@@ -598,118 +671,22 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  <div
-                    className={`rounded-2xl px-4 py-2 ${
-                      message.isDeleted
-                        ? 'bg-gray-200 text-gray-500 italic'
-                        : isOwn
-                        ? 'bg-blue-500 text-white rounded-br-sm'
-                        : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
-                    }`}
-                  >
-                    {/* Show attachments only if message is not deleted */}
-                    {!message.isDeleted && ((message.attachments && message.attachments.length > 0) || message.fileUrl) ? (
-                      <div className="space-y-2 mb-2">
-                        {message.attachments && message.attachments.map((att, idx) => (
-                          <div key={idx}>
-                            {att.type === 'image' && (
-                              <img
-                                src={att.url}
-                                alt={att.fileName || 'Attachment'}
-                                className="max-w-xs rounded-lg cursor-pointer"
-                                onClick={() => window.open(att.url, '_blank')}
-                              />
-                            )}
-                            {att.type === 'audio' && (
-                              <audio controls className="w-full">
-                                <source src={att.url} />
-                              </audio>
-                            )}
-                            {att.type === 'file' && (
-                              <a
-                                href={att.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center space-x-2 text-blue-500 hover:text-blue-600"
-                              >
-                                <FileText className="w-4 h-4" />
-                                <span>{att.fileName || 'File'}</span>
-                              </a>
-                            )}
-                          </div>
-                        ))}
-                        {/* Legacy fileUrl support */}
-                        {!message.attachments && message.fileUrl && (
-                          <div>
-                            {message.messageType === 'image' && (
-                              <img
-                                src={message.fileUrl}
-                                alt={message.fileName || 'Image'}
-                                className="max-w-xs rounded-lg cursor-pointer"
-                                onClick={() => window.open(message.fileUrl, '_blank')}
-                              />
-                            )}
-                            {message.messageType === 'audio' && (
-                              <audio controls className="w-full">
-                                <source src={message.fileUrl} />
-                              </audio>
-                            )}
-                            {message.messageType === 'file' && (
-                              <a
-                                href={message.fileUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center space-x-2 text-blue-500 hover:text-blue-600"
-                              >
-                                <FileText className="w-4 h-4" />
-                                <span>{message.fileName || 'File'}</span>
-                              </a>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ) : null}
-                    {message.isDeleted ? (
-                      <div className="flex items-center space-x-2">
-                        <X className="w-4 h-4" />
-                        <span className="text-sm">This message was deleted</span>
-                      </div>
-                    ) : editingMessageId === message._id ? (
-                      <div className="space-y-2">
-                        <textarea
-                          ref={editInputRef}
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSaveEdit(message._id);
-                            } else if (e.key === 'Escape') {
-                              handleCancelEdit();
-                            }
-                          }}
-                          className="w-full px-2 py-1 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-                          rows={2}
-                        />
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleSaveEdit(message._id)}
-                            className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : message.content ? (
-                      <p className="whitespace-pre-wrap break-words">{message.content}</p>
-                    ) : null}
-                  </div>
+                  <MessageItem
+                    message={message}
+                    isOwn={isOwn}
+                    isSelected={selectedMessages.has(message._id)}
+                    isSelectionMode={isSelectionMode}
+                    editContent={editContent}
+                    setEditContent={setEditContent}
+                    onDelete={() => handleDeleteMessage(message._id)}
+                    onReply={handleReply}
+                    onSelect={toggleMessageSelection}
+                    onLongPress={handleLongPress}
+                    currentUser={currentUser}
+                    editingMessageId={editingMessageId}
+                    handleSaveEdit={handleSaveEdit}
+                    handleCancelEdit={handleCancelEdit}
+                  />
                   {showTime && (
                     <div className={`flex items-center space-x-1 mt-1 text-xs ${message.isDeleted ? 'text-gray-400' : 'text-gray-500'} ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
                       <span>{formatTime(message.createdAt)}</span>
@@ -857,6 +834,82 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           srcObject={remoteStream}
         />
       )}
+
+      {/* Selection Mode Header */}
+      <AnimatePresence>
+        {isSelectionMode && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-blue-500 text-white px-6 py-3 flex items-center justify-between"
+          >
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={exitSelectionMode}
+                className="p-1 hover:bg-blue-600 rounded transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <span className="font-semibold">
+                {selectedMessages.size} {selectedMessages.size === 1 ? 'message' : 'messages'} selected
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => {
+                  // Handle bulk actions
+                  exitSelectionMode();
+                }}
+                className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Reply Preview */}
+      <AnimatePresence>
+        {replyingTo && (
+          <motion.div
+            ref={replyPreviewRef}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-gray-100 border-t border-gray-200 px-6 py-3"
+          >
+            <div className="flex items-start space-x-3">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-1">
+                  <Reply className="w-4 h-4 text-blue-500" />
+                  <span className="text-sm font-semibold text-gray-700">
+                    Replying to {typeof replyingTo.sender === 'object' 
+                      ? (replyingTo.sender._id?.toString() === currentUser?._id?.toString() 
+                          ? 'You' 
+                          : replyingTo.sender.name || 'User')
+                      : 'User'}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-600 truncate pl-6">
+                  {replyingTo.content || 
+                   (replyingTo.attachments?.[0]?.type === 'image' ? '📷 Image' :
+                    replyingTo.attachments?.[0]?.type === 'audio' ? '🎤 Audio' :
+                    replyingTo.attachments?.[0]?.type === 'file' ? '📎 File' :
+                    replyingTo.fileUrl ? '📎 Attachment' : 'Message')}
+                </div>
+              </div>
+              <button
+                onClick={cancelReply}
+                className="p-1 hover:bg-gray-200 rounded transition-colors"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Input Area */}
       <form onSubmit={handleSend} className="bg-white border-t border-gray-200 px-6 py-4">
