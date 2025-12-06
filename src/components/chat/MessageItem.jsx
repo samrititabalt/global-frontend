@@ -20,6 +20,7 @@ const MessageItem = ({
   editingMessageId,
   handleSaveEdit,
   handleCancelEdit,
+  onReplyClick, // New prop for handling reply click
 }) => {
   const swipeRef = useSwipe(
     null, // left swipe
@@ -51,11 +52,20 @@ const MessageItem = ({
           : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
       } ${isSelectionMode ? 'cursor-pointer' : ''}`}
     >
-      {/* Reply Preview */}
+      {/* Reply Preview - Clickable to scroll to original message */}
       {message.replyTo && !message.isDeleted && (
-        <div className={`mb-2 pb-2 border-l-2 ${
-          isOwn ? 'border-white/50' : 'border-blue-500'
-        } pl-2`}>
+        <div 
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onReplyClick && typeof message.replyTo === 'object' && message.replyTo._id) {
+              onReplyClick(message.replyTo._id);
+            }
+          }}
+          className={`mb-2 pb-2 border-l-2 ${
+            isOwn ? 'border-white/50' : 'border-blue-500'
+          } pl-2 cursor-pointer hover:opacity-80 transition-opacity`}
+          title="Click to view original message"
+        >
           <div className={`text-xs font-semibold mb-1 ${
             isOwn ? 'text-white/80' : 'text-blue-600'
           }`}>

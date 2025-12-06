@@ -64,6 +64,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const chatContainerRef = useRef(null);
   const audioRef = useRef(null);
   const editInputRef = useRef(null);
+  const messageRefs = useRef({}); // Store refs for each message to enable scrolling
 
   // WebRTC for voice calls
   const {
@@ -223,6 +224,23 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
+
+  // Function to scroll to a specific message
+  const scrollToMessage = (messageId) => {
+    const messageElement = messageRefs.current[messageId];
+    if (messageElement) {
+      messageElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center',
+        inline: 'nearest'
+      });
+      // Highlight the message briefly
+      messageElement.classList.add('ring-2', 'ring-blue-400', 'ring-opacity-75');
+      setTimeout(() => {
+        messageElement.classList.remove('ring-2', 'ring-blue-400', 'ring-opacity-75');
+      }, 2000);
+    }
+  };
 
   const loadMessages = async () => {
     if (!chatSession?._id || !currentUser) return;
@@ -690,9 +708,15 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           return (
             <motion.div
               key={message._id}
+              ref={(el) => {
+                if (el) {
+                  messageRefs.current[message._id] = el;
+                }
+              }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex ${isOwn ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mt-4' : 'mt-1'}`}
+              className={`flex ${isOwn ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mt-4' : 'mt-1'} transition-all duration-300`}
+              id={`message-${message._id}`}
             >
               <div className={`flex items-end space-x-2 max-w-[70%] ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 {!isOwn && showAvatar && (
@@ -782,6 +806,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                     editingMessageId={editingMessageId}
                     handleSaveEdit={handleSaveEdit}
                     handleCancelEdit={handleCancelEdit}
+                    onReplyClick={scrollToMessage}
                   />
                   {showTime && (
                     <div className={`flex items-center space-x-1 mt-1 text-xs ${message.isDeleted ? 'text-gray-400' : 'text-gray-500'} ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
