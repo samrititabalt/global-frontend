@@ -148,6 +148,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
       const dataUserId = data.userId?.toString();
       const otherUserId = otherUser._id?.toString();
       if (dataUserId === otherUserId) {
+        console.log('✅ User online event received:', data);
         setOtherUserOnline(true);
       }
     };
@@ -157,6 +158,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
       const dataUserId = data.userId?.toString();
       const otherUserId = otherUser._id?.toString();
       if (dataUserId === otherUserId) {
+        console.log('❌ User offline event received:', data);
         setOtherUserOnline(false);
       }
     };
@@ -529,8 +531,9 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
       // Check if user has isOnline property
       if (typeof otherUser.isOnline === 'boolean') {
         setOtherUserOnline(otherUser.isOnline);
+        console.log(`Initial online status for ${otherUser.name}:`, otherUser.isOnline);
       } else {
-        // Default to false if not set
+        // Default to false if not set, but try to get from database
         setOtherUserOnline(false);
       }
     } else {
@@ -540,9 +543,10 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
 
   // Update online status when socket connects
   useEffect(() => {
-    if (socket && socket.connected && otherUser) {
-      // Request current online status
-      // The status will be updated via socket events
+    if (socket && socket.connected && otherUser && socket.userId) {
+      // When socket connects, check if other user is online
+      // The status will be updated via socket events (userOnline/userOffline)
+      console.log('Socket connected, waiting for online status updates');
     }
   }, [socket, otherUser]);
 
@@ -726,7 +730,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                     <div className={`flex items-center space-x-1 mt-1 text-xs ${message.isDeleted ? 'text-gray-400' : 'text-gray-500'} ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
                       <span>{formatTime(message.createdAt)}</span>
                       {message.isEdited && !message.isDeleted && (
-                        <span className="italic text-gray-400" title={`Edited at ${formatTime(message.editedAt)}`}>
+                        <span className={`italic ${isOwn ? 'text-white/70' : 'text-gray-400'}`} title={`Edited at ${formatTime(message.editedAt)}`}>
                           Edited
                         </span>
                       )}
