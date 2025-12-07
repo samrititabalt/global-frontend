@@ -898,6 +898,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
         localStream={localStream}
         otherUser={otherUser}
         currentUser={currentUser}
+        otherUserOnline={otherUserOnline}
         onAccept={acceptCall}
         onReject={rejectCall}
         onEnd={endCall}

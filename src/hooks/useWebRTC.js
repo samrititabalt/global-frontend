@@ -10,6 +10,9 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   const [callStatus, setCallStatus] = useState('idle'); // idle, calling, ringing, connected, ended
   const [remoteStream, setRemoteStream] = useState(null);
   
+  // Track if answer was received (for status updates)
+  const answerReceivedRef = useRef(false);
+  
   const localStreamRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const remoteStreamRef = useRef(null);
@@ -75,10 +78,12 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       if (data.from === currentUserId) return;
 
       try {
+        answerReceivedRef.current = true;
         await peerConnectionRef.current.setRemoteDescription(
           new RTCSessionDescription(data.answer)
         );
-        setCallStatus('connected');
+        // Status will be updated when connection state changes to 'connected'
+        console.log('Answer received, waiting for connection...');
       } catch (error) {
         console.error('Error handling answer:', error);
         endCall();
@@ -163,6 +168,17 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
           // Don't auto-end, let user handle it
         } else if (pc.connectionState === 'connected') {
           setCallStatus('connected');
+          setIsCallIncoming(false);
+          setIsCallOutgoing(false);
+          console.log('Call connected successfully');
+        }
+      };
+
+      // Handle ICE connection state for better status tracking
+      pc.oniceconnectionstatechange = () => {
+        console.log('ICE connection state:', pc.iceConnectionState);
+        if (pc.iceConnectionState === 'checking' && callStatus === 'calling') {
+          setCallStatus('ringing');
         }
       };
 
@@ -303,6 +319,7 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     setRemoteStream(null);
     remoteStreamRef.current = null;
     callInitiatorRef.current = null;
+    answerReceivedRef.current = false;
 
     // Notify other party
     if (socket && chatSessionId) {

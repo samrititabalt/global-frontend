@@ -11,6 +11,7 @@ const VoiceCallUI = ({
   localStream,
   otherUser,
   currentUser,
+  otherUserOnline,
   onAccept,
   onReject,
   onEnd,
@@ -19,20 +20,55 @@ const VoiceCallUI = ({
 }) => {
   const remoteAudioRef = useRef(null);
   const localAudioRef = useRef(null);
+  const ringtoneRef = useRef(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [callDuration, setCallDuration] = useState(0);
+  const [availableAudioOutputs, setAvailableAudioOutputs] = useState([]);
 
-  // Update remote audio when stream changes
+  // Get available audio outputs (for speaker/earpiece)
+  useEffect(() => {
+    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+      navigator.mediaDevices.enumerateDevices().then(devices => {
+        const audioOutputs = devices.filter(device => device.kind === 'audiooutput');
+        setAvailableAudioOutputs(audioOutputs);
+        console.log('Available audio outputs:', audioOutputs);
+      });
+    }
+  }, []);
+
+  // Update remote audio when stream changes - CRITICAL for mobile
   useEffect(() => {
     if (remoteAudioRef.current && remoteStream) {
       console.log('Setting remote audio stream:', remoteStream);
-      remoteAudioRef.current.srcObject = remoteStream;
-      remoteAudioRef.current.play().catch(err => {
-        console.error('Error playing remote audio:', err);
-      });
+      const audioElement = remoteAudioRef.current;
+      
+      // Set the stream
+      audioElement.srcObject = remoteStream;
+      
+      // For mobile: ensure proper playback
+      audioElement.setAttribute('playsinline', 'true');
+      audioElement.setAttribute('webkit-playsinline', 'true');
+      
+      // Play with error handling
+      const playPromise = audioElement.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('Remote audio playing successfully');
+            // Set initial volume based on speaker state
+            audioElement.volume = isSpeakerOn ? 1.0 : 0.5;
+          })
+          .catch(err => {
+            console.error('Error playing remote audio:', err);
+            // Try again after user interaction
+            setTimeout(() => {
+              audioElement.play().catch(e => console.error('Retry failed:', e));
+            }, 1000);
+          });
+      }
     }
-  }, [remoteStream]);
+  }, [remoteStream, isSpeakerOn]);
 
   // Update local audio when stream changes (for echo cancellation testing)
   useEffect(() => {
@@ -43,10 +79,11 @@ const VoiceCallUI = ({
     }
   }, [localStream]);
 
-  // Call duration timer
+  // Call duration timer - ONLY start when connected
   useEffect(() => {
     let interval = null;
-    if (callStatus === 'connected') {
+    if (callStatus === 'connected' && remoteStream) {
+      // Only start timer when call is actually connected
       interval = setInterval(() => {
         setCallDuration(prev => prev + 1);
       }, 1000);
@@ -56,7 +93,104 @@ const VoiceCallUI = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [callStatus]);
+  }, [callStatus, remoteStream]);
+
+  // Generate simple ringtone using Web Audio API (fallback)
+  const generateRingtone = () => {
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800; // Hz
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+      
+      return audioContext;
+    } catch (err) {
+      console.error('Error generating ringtone:', err);
+      return null;
+    }
+  };
+
+  // Ringtone management
+  useEffect(() => {
+    const ringtone = ringtoneRef.current;
+    let ringtoneInterval = null;
+    let audioContext = null;
+
+    // Play ringtone for incoming calls
+    if (isCallIncoming && callStatus === 'ringing') {
+      if (ringtone && ringtone.src) {
+        // Try to play file-based ringtone
+        ringtone.loop = true;
+        ringtone.volume = 0.7;
+        ringtone.play().catch(err => {
+          console.log('File ringtone failed, using generated tone:', err);
+          // Fallback to generated tone
+          ringtoneInterval = setInterval(() => {
+            audioContext = generateRingtone();
+          }, 500);
+        });
+      } else {
+        // Use generated tone
+        ringtoneInterval = setInterval(() => {
+          audioContext = generateRingtone();
+        }, 500);
+      }
+    }
+    // Play ringtone for outgoing calls (ringing status)
+    else if (isCallOutgoing && callStatus === 'ringing') {
+      if (ringtone && ringtone.src) {
+        ringtone.loop = true;
+        ringtone.volume = 0.5;
+        ringtone.play().catch(err => {
+          console.log('File ringtone failed, using generated tone:', err);
+          ringtoneInterval = setInterval(() => {
+            audioContext = generateRingtone();
+          }, 500);
+        });
+      } else {
+        ringtoneInterval = setInterval(() => {
+          audioContext = generateRingtone();
+        }, 500);
+      }
+    }
+    // Stop ringtone when call is accepted, rejected, or ended
+    else {
+      if (ringtone) {
+        ringtone.pause();
+        ringtone.currentTime = 0;
+      }
+      if (ringtoneInterval) {
+        clearInterval(ringtoneInterval);
+      }
+      if (audioContext) {
+        audioContext.close();
+      }
+    }
+
+    return () => {
+      if (ringtone) {
+        ringtone.pause();
+        ringtone.currentTime = 0;
+      }
+      if (ringtoneInterval) {
+        clearInterval(ringtoneInterval);
+      }
+      if (audioContext) {
+        audioContext.close();
+      }
+    };
+  }, [isCallIncoming, isCallOutgoing, callStatus]);
 
   const formatDuration = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -74,12 +208,39 @@ const VoiceCallUI = ({
     }
   };
 
-  const handleToggleSpeaker = () => {
-    if (remoteAudioRef.current) {
-      remoteAudioRef.current.volume = isSpeakerOn ? 0.5 : 1.0;
-      setIsSpeakerOn(!isSpeakerOn);
-      if (onToggleSpeaker) onToggleSpeaker(!isSpeakerOn);
+  const handleToggleSpeaker = async () => {
+    const audioElement = remoteAudioRef.current;
+    if (!audioElement) return;
+
+    const newSpeakerState = !isSpeakerOn;
+    
+    // For mobile devices: use setSinkId for proper speaker/earpiece switching
+    if (audioElement.setSinkId && availableAudioOutputs.length > 0) {
+      try {
+        // If speaker is on, switch to earpiece (first audio output usually)
+        // If speaker is off, switch to default (speaker)
+        if (newSpeakerState) {
+          // Turn on speaker - use default or last device
+          await audioElement.setSinkId('');
+        } else {
+          // Turn on earpiece - use first available audio output
+          if (availableAudioOutputs[0]?.deviceId) {
+            await audioElement.setSinkId(availableAudioOutputs[0].deviceId);
+          }
+        }
+        console.log('Audio output switched:', newSpeakerState ? 'Speaker' : 'Earpiece');
+      } catch (err) {
+        console.error('Error setting audio sink:', err);
+        // Fallback to volume control
+        audioElement.volume = newSpeakerState ? 1.0 : 0.5;
+      }
+    } else {
+      // Fallback: use volume control for desktop
+      audioElement.volume = newSpeakerState ? 1.0 : 0.5;
     }
+
+    setIsSpeakerOn(newSpeakerState);
+    if (onToggleSpeaker) onToggleSpeaker(newSpeakerState);
   };
 
   // Incoming call UI
@@ -92,9 +253,24 @@ const VoiceCallUI = ({
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-gradient-to-br from-green-500 via-green-600 to-green-700 z-50 flex items-center justify-center"
         >
-          {/* Hidden audio elements */}
-          <audio ref={remoteAudioRef} autoPlay playsInline />
-          <audio ref={localAudioRef} autoPlay playsInline muted />
+          {/* Hidden audio elements - CRITICAL for mobile */}
+          <audio 
+            ref={remoteAudioRef} 
+            autoPlay 
+            playsInline
+            webkit-playsinline="true"
+            controls={false}
+            style={{ display: 'none' }}
+          />
+          <audio 
+            ref={localAudioRef} 
+            autoPlay 
+            playsInline 
+            muted
+            webkit-playsinline="true"
+            controls={false}
+            style={{ display: 'none' }}
+          />
 
           <div className="text-center text-white px-6">
             {/* Avatar */}
@@ -116,7 +292,19 @@ const VoiceCallUI = ({
 
             {/* Name */}
             <h2 className="text-3xl font-bold mb-2">{otherUser?.name || 'Unknown'}</h2>
-            <p className="text-green-100 text-lg mb-8">Incoming voice call</p>
+            <p className="text-green-100 text-lg mb-2">Incoming voice call</p>
+            {/* Status based on online/offline */}
+            <p className="text-green-200 text-sm mb-8">
+              {otherUserOnline ? 'Ringing...' : 'Calling...'}
+            </p>
+            
+            {/* Hidden ringtone */}
+            <audio
+              ref={ringtoneRef}
+              src="/ringtone.mp3"
+              preload="auto"
+              loop
+            />
 
             {/* Action Buttons */}
             <div className="flex justify-center space-x-6">
@@ -156,14 +344,24 @@ const VoiceCallUI = ({
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 z-50 flex items-center justify-center"
         >
-          {/* Hidden audio elements */}
+          {/* Hidden audio elements - CRITICAL for mobile */}
           <audio 
             ref={remoteAudioRef} 
             autoPlay 
-            playsInline 
-            volume={isSpeakerOn ? 1.0 : 0.5}
+            playsInline
+            webkit-playsinline="true"
+            controls={false}
+            style={{ display: 'none' }}
           />
-          <audio ref={localAudioRef} autoPlay playsInline muted />
+          <audio 
+            ref={localAudioRef} 
+            autoPlay 
+            playsInline 
+            muted
+            webkit-playsinline="true"
+            controls={false}
+            style={{ display: 'none' }}
+          />
 
           <div className="text-center text-white px-6 w-full max-w-md">
             {/* Avatar */}
@@ -189,14 +387,26 @@ const VoiceCallUI = ({
             
             {/* Call Status */}
             <div className="mb-8">
-              {callStatus === 'calling' || callStatus === 'ringing' ? (
-                <p className="text-blue-100 text-lg">Calling...</p>
+              {callStatus === 'calling' ? (
+                <p className="text-blue-100 text-lg">
+                  {otherUserOnline ? 'Ringing...' : 'Calling...'}
+                </p>
+              ) : callStatus === 'ringing' ? (
+                <p className="text-blue-100 text-lg">Ringing...</p>
               ) : callStatus === 'connected' ? (
                 <p className="text-blue-100 text-lg font-mono">{formatDuration(callDuration)}</p>
               ) : (
                 <p className="text-blue-100 text-lg">{callStatus}</p>
               )}
             </div>
+            
+            {/* Hidden ringtone */}
+            <audio
+              ref={ringtoneRef}
+              src="/ringtone.mp3"
+              preload="auto"
+              loop
+            />
 
             {/* Control Buttons */}
             <div className="flex justify-center items-center space-x-4 mb-6">
