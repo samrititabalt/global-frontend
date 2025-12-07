@@ -22,18 +22,49 @@ const VoiceCallUI = ({
   const localAudioRef = useRef(null);
   const ringtoneRef = useRef(null);
   const [isMuted, setIsMuted] = useState(false);
-  const [isSpeakerOn, setIsSpeakerOn] = useState(true);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(true); // true = speaker, false = earpiece
   const [callDuration, setCallDuration] = useState(0);
   const [availableAudioOutputs, setAvailableAudioOutputs] = useState([]);
+  const [earpieceDeviceId, setEarpieceDeviceId] = useState(null);
+  const [speakerDeviceId, setSpeakerDeviceId] = useState(null);
 
   // Get available audio outputs (for speaker/earpiece)
   useEffect(() => {
-    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
-      navigator.mediaDevices.enumerateDevices().then(devices => {
+    const enumerateDevices = async () => {
+      try {
+        // Request permission to enumerate devices
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        const devices = await navigator.mediaDevices.enumerateDevices();
         const audioOutputs = devices.filter(device => device.kind === 'audiooutput');
         setAvailableAudioOutputs(audioOutputs);
+        
+        // Find earpiece (usually first device or device with 'earpiece' in label)
+        const earpiece = audioOutputs.find(device => 
+          device.label.toLowerCase().includes('earpiece') || 
+          device.label.toLowerCase().includes('receiver') ||
+          device.label.toLowerCase().includes('phone')
+        ) || audioOutputs[0];
+        
+        // Find speaker (usually default or device with 'speaker' in label)
+        const speaker = audioOutputs.find(device => 
+          device.label.toLowerCase().includes('speaker') ||
+          device.deviceId === 'default'
+        ) || audioOutputs[audioOutputs.length - 1] || null;
+        
+        if (earpiece) setEarpieceDeviceId(earpiece.deviceId);
+        if (speaker) setSpeakerDeviceId(speaker.deviceId);
+        
         console.log('Available audio outputs:', audioOutputs);
-      });
+        console.log('Earpiece device:', earpiece);
+        console.log('Speaker device:', speaker);
+      } catch (err) {
+        console.error('Error enumerating devices:', err);
+      }
+    };
+    
+    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+      enumerateDevices();
     }
   }, []);
 
@@ -50,14 +81,27 @@ const VoiceCallUI = ({
       audioElement.setAttribute('playsinline', 'true');
       audioElement.setAttribute('webkit-playsinline', 'true');
       
+      // Set initial audio output based on speaker state
+      if (audioElement.setSinkId) {
+        if (isSpeakerOn && speakerDeviceId) {
+          audioElement.setSinkId(speakerDeviceId).catch(err => {
+            console.log('Error setting initial speaker:', err);
+          });
+        } else if (!isSpeakerOn && earpieceDeviceId) {
+          audioElement.setSinkId(earpieceDeviceId).catch(err => {
+            console.log('Error setting initial earpiece:', err);
+          });
+        }
+      }
+      
       // Play with error handling
       const playPromise = audioElement.play();
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
             console.log('Remote audio playing successfully');
-            // Set initial volume based on speaker state
-            audioElement.volume = isSpeakerOn ? 1.0 : 0.5;
+            // Set volume
+            audioElement.volume = 1.0;
           })
           .catch(err => {
             console.error('Error playing remote audio:', err);
@@ -68,7 +112,7 @@ const VoiceCallUI = ({
           });
       }
     }
-  }, [remoteStream, isSpeakerOn]);
+  }, [remoteStream, isSpeakerOn, speakerDeviceId, earpieceDeviceId]);
 
   // Update local audio when stream changes (for echo cancellation testing)
   useEffect(() => {
@@ -212,36 +256,94 @@ const VoiceCallUI = ({
     const audioElement = remoteAudioRef.current;
     if (!audioElement) return;
 
-    const newSpeakerState = !isSpeakerOn;
+    const newSpeakerState = !isSpeakerOn; // true = speaker, false = earpiece
     
-    // For mobile devices: use setSinkId for proper speaker/earpiece switching
-    if (audioElement.setSinkId && availableAudioOutputs.length > 0) {
-      try {
-        // If speaker is on, switch to earpiece (first audio output usually)
-        // If speaker is off, switch to default (speaker)
+    try {
+      // For mobile devices: use setSinkId for proper speaker/earpiece switching
+      if (audioElement.setSinkId) {
         if (newSpeakerState) {
-          // Turn on speaker - use default or last device
-          await audioElement.setSinkId('');
+          // Turn ON speaker - use speaker device or default
+          if (speakerDeviceId) {
+            await audioElement.setSinkId(speakerDeviceId);
+          } else {
+            // Use default (usually speaker)
+            await audioElement.setSinkId('');
+          }
+          console.log('Audio output: Speaker');
         } else {
-          // Turn on earpiece - use first available audio output
-          if (availableAudioOutputs[0]?.deviceId) {
+          // Turn OFF speaker = use EARPIECE
+          if (earpieceDeviceId) {
+            await audioElement.setSinkId(earpieceDeviceId);
+          } else if (availableAudioOutputs.length > 0) {
+            // Fallback to first device (usually earpiece on mobile)
             await audioElement.setSinkId(availableAudioOutputs[0].deviceId);
           }
+          console.log('Audio output: Earpiece');
         }
-        console.log('Audio output switched:', newSpeakerState ? 'Speaker' : 'Earpiece');
-      } catch (err) {
-        console.error('Error setting audio sink:', err);
-        // Fallback to volume control
-        audioElement.volume = newSpeakerState ? 1.0 : 0.5;
+      } else {
+        // Fallback: use volume control for desktop/browsers without setSinkId
+        audioElement.volume = newSpeakerState ? 1.0 : 0.7;
+        console.log('Using volume fallback:', newSpeakerState ? 'Speaker' : 'Earpiece');
       }
-    } else {
-      // Fallback: use volume control for desktop
-      audioElement.volume = newSpeakerState ? 1.0 : 0.5;
+    } catch (err) {
+      console.error('Error setting audio sink:', err);
+      // Fallback to volume control
+      audioElement.volume = newSpeakerState ? 1.0 : 0.7;
     }
 
     setIsSpeakerOn(newSpeakerState);
     if (onToggleSpeaker) onToggleSpeaker(newSpeakerState);
   };
+
+  // Screen blackout when earpiece is active (like proximity sensor)
+  useEffect(() => {
+    if (!isCallActive || callStatus !== 'connected') {
+      // Restore normal screen when call ends
+      document.body.style.backgroundColor = '';
+      document.body.style.overflow = '';
+      return;
+    }
+
+    // When earpiece is active (speaker OFF), turn screen black
+    if (!isSpeakerOn) {
+      // Make entire screen black
+      document.body.style.backgroundColor = '#000000';
+      document.body.style.overflow = 'hidden';
+      
+      // Prevent screen timeout (keep screen on but black)
+      if ('wakeLock' in navigator) {
+        navigator.wakeLock.request('screen').catch(err => {
+          console.log('Wake lock not supported:', err);
+        });
+      }
+      
+      // Also set meta theme color to black
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', '#000000');
+      }
+    } else {
+      // When speaker is ON, restore normal screen
+      document.body.style.backgroundColor = '';
+      document.body.style.overflow = '';
+      
+      // Restore theme color
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', '#ffffff');
+      }
+    }
+
+    return () => {
+      // Cleanup on unmount
+      document.body.style.backgroundColor = '';
+      document.body.style.overflow = '';
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', '#ffffff');
+      }
+    };
+  }, [isSpeakerOn, isCallActive, callStatus]);
 
   // Incoming call UI
   if (isCallIncoming) {
@@ -342,7 +444,14 @@ const VoiceCallUI = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 z-50 flex items-center justify-center"
+          className={`fixed inset-0 z-50 flex items-center justify-center ${
+            !isSpeakerOn 
+              ? 'bg-black' // Black screen when earpiece is active
+              : 'bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700'
+          }`}
+          style={{
+            backgroundColor: !isSpeakerOn ? '#000000' : undefined,
+          }}
         >
           {/* Hidden audio elements - CRITICAL for mobile */}
           <audio 
@@ -363,8 +472,10 @@ const VoiceCallUI = ({
             style={{ display: 'none' }}
           />
 
-          <div className="text-center text-white px-6 w-full max-w-md">
-            {/* Avatar */}
+          <div className={`text-center px-6 w-full max-w-md ${
+            !isSpeakerOn ? 'hidden' : 'block'
+          }`}>
+            {/* Avatar - Only show when speaker is ON */}
             <motion.div
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ repeat: Infinity, duration: 3 }}
@@ -382,8 +493,8 @@ const VoiceCallUI = ({
               />
             </motion.div>
 
-            {/* Name */}
-            <h2 className="text-3xl font-bold mb-2">{otherUser?.name || 'Unknown'}</h2>
+            {/* Name - Only show when speaker is ON */}
+            <h2 className="text-3xl font-bold mb-2 text-white">{otherUser?.name || 'Unknown'}</h2>
             
             {/* Call Status */}
             <div className="mb-8">
@@ -408,30 +519,35 @@ const VoiceCallUI = ({
               loop
             />
 
-            {/* Control Buttons */}
-            <div className="flex justify-center items-center space-x-4 mb-6">
+            {/* Control Buttons - Always visible, positioned at bottom */}
+            <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 flex justify-center items-center space-x-4 z-50">
               {/* Mute/Unmute */}
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={handleToggleMute}
                 className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-colors ${
-                  isMuted ? 'bg-red-500 hover:bg-red-600' : 'bg-white/20 hover:bg-white/30 backdrop-blur-sm'
+                  isMuted 
+                    ? 'bg-red-500 hover:bg-red-600 text-white' 
+                    : 'bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white'
                 }`}
               >
                 {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
               </motion.button>
 
-              {/* Speaker */}
+              {/* Speaker/Earpiece Toggle - WhatsApp style (highlighted when speaker ON) */}
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={handleToggleSpeaker}
-                className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-colors ${
-                  isSpeakerOn ? 'bg-white/20 hover:bg-white/30 backdrop-blur-sm' : 'bg-white/10 hover:bg-white/20 backdrop-blur-sm'
+                className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all text-white ${
+                  isSpeakerOn 
+                    ? 'bg-white/40 hover:bg-white/50 backdrop-blur-sm ring-2 ring-white/50' // Active/highlighted when speaker is ON
+                    : 'bg-white/15 hover:bg-white/25 backdrop-blur-sm' // Dimmed when earpiece is ON
                 }`}
+                title={isSpeakerOn ? 'Speaker (tap for earpiece)' : 'Earpiece (tap for speaker)'}
               >
-                {isSpeakerOn ? <Volume2 className="w-6 h-6" /> : <VolumeX className="w-6 h-6" />}
+                <Volume2 className="w-6 h-6" />
               </motion.button>
 
               {/* End Call */}
@@ -439,21 +555,28 @@ const VoiceCallUI = ({
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={onEnd}
-                className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
+                className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors text-white"
               >
                 <PhoneOff className="w-8 h-8" />
               </motion.button>
             </div>
 
-            {/* Status indicators */}
-            <div className="flex justify-center space-x-2 mt-4">
-              {isMuted && (
-                <span className="text-xs bg-red-500/50 px-3 py-1 rounded-full">Muted</span>
-              )}
-              {callStatus === 'connected' && remoteStream && (
-                <span className="text-xs bg-green-500/50 px-3 py-1 rounded-full">Connected</span>
-              )}
-            </div>
+            {/* Status indicators - Only show when speaker is ON */}
+            {isSpeakerOn && (
+              <div className="flex justify-center space-x-2 mt-4">
+                {isMuted && (
+                  <span className="text-xs bg-red-500/50 px-3 py-1 rounded-full text-white">Muted</span>
+                )}
+                {callStatus === 'connected' && remoteStream && (
+                  <span className="text-xs bg-green-500/50 px-3 py-1 rounded-full text-white">Connected</span>
+                )}
+              </div>
+            )}
+            
+            {/* Black screen overlay when earpiece is active - like phone proximity sensor */}
+            {!isSpeakerOn && (
+              <div className="fixed inset-0 bg-black z-30" />
+            )}
           </div>
         </motion.div>
       </AnimatePresence>
