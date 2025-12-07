@@ -43,7 +43,7 @@ const MessageItem = ({
           onSelect(message._id);
         }
       }}
-      className={`rounded-2xl px-2.5 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 transition-all relative ${
+      className={`rounded-2xl px-4 py-2 transition-all relative ${
         isSelected
           ? 'ring-2 ring-blue-500 bg-blue-50'
           : message.isDeleted
@@ -51,7 +51,7 @@ const MessageItem = ({
           : isOwn
           ? 'bg-blue-500 text-white rounded-br-sm'
           : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
-      } ${isSelectionMode ? 'cursor-pointer' : ''} max-w-[90%] sm:max-w-[85%] md:max-w-md`}
+      } ${isSelectionMode ? 'cursor-pointer' : ''}`}
     >
       {/* Reply Preview - Clickable to scroll to original message */}
       {message.replyTo && !message.isDeleted && (

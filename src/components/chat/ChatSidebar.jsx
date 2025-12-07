@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Search, MessageSquare, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const ChatSidebar = ({ chatSessions, currentChatId, onNewChat, basePath = '/customer/chat' }) => {
+const ChatSidebar = ({ chatSessions, currentChatId, onNewChat }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
@@ -83,27 +83,27 @@ const ChatSidebar = ({ chatSessions, currentChatId, onNewChat, basePath = '/cust
   };
 
   return (
-    <div className="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col h-full">
-      {/* Header - Mobile responsive */}
-      <div className="p-3 sm:p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Chats</h2>
+    <div className="w-80 bg-white border-r border-gray-200 flex flex-col h-full">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-900">Chats</h2>
           <button
             onClick={onNewChat}
-            className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             title="New Chat"
           >
             <Plus className="w-5 h-5 text-gray-600" />
           </button>
         </div>
         <div className="relative">
-          <Search className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
             placeholder="Search chats..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
@@ -124,20 +124,20 @@ const ChatSidebar = ({ chatSessions, currentChatId, onNewChat, basePath = '/cust
               return (
                 <button
                   key={chat._id}
-                  onClick={() => navigate(`${basePath}/${chat._id}`)}
-                  className={`w-full p-3 sm:p-4 text-left hover:bg-gray-50 active:bg-gray-100 transition-colors ${
+                  onClick={() => navigate(`/customer/chat/${chat._id}`)}
+                  className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
                     isActive ? 'bg-blue-50 border-l-4 border-blue-500' : ''
                   }`}
                 >
-                  <div className="flex items-start space-x-2 sm:space-x-3">
+                  <div className="flex items-start space-x-3">
                     <div className="flex-shrink-0">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-sm sm:text-base">
+                      <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
                         {getChatTitle(chat).charAt(0)}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className={`font-semibold truncate text-sm sm:text-base ${
+                        <h3 className={`font-semibold truncate ${
                           isActive ? 'text-blue-600' : 'text-gray-900'
                         }`}>
                           {getChatTitle(chat)}
@@ -146,19 +146,19 @@ const ChatSidebar = ({ chatSessions, currentChatId, onNewChat, basePath = '/cust
                           {formatTime(chat.updatedAt || chat.createdAt)}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs sm:text-sm text-gray-600 truncate flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-gray-600 truncate">
                           {getChatPreview(chat)}
                         </p>
                         {unreadCount > 0 && (
-                          <span className="bg-blue-500 text-white text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full flex-shrink-0 min-w-[20px] text-center">
-                            {unreadCount > 99 ? '99+' : unreadCount}
+                          <span className="bg-blue-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ml-2">
+                            {unreadCount}
                           </span>
                         )}
                       </div>
                       {chat.status && (
                         <div className="mt-1">
-                          <span className={`text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
                             chat.status === 'active' ? 'bg-green-100 text-green-800' :
                             chat.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                             'bg-gray-100 text-gray-800'

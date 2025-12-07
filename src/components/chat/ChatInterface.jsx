@@ -15,7 +15,6 @@ import {
   MoreVertical,
   Reply,
   CornerDownLeft,
-  ArrowLeft,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/axios';
@@ -40,7 +39,7 @@ import VoiceCallUI from './VoiceCallUI';
  * Attachments UI is present, but real-time send is focused on text messages for now.
  */
 
-const ChatInterface = ({ chatSession, currentUser, socket, onBackToChatList }) => {
+const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -654,61 +653,50 @@ const ChatInterface = ({ chatSession, currentUser, socket, onBackToChatList }) =
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
-      {/* Chat Header - Mobile responsive with back button */}
-      <div className="bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-          {/* Back button for mobile */}
-          {onBackToChatList && (
-            <button
-              onClick={onBackToChatList}
-              className="md:hidden p-1.5 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 mr-1"
-              title="Back to chats"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
-            </button>
-          )}
-          
-          <div className="relative flex-shrink-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-sm sm:text-base">
+      {/* Chat Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="relative">
+            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
               {otherUser?.name?.charAt(0) || 'U'}
             </div>
             {otherUserOnline && (
-              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 rounded-full border-2 border-white"></div>
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
             )}
           </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{otherUser?.name || 'User'}</h3>
-            <p className="text-xs sm:text-sm text-gray-500">
+          <div>
+            <h3 className="font-semibold text-gray-900">{otherUser?.name || 'User'}</h3>
+            <p className="text-sm text-gray-500">
               {otherUserOnline ? 'Online' : 'Offline'}
             </p>
           </div>
         </div>
-        <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+        <div className="flex items-center space-x-2">
           {!isCallActive ? (
             <button
               onClick={startCall}
-              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               title="Start voice call"
             >
-              <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+              <Phone className="w-5 h-5 text-gray-600" />
             </button>
           ) : (
             <button
               onClick={endCall}
-              className="p-1.5 sm:p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
               title="End call"
             >
-              <PhoneOff className="w-5 h-5 sm:w-6 sm:h-6" />
+              <PhoneOff className="w-5 h-5" />
             </button>
           )}
         </div>
       </div>
 
-      {/* Messages Container - Mobile responsive */}
+      {/* Messages Container */}
       <div 
         ref={chatContainerRef}
-        className="flex-1 overflow-y-auto px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 space-y-2 sm:space-y-3 md:space-y-4"
-        style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}
+        className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+        style={{ scrollBehavior: 'smooth' }}
       >
         {messages.map((message, index) => {
           const senderId =
@@ -731,9 +719,9 @@ const ChatInterface = ({ chatSession, currentUser, socket, onBackToChatList }) =
               className={`flex ${isOwn ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mt-4' : 'mt-1'} transition-all duration-300`}
               id={`message-${message._id}`}
             >
-              <div className={`flex items-end space-x-1 sm:space-x-2 max-w-[90%] sm:max-w-[85%] md:max-w-[70%] ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
+              <div className={`flex items-end space-x-2 max-w-[70%] ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 {!isOwn && showAvatar && (
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                     {otherUser?.name?.charAt(0) || 'U'}
                   </div>
                 )}
@@ -837,23 +825,23 @@ const ChatInterface = ({ chatSession, currentUser, socket, onBackToChatList }) =
           );
         })}
 
-        {/* Typing Indicator - Mobile responsive */}
+        {/* Typing Indicator */}
         <AnimatePresence>
           {isTyping && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="flex items-center space-x-1.5 sm:space-x-2"
+              className="flex items-center space-x-2"
             >
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold">
                 {typingUser?.charAt(0) || 'U'}
               </div>
-              <div className="bg-white rounded-2xl rounded-bl-sm px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200">
-                <div className="flex space-x-0.5 sm:space-x-1">
-                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              <div className="bg-white rounded-2xl rounded-bl-sm px-4 py-2 border border-gray-200">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                 </div>
               </div>
             </motion.div>
@@ -863,34 +851,34 @@ const ChatInterface = ({ chatSession, currentUser, socket, onBackToChatList }) =
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Attachments Preview - Mobile responsive */}
+      {/* Attachments Preview */}
       {attachments.length > 0 && (
-        <div className="px-2 sm:px-3 md:px-4 lg:px-6 py-2 bg-gray-50 border-t border-gray-200">
-          <div className="flex space-x-1.5 sm:space-x-2 overflow-x-auto pb-1">
+        <div className="px-6 py-2 bg-gray-50 border-t border-gray-200">
+          <div className="flex space-x-2 overflow-x-auto">
             {attachments.map((att, index) => (
               <div key={index} className="relative flex-shrink-0">
                 {att.type === 'image' && att.preview && (
-                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="relative w-20 h-20 rounded-lg overflow-hidden">
                     <img src={att.preview} alt="Preview" className="w-full h-full object-cover" />
                     <button
                       onClick={() => removeAttachment(index)}
-                      className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 bg-red-500 text-white rounded-full p-0.5 sm:p-1 hover:bg-red-600 active:bg-red-700"
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                     >
-                      <X className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                      <X className="w-3 h-3" />
                     </button>
                   </div>
                 )}
                 {att.type === 'audio' && (
-                  <div className="relative w-56 sm:w-64 bg-white rounded-lg p-2 sm:p-3 border border-gray-200 flex-shrink-0">
+                  <div className="relative w-64 bg-white rounded-lg p-3 border border-gray-200">
                     <VoiceNote 
                       url={att.preview} 
                       isOwn={false}
                     />
                     <button
                       onClick={() => removeAttachment(index)}
-                      className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 bg-red-500 text-white rounded-full p-0.5 sm:p-1 hover:bg-red-600 active:bg-red-700 z-10"
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 z-10"
                     >
-                      <X className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                      <X className="w-3 h-3" />
                     </button>
                   </div>
                 )}
@@ -916,33 +904,33 @@ const ChatInterface = ({ chatSession, currentUser, socket, onBackToChatList }) =
         onEnd={endCall}
       />
 
-      {/* Selection Mode Header - Mobile responsive */}
+      {/* Selection Mode Header */}
       <AnimatePresence>
         {isSelectionMode && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="bg-blue-500 text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 flex items-center justify-between"
+            className="bg-blue-500 text-white px-6 py-3 flex items-center justify-between"
           >
-            <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
+            <div className="flex items-center space-x-4">
               <button
                 onClick={exitSelectionMode}
-                className="p-1 hover:bg-blue-600 active:bg-blue-700 rounded transition-colors"
+                className="p-1 hover:bg-blue-600 rounded transition-colors"
               >
-                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                <X className="w-5 h-5" />
               </button>
-              <span className="font-semibold text-sm sm:text-base">
+              <span className="font-semibold">
                 {selectedMessages.size} {selectedMessages.size === 1 ? 'message' : 'messages'} selected
               </span>
             </div>
-            <div className="flex items-center space-x-1 sm:space-x-2">
+            <div className="flex items-center space-x-2">
               <button
                 onClick={() => {
                   // Handle bulk actions
                   exitSelectionMode();
                 }}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/20 hover:bg-white/30 active:bg-white/40 rounded-lg transition-colors text-xs sm:text-sm font-medium"
+                className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm font-medium"
               >
                 Delete
               </button>
@@ -992,25 +980,25 @@ const ChatInterface = ({ chatSession, currentUser, socket, onBackToChatList }) =
         )}
       </AnimatePresence>
 
-      {/* Input Area - Mobile responsive */}
-      <form onSubmit={handleSend} className="bg-white border-t border-gray-200 px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 safe-area-inset-bottom">
-        <div className="flex items-end space-x-1 sm:space-x-2">
-          <div className="flex space-x-0.5 sm:space-x-1 flex-shrink-0">
+      {/* Input Area */}
+      <form onSubmit={handleSend} className="bg-white border-t border-gray-200 px-6 py-4">
+        <div className="flex items-end space-x-2">
+          <div className="flex space-x-1">
             <button
               type="button"
               onClick={() => imageInputRef.current?.click()}
-              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors active:bg-gray-200"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               title="Upload image"
             >
-              <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+              <FileText className="w-5 h-5 text-gray-600" />
             </button>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors active:bg-gray-200"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               title="Upload file"
             >
-              <Paperclip className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+              <Paperclip className="w-5 h-5 text-gray-600" />
             </button>
           </div>
           <input
@@ -1051,36 +1039,36 @@ const ChatInterface = ({ chatSession, currentUser, socket, onBackToChatList }) =
                 }
               }}
               placeholder="Type a message..."
-              className="w-full px-2.5 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 pr-14 sm:pr-16 md:pr-20 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm sm:text-base"
+              className="w-full px-4 py-3 pr-20 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               rows={1}
-              style={{ minHeight: '36px', maxHeight: '120px' }}
+              style={{ minHeight: '48px', maxHeight: '120px' }}
             />
-            <div className="absolute right-1 sm:right-1.5 md:right-2 bottom-1 sm:bottom-1.5 md:bottom-2 flex items-center space-x-1 sm:space-x-1.5 md:space-x-2">
+            <div className="absolute right-2 bottom-2 flex items-center space-x-2">
               {isRecording ? (
                 <>
-                  <div className="flex items-center space-x-1 sm:space-x-1.5 md:space-x-2 px-1.5 sm:px-2 md:px-3 py-1 sm:py-1.5 bg-red-50 rounded-lg border border-red-200">
-                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs sm:text-sm font-medium text-red-600 whitespace-nowrap">
+                  <div className="flex items-center space-x-2 px-3 py-1.5 bg-red-50 rounded-lg border border-red-200">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium text-red-600">
                       {formatRecordingTime(recordingTime)}
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={stopRecording}
-                    className="p-1.5 sm:p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 active:bg-red-700 transition-colors shadow-lg"
+                    className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-lg"
                     title="Stop recording"
                   >
-                    <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 bg-white rounded-sm"></div>
+                    <div className="w-4 h-4 bg-white rounded-sm"></div>
                   </button>
                 </>
               ) : (
                 <button
                   type="button"
                   onClick={startRecording}
-                  className="p-1.5 sm:p-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   title="Record voice note"
                 >
-                  <Mic className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-gray-600" />
+                  <Mic className="w-5 h-5 text-gray-600" />
                 </button>
               )}
             </div>
@@ -1089,12 +1077,12 @@ const ChatInterface = ({ chatSession, currentUser, socket, onBackToChatList }) =
           <button
             type="submit"
             disabled={(!inputMessage.trim() && attachments.length === 0) || isUploading}
-            className="p-2 sm:p-2.5 md:p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+            className="p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
             {isUploading ? (
-              <div className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             ) : (
-              <Send className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5" />
+              <Send className="w-5 h-5" />
             )}
           </button>
         </div>
