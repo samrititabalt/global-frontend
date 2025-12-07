@@ -22,6 +22,7 @@ import { chatAPI } from '../../services/api';
 import { useWebRTC } from '../../hooks/useWebRTC';
 import MessageItem from './MessageItem';
 import VoiceNote from './VoiceNote';
+import VoiceCallUI from './VoiceCallUI';
 
 /**
  * ChatInterface
@@ -887,66 +888,20 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
         </div>
       )}
 
-      {/* Call Incoming Modal */}
-      <AnimatePresence>
-        {isCallIncoming && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              className="bg-white rounded-2xl p-8 text-center max-w-md"
-            >
-              <h3 className="text-2xl font-bold mb-2">Incoming Call</h3>
-              <p className="text-gray-600 mb-6">{otherUser?.name || 'User'}</p>
-              <div className="flex justify-center space-x-4">
-                <button
-                  onClick={rejectCall}
-                  className="p-4 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                >
-                  <PhoneOff className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={acceptCall}
-                  className="p-4 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors"
-                >
-                  <Phone className="w-6 h-6" />
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Active Call UI */}
-      {isCallActive && callStatus === 'connected' && (
-        <div className="bg-blue-500 text-white px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-            <span>Call in progress with {otherUser?.name || 'User'}</span>
-          </div>
-          <button
-            onClick={endCall}
-            className="p-2 bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
-          >
-            <PhoneOff className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {/* Audio elements for WebRTC */}
-      {remoteStream && (
-        <audio
-          ref={audioRef}
-          autoPlay
-          playsInline
-          srcObject={remoteStream}
-        />
-      )}
+      {/* WhatsApp-style Voice Call UI */}
+      <VoiceCallUI
+        isCallActive={isCallActive}
+        isCallIncoming={isCallIncoming}
+        isCallOutgoing={isCallOutgoing}
+        callStatus={callStatus}
+        remoteStream={remoteStream}
+        localStream={localStream}
+        otherUser={otherUser}
+        currentUser={currentUser}
+        onAccept={acceptCall}
+        onReject={rejectCall}
+        onEnd={endCall}
+      />
 
       {/* Selection Mode Header */}
       <AnimatePresence>

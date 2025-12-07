@@ -29,22 +29,38 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     const handleOffer = async (data) => {
       if (data.from === currentUserId) return;
       
+      console.log('Received call offer from:', data.from);
       setIsCallIncoming(true);
       setIsCallActive(true);
       setCallStatus('ringing');
       callInitiatorRef.current = data.from;
 
       try {
+        // Create peer connection
         await createPeerConnection();
+        
+        // Get local stream BEFORE setting remote description
         await setLocalStream();
         
+        // Set remote description
         await peerConnectionRef.current.setRemoteDescription(
           new RTCSessionDescription(data.offer)
         );
 
-        const answer = await peerConnectionRef.current.createAnswer();
+        // Create answer
+        const answer = await peerConnectionRef.current.createAnswer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: false,
+        });
+
+        // Set codec preferences
+        if (answer.sdp) {
+          answer.sdp = answer.sdp.replace(/a=rtpmap:(\d+) opus\/48000\/2/g, 'a=rtpmap:$1 opus/48000/2');
+        }
+
         await peerConnectionRef.current.setLocalDescription(answer);
 
+        console.log('Sending answer to offer');
         socket.emit('answer', {
           chatSessionId,
           answer,
@@ -104,11 +120,20 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     try {
       const pc = new RTCPeerConnection(rtcConfiguration);
 
-      // Handle remote stream
+      // Handle remote stream - CRITICAL for audio
       pc.ontrack = (event) => {
+        console.log('Received remote track:', event.track.kind);
         if (event.streams && event.streams[0]) {
-          remoteStreamRef.current = event.streams[0];
-          setRemoteStream(event.streams[0]);
+          const stream = event.streams[0];
+          remoteStreamRef.current = stream;
+          setRemoteStream(stream);
+          console.log('Remote stream set:', stream.getAudioTracks().length, 'audio tracks');
+        } else if (event.track) {
+          // Fallback: create stream from track
+          const stream = new MediaStream([event.track]);
+          remoteStreamRef.current = stream;
+          setRemoteStream(stream);
+          console.log('Remote stream created from track');
         }
       };
 
@@ -122,11 +147,22 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
         }
       };
 
+      // Handle ICE connection state
+      pc.oniceconnectionstatechange = () => {
+        console.log('ICE connection state:', pc.iceConnectionState);
+        if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+          console.warn('ICE connection failed or disconnected');
+        }
+      };
+
       // Handle connection state changes
       pc.onconnectionstatechange = () => {
-        console.log('Connection state:', pc.connectionState);
+        console.log('Peer connection state:', pc.connectionState);
         if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-          endCall();
+          console.warn('Connection failed or disconnected');
+          // Don't auto-end, let user handle it
+        } else if (pc.connectionState === 'connected') {
+          setCallStatus('connected');
         }
       };
 
@@ -141,18 +177,26 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   const setLocalStream = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000,
+        },
         video: false,
       });
 
       localStreamRef.current = stream;
+      console.log('Local stream obtained:', stream.getAudioTracks().length, 'audio tracks');
 
-      // Add tracks to peer connection
-      stream.getTracks().forEach((track) => {
-        if (peerConnectionRef.current) {
+      // Add tracks to peer connection - CRITICAL for audio transfer
+      if (peerConnectionRef.current) {
+        stream.getAudioTracks().forEach((track) => {
+          console.log('Adding local track:', track.kind, track.id);
           peerConnectionRef.current.addTrack(track, stream);
-        }
-      });
+        });
+        console.log('Local tracks added to peer connection');
+      }
 
       return stream;
     } catch (error) {
@@ -173,13 +217,23 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       setCallStatus('calling');
       callInitiatorRef.current = currentUserId;
 
+      // Create peer connection first
       await createPeerConnection();
+      
+      // Get local stream and add tracks
       await setLocalStream();
 
+      // Create offer with proper audio constraints
       const offer = await peerConnectionRef.current.createOffer({
         offerToReceiveAudio: true,
         offerToReceiveVideo: false,
       });
+
+      // Set codec preferences for better audio quality
+      if (offer.sdp) {
+        // Prefer Opus codec for better quality
+        offer.sdp = offer.sdp.replace(/a=rtpmap:(\d+) opus\/48000\/2/g, 'a=rtpmap:$1 opus/48000/2');
+      }
 
       await peerConnectionRef.current.setLocalDescription(offer);
 
@@ -188,12 +242,15 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
         offer,
       });
 
-      // Set timeout for call
+      console.log('Call offer sent, waiting for answer...');
+      
+      // Set timeout for call (60 seconds)
       setTimeout(() => {
         if (callStatus === 'calling' || callStatus === 'ringing') {
+          console.log('Call timeout, ending call');
           endCall();
         }
-      }, 30000); // 30 seconds timeout
+      }, 60000); // 60 seconds timeout
     } catch (error) {
       console.error('Error starting call:', error);
       alert('Failed to start call. Please check microphone permissions.');
@@ -205,6 +262,13 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     try {
       setIsCallIncoming(false);
       setCallStatus('connected');
+      
+      // Ensure local stream is set if not already
+      if (!localStreamRef.current && peerConnectionRef.current) {
+        await setLocalStream();
+      }
+      
+      console.log('Call accepted, status:', callStatus);
     } catch (error) {
       console.error('Error accepting call:', error);
       endCall();
