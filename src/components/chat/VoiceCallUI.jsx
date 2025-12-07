@@ -295,55 +295,7 @@ const VoiceCallUI = ({
     if (onToggleSpeaker) onToggleSpeaker(newSpeakerState);
   };
 
-  // Screen blackout when earpiece is active (like proximity sensor)
-  useEffect(() => {
-    if (!isCallActive || callStatus !== 'connected') {
-      // Restore normal screen when call ends
-      document.body.style.backgroundColor = '';
-      document.body.style.overflow = '';
-      return;
-    }
-
-    // When earpiece is active (speaker OFF), turn screen black
-    if (!isSpeakerOn) {
-      // Make entire screen black
-      document.body.style.backgroundColor = '#000000';
-      document.body.style.overflow = 'hidden';
-      
-      // Prevent screen timeout (keep screen on but black)
-      if ('wakeLock' in navigator) {
-        navigator.wakeLock.request('screen').catch(err => {
-          console.log('Wake lock not supported:', err);
-        });
-      }
-      
-      // Also set meta theme color to black
-      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', '#000000');
-      }
-    } else {
-      // When speaker is ON, restore normal screen
-      document.body.style.backgroundColor = '';
-      document.body.style.overflow = '';
-      
-      // Restore theme color
-      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', '#ffffff');
-      }
-    }
-
-    return () => {
-      // Cleanup on unmount
-      document.body.style.backgroundColor = '';
-      document.body.style.overflow = '';
-      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', '#ffffff');
-      }
-    };
-  }, [isSpeakerOn, isCallActive, callStatus]);
+  // Removed black screen feature as per user request
 
   // Incoming call UI
   if (isCallIncoming) {
@@ -444,14 +396,7 @@ const VoiceCallUI = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className={`fixed inset-0 z-50 flex items-center justify-center ${
-            !isSpeakerOn 
-              ? 'bg-black' // Black screen when earpiece is active
-              : 'bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700'
-          }`}
-          style={{
-            backgroundColor: !isSpeakerOn ? '#000000' : undefined,
-          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700"
         >
           {/* Hidden audio elements - CRITICAL for mobile */}
           <audio 
@@ -472,9 +417,7 @@ const VoiceCallUI = ({
             style={{ display: 'none' }}
           />
 
-          <div className={`text-center px-6 w-full max-w-md ${
-            !isSpeakerOn ? 'hidden' : 'block'
-          }`}>
+          <div className="text-center px-6 w-full max-w-md">
             {/* Avatar - Only show when speaker is ON */}
             <motion.div
               animate={{ scale: [1, 1.05, 1] }}
@@ -561,22 +504,15 @@ const VoiceCallUI = ({
               </motion.button>
             </div>
 
-            {/* Status indicators - Only show when speaker is ON */}
-            {isSpeakerOn && (
-              <div className="flex justify-center space-x-2 mt-4">
-                {isMuted && (
-                  <span className="text-xs bg-red-500/50 px-3 py-1 rounded-full text-white">Muted</span>
-                )}
-                {callStatus === 'connected' && remoteStream && (
-                  <span className="text-xs bg-green-500/50 px-3 py-1 rounded-full text-white">Connected</span>
-                )}
-              </div>
-            )}
-            
-            {/* Black screen overlay when earpiece is active - like phone proximity sensor */}
-            {!isSpeakerOn && (
-              <div className="fixed inset-0 bg-black z-30" />
-            )}
+            {/* Status indicators */}
+            <div className="flex justify-center space-x-2 mt-4">
+              {isMuted && (
+                <span className="text-xs bg-red-500/50 px-3 py-1 rounded-full text-white">Muted</span>
+              )}
+              {callStatus === 'connected' && remoteStream && (
+                <span className="text-xs bg-green-500/50 px-3 py-1 rounded-full text-white">Connected</span>
+              )}
+            </div>
           </div>
         </motion.div>
       </AnimatePresence>

@@ -4,6 +4,7 @@ import { X, Check, Edit, Trash2, Reply, MoreVertical, FileText, CheckCheck } fro
 import { useSwipe } from '../../hooks/useSwipe';
 import { useLongPress } from '../../hooks/useLongPress';
 import VoiceNote from './VoiceNote';
+import FilePreview from './FilePreview';
 
 const MessageItem = ({
   message,
@@ -42,7 +43,7 @@ const MessageItem = ({
           onSelect(message._id);
         }
       }}
-      className={`rounded-2xl px-4 py-2 transition-all relative ${
+      className={`rounded-2xl px-3 py-2 sm:px-4 sm:py-2 transition-all relative ${
         isSelected
           ? 'ring-2 ring-blue-500 bg-blue-50'
           : message.isDeleted
@@ -50,7 +51,7 @@ const MessageItem = ({
           : isOwn
           ? 'bg-blue-500 text-white rounded-br-sm'
           : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
-      } ${isSelectionMode ? 'cursor-pointer' : ''}`}
+      } ${isSelectionMode ? 'cursor-pointer' : ''} max-w-[85%] sm:max-w-md`}
     >
       {/* Reply Preview - Clickable to scroll to original message */}
       {message.replyTo && !message.isDeleted && (
@@ -123,15 +124,10 @@ const MessageItem = ({
                 />
               )}
               {att.type === 'file' && (
-                <a
-                  href={att.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center space-x-2 text-blue-500 hover:text-blue-600"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>{att.fileName || 'File'}</span>
-                </a>
+                <FilePreview 
+                  file={att} 
+                  isOwn={isOwn}
+                />
               )}
             </div>
           ))}
@@ -152,15 +148,14 @@ const MessageItem = ({
                 />
               )}
               {message.messageType === 'file' && (
-                <a
-                  href={message.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center space-x-2 text-blue-500 hover:text-blue-600"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>{message.fileName || 'File'}</span>
-                </a>
+                <FilePreview 
+                  file={{
+                    url: message.fileUrl,
+                    fileName: message.fileName,
+                    size: message.size
+                  }} 
+                  isOwn={isOwn}
+                />
               )}
             </div>
           )}

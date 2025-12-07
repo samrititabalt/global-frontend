@@ -38,36 +38,18 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       setCallStatus('ringing');
       callInitiatorRef.current = data.from;
 
+      // Store the offer for when user accepts
+      // Don't auto-accept - wait for user to pick up
       try {
-        // Create peer connection
+        // Create peer connection but don't send answer yet
         await createPeerConnection();
         
-        // Get local stream BEFORE setting remote description
-        await setLocalStream();
-        
-        // Set remote description
-        await peerConnectionRef.current.setRemoteDescription(
-          new RTCSessionDescription(data.offer)
-        );
-
-        // Create answer
-        const answer = await peerConnectionRef.current.createAnswer({
-          offerToReceiveAudio: true,
-          offerToReceiveVideo: false,
-        });
-
-        // Set codec preferences
-        if (answer.sdp) {
-          answer.sdp = answer.sdp.replace(/a=rtpmap:(\d+) opus\/48000\/2/g, 'a=rtpmap:$1 opus/48000/2');
+        // Store the offer
+        if (peerConnectionRef.current) {
+          await peerConnectionRef.current.setRemoteDescription(
+            new RTCSessionDescription(data.offer)
+          );
         }
-
-        await peerConnectionRef.current.setLocalDescription(answer);
-
-        console.log('Sending answer to offer');
-        socket.emit('answer', {
-          chatSessionId,
-          answer,
-        });
       } catch (error) {
         console.error('Error handling offer:', error);
         endCall();
@@ -276,15 +258,39 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
 
   const acceptCall = async () => {
     try {
+      if (!peerConnectionRef.current || !socket || !chatSessionId) {
+        console.error('Cannot accept call: missing peer connection or socket');
+        return;
+      }
+
       setIsCallIncoming(false);
-      setCallStatus('connected');
+      setCallStatus('ringing'); // Will change to connected when answer is sent
       
-      // Ensure local stream is set if not already
-      if (!localStreamRef.current && peerConnectionRef.current) {
+      // Get local stream if not already set
+      if (!localStreamRef.current) {
         await setLocalStream();
       }
       
-      console.log('Call accepted, status:', callStatus);
+      // Create and send answer
+      const answer = await peerConnectionRef.current.createAnswer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: false,
+      });
+
+      // Set codec preferences
+      if (answer.sdp) {
+        answer.sdp = answer.sdp.replace(/a=rtpmap:(\d+) opus\/48000\/2/g, 'a=rtpmap:$1 opus/48000/2');
+      }
+
+      await peerConnectionRef.current.setLocalDescription(answer);
+
+      console.log('Sending answer - call accepted');
+      socket.emit('answer', {
+        chatSessionId,
+        answer,
+      });
+      
+      // Status will change to 'connected' when connection state changes
     } catch (error) {
       console.error('Error accepting call:', error);
       endCall();

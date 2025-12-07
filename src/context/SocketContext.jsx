@@ -40,46 +40,46 @@ export const SocketProvider = ({ children }) => {
     console.log('📡 API URL:', API_CONFIG.API_URL);
 
     // Create new socket connection
-    const newSocket = io(socketUrl, {
-      transports: ['websocket', 'polling'],
-      withCredentials: true,
-      reconnection: true,
-      reconnectionDelay: 1000,
+      const newSocket = io(socketUrl, {
+        transports: ['websocket', 'polling'],
+        withCredentials: true,
+        reconnection: true,
+        reconnectionDelay: 1000,
       reconnectionAttempts: Infinity,
       reconnectionDelayMax: 5000,
       timeout: 20000,
       forceNew: true,
-    });
+      });
 
     // Connection successful
-    newSocket.on('connect', () => {
+      newSocket.on('connect', () => {
       console.log('✅ Socket connected:', newSocket.id);
       setIsConnected(true);
       
-      const userId = user._id || user.id;
-      if (userId) {
+        const userId = user._id || user.id;
+        if (userId) {
         const token = localStorage.getItem('token');
         console.log('👤 Joining socket room for user:', userId);
         
-        newSocket.emit('join', {
-          userId: userId,
+          newSocket.emit('join', {
+            userId: userId,
           token: token
-        });
+          });
         
-        // Store userId on socket for backend access
-        newSocket.userId = userId;
-      }
-    });
+          // Store userId on socket for backend access
+          newSocket.userId = userId;
+        }
+      });
 
     // Connection error
-    newSocket.on('connect_error', (error) => {
+      newSocket.on('connect_error', (error) => {
       console.error('❌ Socket connection error:', error.message);
       console.error('Socket URL attempted:', socketUrl);
       setIsConnected(false);
-    });
+      });
 
     // Disconnected
-    newSocket.on('disconnect', (reason) => {
+      newSocket.on('disconnect', (reason) => {
       console.log('🔌 Socket disconnected:', reason);
       setIsConnected(false);
       
@@ -118,23 +118,23 @@ export const SocketProvider = ({ children }) => {
     });
 
     // Socket error
-    newSocket.on('error', (error) => {
+      newSocket.on('error', (error) => {
       console.error('❌ Socket error:', error);
-    });
+      });
 
     // Store socket reference
     socketRef.current = newSocket;
-    setSocket(newSocket);
+      setSocket(newSocket);
 
     // Cleanup function
-    return () => {
+      return () => {
       console.log('🧹 Cleaning up socket connection');
       if (socketRef.current) {
         socketRef.current.removeAllListeners();
         socketRef.current.disconnect();
         socketRef.current = null;
       }
-      setSocket(null);
+        setSocket(null);
       setIsConnected(false);
     };
   }, [isAuthenticated, user]);
