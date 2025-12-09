@@ -101,12 +101,6 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       endCall(duration);
     };
 
-    const handleCallEnded = (data) => {
-      // If other party ended the call, use their duration if provided
-      const duration = data?.duration || null;
-      endCall(duration);
-    };
-
     socket.on('offer', handleOffer);
     socket.on('answer', handleAnswer);
     socket.on('ice-candidate', handleIceCandidate);
