@@ -700,5 +700,3 @@ const VoiceCallUI = ({
 };
 
 export default VoiceCallUI;
-
-export default VoiceCallUI;
