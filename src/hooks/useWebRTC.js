@@ -9,11 +9,16 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   const [isCallOutgoing, setIsCallOutgoing] = useState(false);
   const [callStatus, setCallStatus] = useState('idle'); // idle, calling, ringing, connected, ended
   const [remoteStream, setRemoteStream] = useState(null);
+  const [screenShareStream, setScreenShareStream] = useState(null);
+  const [remoteScreenShareStream, setRemoteScreenShareStream] = useState(null);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [isCallMinimized, setIsCallMinimized] = useState(false);
   
   // Track if answer was received (for status updates)
   const answerReceivedRef = useRef(false);
   
   const localStreamRef = useRef(null);
+  const screenShareStreamRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const remoteStreamRef = useRef(null);
   const callInitiatorRef = useRef(null);
@@ -107,20 +112,33 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     try {
       const pc = new RTCPeerConnection(rtcConfiguration);
 
-      // Handle remote stream - CRITICAL for audio
+      // Handle remote stream - CRITICAL for audio and screen share
       pc.ontrack = (event) => {
-        console.log('Received remote track:', event.track.kind);
+        console.log('Received remote track:', event.track.kind, event.track.id);
         if (event.streams && event.streams[0]) {
           const stream = event.streams[0];
-          remoteStreamRef.current = stream;
-          setRemoteStream(stream);
-          console.log('Remote stream set:', stream.getAudioTracks().length, 'audio tracks');
+          
+          // Check if it's a video track (screen share) or audio track
+          if (event.track.kind === 'video') {
+            // This is screen share
+            setRemoteScreenShareStream(stream);
+            console.log('Remote screen share stream received');
+          } else if (event.track.kind === 'audio') {
+            // This is audio
+            remoteStreamRef.current = stream;
+            setRemoteStream(stream);
+            console.log('Remote audio stream set:', stream.getAudioTracks().length, 'audio tracks');
+          }
         } else if (event.track) {
           // Fallback: create stream from track
           const stream = new MediaStream([event.track]);
-          remoteStreamRef.current = stream;
-          setRemoteStream(stream);
-          console.log('Remote stream created from track');
+          if (event.track.kind === 'video') {
+            setRemoteScreenShareStream(stream);
+          } else {
+            remoteStreamRef.current = stream;
+            setRemoteStream(stream);
+          }
+          console.log('Remote stream created from track:', event.track.kind);
         }
       };
 
@@ -221,10 +239,10 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       // Get local stream and add tracks
       await setLocalStream();
 
-      // Create offer with proper audio constraints
+      // Create offer with proper audio and video constraints (video for screen share)
       const offer = await peerConnectionRef.current.createOffer({
         offerToReceiveAudio: true,
-        offerToReceiveVideo: false,
+        offerToReceiveVideo: true, // Allow video for screen sharing
       });
 
       // Set codec preferences for better audio quality
@@ -271,10 +289,10 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
         await setLocalStream();
       }
       
-      // Create and send answer
+      // Create and send answer (allow video for screen sharing)
       const answer = await peerConnectionRef.current.createAnswer({
         offerToReceiveAudio: true,
-        offerToReceiveVideo: false,
+        offerToReceiveVideo: true, // Allow video for screen sharing
       });
 
       // Set codec preferences
@@ -304,7 +322,69 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     endCall();
   };
 
+  const startScreenShare = async () => {
+    try {
+      if (!peerConnectionRef.current) {
+        console.error('No peer connection available');
+        return;
+      }
+
+      // Get screen share stream
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          cursor: 'always',
+          displaySurface: 'monitor'
+        },
+        audio: false
+      });
+
+      screenShareStreamRef.current = stream;
+      setScreenShareStream(stream);
+      setIsScreenSharing(true);
+
+      // Add video track to peer connection
+      stream.getVideoTracks().forEach((track) => {
+        track.onended = () => {
+          stopScreenShare();
+        };
+        if (peerConnectionRef.current) {
+          const sender = peerConnectionRef.current.getSenders().find(s => 
+            s.track && s.track.kind === 'video'
+          );
+          
+          if (sender) {
+            sender.replaceTrack(track);
+          } else {
+            peerConnectionRef.current.addTrack(track, stream);
+          }
+        }
+      });
+
+      console.log('Screen share started');
+    } catch (error) {
+      console.error('Error starting screen share:', error);
+      alert('Failed to start screen share. Please check permissions.');
+    }
+  };
+
+  const stopScreenShare = () => {
+    if (screenShareStreamRef.current) {
+      screenShareStreamRef.current.getTracks().forEach((track) => track.stop());
+      screenShareStreamRef.current = null;
+    }
+    setScreenShareStream(null);
+    setIsScreenSharing(false);
+    console.log('Screen share stopped');
+  };
+
+  const toggleCallMinimize = () => {
+    setIsCallMinimized(prev => !prev);
+  };
+
   const endCall = () => {
+    // Stop screen share
+    stopScreenShare();
+
     // Stop local stream
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => track.stop());
@@ -323,6 +403,10 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     setIsCallOutgoing(false);
     setCallStatus('idle');
     setRemoteStream(null);
+    setScreenShareStream(null);
+    setRemoteScreenShareStream(null);
+    setIsScreenSharing(false);
+    setIsCallMinimized(false);
     remoteStreamRef.current = null;
     callInitiatorRef.current = null;
     answerReceivedRef.current = false;
@@ -340,9 +424,16 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     callStatus,
     remoteStream,
     localStream: localStreamRef.current,
+    screenShareStream,
+    remoteScreenShareStream,
+    isScreenSharing,
+    isCallMinimized,
     startCall,
     acceptCall,
     rejectCall,
     endCall,
+    startScreenShare,
+    stopScreenShare,
+    toggleCallMinimize,
   };
 };

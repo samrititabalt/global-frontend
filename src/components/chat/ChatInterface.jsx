@@ -15,6 +15,7 @@ import {
   MoreVertical,
   Reply,
   CornerDownLeft,
+  Maximize2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/axios';
@@ -75,10 +76,17 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     callStatus,
     remoteStream,
     localStream,
+    screenShareStream,
+    remoteScreenShareStream,
+    isScreenSharing,
+    isCallMinimized,
     startCall,
     acceptCall,
     rejectCall,
     endCall,
+    startScreenShare,
+    stopScreenShare,
+    toggleCallMinimize,
   } = useWebRTC(socket, chatSession?._id, currentUser?._id || currentUser?.id);
 
   useEffect(() => {
@@ -540,6 +548,29 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  const formatDuration = (seconds) => {
+    if (!seconds || seconds === 0) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Calculate call duration
+  const [callDuration, setCallDuration] = useState(0);
+  useEffect(() => {
+    let interval = null;
+    if (callStatus === 'connected' && remoteStream) {
+      interval = setInterval(() => {
+        setCallDuration(prev => prev + 1);
+      }, 1000);
+    } else {
+      setCallDuration(0);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [callStatus, remoteStream]);
+
   const handleEditMessage = (message) => {
     setEditingMessageId(message._id);
     setEditContent(message.content || '');
@@ -652,7 +683,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className={`flex flex-col h-full bg-gray-50 ${isCallMinimized ? '' : isCallActive ? 'pointer-events-none' : ''}`}>
       {/* Chat Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -888,21 +919,60 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
         </div>
       )}
 
-      {/* WhatsApp-style Voice Call UI */}
-      <VoiceCallUI
-        isCallActive={isCallActive}
-        isCallIncoming={isCallIncoming}
-        isCallOutgoing={isCallOutgoing}
-        callStatus={callStatus}
-        remoteStream={remoteStream}
-        localStream={localStream}
-        otherUser={otherUser}
-        currentUser={currentUser}
-        otherUserOnline={otherUserOnline}
-        onAccept={acceptCall}
-        onReject={rejectCall}
-        onEnd={endCall}
-      />
+      {/* WhatsApp-style Voice Call UI - Only show when not minimized */}
+      {!isCallMinimized && (
+        <VoiceCallUI
+          isCallActive={isCallActive}
+          isCallIncoming={isCallIncoming}
+          isCallOutgoing={isCallOutgoing}
+          callStatus={callStatus}
+          remoteStream={remoteStream}
+          localStream={localStream}
+          screenShareStream={screenShareStream}
+          remoteScreenShareStream={remoteScreenShareStream}
+          isScreenSharing={isScreenSharing}
+          isCallMinimized={isCallMinimized}
+          otherUser={otherUser}
+          currentUser={currentUser}
+          otherUserOnline={otherUserOnline}
+          onAccept={acceptCall}
+          onReject={rejectCall}
+          onEnd={endCall}
+          onStartScreenShare={startScreenShare}
+          onStopScreenShare={stopScreenShare}
+          onToggleMinimize={toggleCallMinimize}
+        />
+      )}
+      
+      {/* Minimized call floating window */}
+      {isCallMinimized && isCallActive && callStatus === 'connected' && (
+        <motion.div
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 100, opacity: 0 }}
+          className="fixed bottom-4 right-4 z-50 bg-blue-500 rounded-lg shadow-2xl p-3 flex items-center space-x-3"
+        >
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold">
+            {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
+          </div>
+          <div className="text-white">
+            <p className="text-sm font-semibold">{otherUser?.name || 'User'}</p>
+            <p className="text-xs opacity-80">{formatDuration(callDuration)}</p>
+          </div>
+          <button
+            onClick={toggleCallMinimize}
+            className="p-1.5 hover:bg-white/20 rounded transition-colors"
+          >
+            <Maximize2 className="w-4 h-4 text-white" />
+          </button>
+          <button
+            onClick={endCall}
+            className="p-1.5 bg-red-500 hover:bg-red-600 rounded transition-colors"
+          >
+            <PhoneOff className="w-4 h-4 text-white" />
+          </button>
+        </motion.div>
+      )}
 
       {/* Selection Mode Header */}
       <AnimatePresence>

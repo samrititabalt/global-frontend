@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, Monitor, Minimize2, Maximize2, X } from 'lucide-react';
 
 const VoiceCallUI = ({
   isCallActive,
@@ -9,6 +9,10 @@ const VoiceCallUI = ({
   callStatus,
   remoteStream,
   localStream,
+  screenShareStream,
+  remoteScreenShareStream,
+  isScreenSharing,
+  isCallMinimized,
   otherUser,
   currentUser,
   otherUserOnline,
@@ -17,6 +21,9 @@ const VoiceCallUI = ({
   onEnd,
   onToggleMute,
   onToggleSpeaker,
+  onStartScreenShare,
+  onStopScreenShare,
+  onToggleMinimize,
 }) => {
   const remoteAudioRef = useRef(null);
   const localAudioRef = useRef(null);
@@ -27,6 +34,9 @@ const VoiceCallUI = ({
   const [availableAudioOutputs, setAvailableAudioOutputs] = useState([]);
   const [earpieceDeviceId, setEarpieceDeviceId] = useState(null);
   const [speakerDeviceId, setSpeakerDeviceId] = useState(null);
+  const [isScreenShareMinimized, setIsScreenShareMinimized] = useState(false);
+  const screenShareVideoRef = useRef(null);
+  const remoteScreenShareVideoRef = useRef(null);
 
   // Get available audio outputs (for speaker/earpiece)
   useEffect(() => {
@@ -122,6 +132,26 @@ const VoiceCallUI = ({
       // localAudioRef.current.volume = 0; // Mute local audio
     }
   }, [localStream]);
+
+  // Update screen share video when stream changes
+  useEffect(() => {
+    if (screenShareVideoRef.current && screenShareStream) {
+      screenShareVideoRef.current.srcObject = screenShareStream;
+      screenShareVideoRef.current.play().catch(err => {
+        console.error('Error playing screen share:', err);
+      });
+    }
+  }, [screenShareStream]);
+
+  // Update remote screen share video when stream changes
+  useEffect(() => {
+    if (remoteScreenShareVideoRef.current && remoteScreenShareStream) {
+      remoteScreenShareVideoRef.current.srcObject = remoteScreenShareStream;
+      remoteScreenShareVideoRef.current.play().catch(err => {
+        console.error('Error playing remote screen share:', err);
+      });
+    }
+  }, [remoteScreenShareStream]);
 
   // Call duration timer - ONLY start when connected
   useEffect(() => {
@@ -388,6 +418,38 @@ const VoiceCallUI = ({
     );
   }
 
+  // Minimized call UI (floating window like WhatsApp)
+  if (isCallMinimized && isCallActive && callStatus === 'connected') {
+    return (
+      <motion.div
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 100, opacity: 0 }}
+        className="fixed bottom-4 right-4 z-50 bg-blue-500 rounded-lg shadow-2xl p-3 flex items-center space-x-3"
+      >
+        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold">
+          {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
+        </div>
+        <div className="text-white">
+          <p className="text-sm font-semibold">{otherUser?.name || 'User'}</p>
+          <p className="text-xs opacity-80">{formatDuration(callDuration)}</p>
+        </div>
+        <button
+          onClick={onToggleMinimize}
+          className="p-1.5 hover:bg-white/20 rounded transition-colors"
+        >
+          <Maximize2 className="w-4 h-4 text-white" />
+        </button>
+        <button
+          onClick={onEnd}
+          className="p-1.5 bg-red-500 hover:bg-red-600 rounded transition-colors"
+        >
+          <PhoneOff className="w-4 h-4 text-white" />
+        </button>
+      </motion.div>
+    );
+  }
+
   // Active call UI (outgoing or connected)
   if (isCallActive && (isCallOutgoing || callStatus === 'connected')) {
     return (
@@ -396,14 +458,13 @@ const VoiceCallUI = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700"
+          className="fixed inset-0 z-50 flex flex-col bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700"
         >
           {/* Hidden audio elements - CRITICAL for mobile */}
           <audio 
             ref={remoteAudioRef} 
             autoPlay 
             playsInline
-            webkit-playsinline="true"
             controls={false}
             style={{ display: 'none' }}
           />
@@ -412,12 +473,98 @@ const VoiceCallUI = ({
             autoPlay 
             playsInline 
             muted
-            webkit-playsinline="true"
             controls={false}
             style={{ display: 'none' }}
           />
 
-          <div className="text-center px-6 w-full max-w-md">
+          {/* Screen Share Display - Mobile layout (takes 60-70% of screen) */}
+          {(isScreenSharing || remoteScreenShareStream) && !isScreenShareMinimized && (
+            <div className="flex-1 relative bg-black overflow-hidden min-h-0" style={{ flex: '0 0 70%' }}>
+              {/* Screen Share Video */}
+              <video
+                ref={remoteScreenShareVideoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-contain"
+                style={{ display: remoteScreenShareStream ? 'block' : 'none' }}
+              />
+              <video
+                ref={screenShareVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-contain"
+                style={{ display: screenShareStream ? 'block' : 'none' }}
+              />
+              
+              {/* Screen Share Controls - Top Right */}
+              <div className="absolute top-2 right-2 flex items-center space-x-1 z-10">
+                <button
+                  onClick={() => setIsScreenShareMinimized(true)}
+                  className="p-1.5 bg-black/60 hover:bg-black/80 rounded transition-colors"
+                  title="Minimize"
+                >
+                  <Minimize2 className="w-3.5 h-3.5 text-white" />
+                </button>
+                {isScreenSharing && (
+                  <button
+                    onClick={onStopScreenShare}
+                    className="p-1.5 bg-red-500 hover:bg-red-600 rounded transition-colors"
+                    title="Stop"
+                  >
+                    <X className="w-3.5 h-3.5 text-white" />
+                  </button>
+                )}
+              </div>
+
+              {/* Screen Share Label - Top Left */}
+              <div className="absolute top-2 left-2 bg-black/60 px-2 py-1 rounded">
+                <p className="text-white text-xs font-medium">Screen Share</p>
+              </div>
+            </div>
+          )}
+
+          {/* Minimized Screen Share (small floating window) */}
+          {(isScreenSharing || remoteScreenShareStream) && isScreenShareMinimized && (
+            <div className="absolute top-16 right-4 w-40 h-28 sm:w-48 sm:h-32 bg-black rounded-lg overflow-hidden shadow-2xl z-10 border-2 border-white/20">
+              <video
+                ref={remoteScreenShareVideoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-contain"
+                style={{ display: remoteScreenShareStream ? 'block' : 'none' }}
+              />
+              <video
+                ref={screenShareVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-contain"
+                style={{ display: screenShareStream ? 'block' : 'none' }}
+              />
+              <div className="absolute top-1 right-1 flex items-center space-x-0.5">
+                <button
+                  onClick={() => setIsScreenShareMinimized(false)}
+                  className="p-1 bg-black/60 hover:bg-black/80 rounded transition-colors"
+                  title="Maximize"
+                >
+                  <Maximize2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+                </button>
+                {isScreenSharing && (
+                  <button
+                    onClick={onStopScreenShare}
+                    className="p-1 bg-red-500 hover:bg-red-600 rounded transition-colors"
+                    title="Stop"
+                  >
+                    <X className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Call Info - Only show when screen share is minimized or not active */}
+          <div className={`text-center px-6 w-full max-w-md flex-1 flex flex-col justify-center ${(isScreenSharing || remoteScreenShareStream) && !isScreenShareMinimized ? 'hidden' : 'flex'}`}>
             {/* Avatar - Only show when speaker is ON */}
             <motion.div
               animate={{ scale: [1, 1.05, 1] }}
@@ -462,45 +609,75 @@ const VoiceCallUI = ({
               loop
             />
 
-            {/* Control Buttons - Always visible, positioned at bottom */}
-            <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 flex justify-center items-center space-x-4 z-50">
+            {/* Control Buttons Bar - Always visible at bottom (like WhatsApp) */}
+            <div className="absolute bottom-0 left-0 right-0 bg-blue-600/95 backdrop-blur-sm px-4 py-3 flex justify-center items-center space-x-3 sm:space-x-4 z-50">
               {/* Mute/Unmute */}
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={handleToggleMute}
-                className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-colors ${
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-lg transition-colors ${
                   isMuted 
                     ? 'bg-red-500 hover:bg-red-600 text-white' 
                     : 'bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white'
                 }`}
               >
-                {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                {isMuted ? <MicOff className="w-5 h-5 sm:w-6 sm:h-6" /> : <Mic className="w-5 h-5 sm:w-6 sm:h-6" />}
               </motion.button>
 
-              {/* Speaker/Earpiece Toggle - WhatsApp style (highlighted when speaker ON) */}
+              {/* Speaker/Earpiece Toggle - WhatsApp style */}
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={handleToggleSpeaker}
-                className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all text-white ${
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-lg transition-all text-white ${
                   isSpeakerOn 
-                    ? 'bg-white/40 hover:bg-white/50 backdrop-blur-sm ring-2 ring-white/50' // Active/highlighted when speaker is ON
-                    : 'bg-white/15 hover:bg-white/25 backdrop-blur-sm' // Dimmed when earpiece is ON
+                    ? 'bg-white/40 hover:bg-white/50 backdrop-blur-sm ring-2 ring-white/50'
+                    : 'bg-white/15 hover:bg-white/25 backdrop-blur-sm'
                 }`}
-                title={isSpeakerOn ? 'Speaker (tap for earpiece)' : 'Earpiece (tap for speaker)'}
+                title={isSpeakerOn ? 'Speaker' : 'Earpiece'}
               >
-                <Volume2 className="w-6 h-6" />
+                <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />
               </motion.button>
+
+              {/* Screen Share Button - Only when connected */}
+              {callStatus === 'connected' && (
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={isScreenSharing ? onStopScreenShare : onStartScreenShare}
+                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-lg transition-colors text-white ${
+                    isScreenSharing
+                      ? 'bg-green-500 hover:bg-green-600'
+                      : 'bg-white/20 hover:bg-white/30 backdrop-blur-sm'
+                  }`}
+                  title={isScreenSharing ? 'Stop screen share' : 'Start screen share'}
+                >
+                  <Monitor className="w-5 h-5 sm:w-6 sm:h-6" />
+                </motion.button>
+              )}
+
+              {/* Minimize Call Button */}
+              {callStatus === 'connected' && (
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={onToggleMinimize}
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-lg transition-colors bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white"
+                  title="Minimize call"
+                >
+                  <Minimize2 className="w-5 h-5 sm:w-6 sm:h-6" />
+                </motion.button>
+              )}
 
               {/* End Call */}
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={onEnd}
-                className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors text-white"
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-500 flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors text-white"
               >
-                <PhoneOff className="w-8 h-8" />
+                <PhoneOff className="w-6 h-6 sm:w-8 sm:h-8" />
               </motion.button>
             </div>
 
@@ -521,5 +698,7 @@ const VoiceCallUI = ({
 
   return null;
 };
+
+export default VoiceCallUI;
 
 export default VoiceCallUI;
