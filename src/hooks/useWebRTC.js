@@ -35,13 +35,108 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     ],
   };
 
+  // Handle tab close/unload - end call automatically
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isCallActive) {
+        // End call when tab is closing
+        if (socket && chatSessionId) {
+          const finalDuration = callStartTime ? Math.floor((Date.now() - callStartTime) / 1000) : callDuration;
+          socket.emit('callEnded', { 
+            chatSessionId, 
+            duration: finalDuration,
+            initiator: callInitiatorRef.current,
+            currentUser: currentUserId
+          });
+        }
+        // Cleanup
+        if (localStreamRef.current) {
+          localStreamRef.current.getTracks().forEach(track => track.stop());
+        }
+        if (screenShareStreamRef.current) {
+          screenShareStreamRef.current.getTracks().forEach(track => track.stop());
+        }
+        if (peerConnectionRef.current) {
+          peerConnectionRef.current.close();
+        }
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && isCallActive) {
+        // Tab is hidden but call continues
+        console.log('Tab hidden, call continues');
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('unload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('unload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isCallActive, socket, chatSessionId, callStartTime, callDuration, currentUserId]);
+
+  // Handle network disconnection
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('Network reconnected');
+    };
+
+    const handleOffline = () => {
+      console.log('Network disconnected');
+      if (isCallActive) {
+        // End call if network disconnects
+        endCall();
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [isCallActive]);
+
   useEffect(() => {
     if (!socket || !chatSessionId) return;
 
     const handleOffer = async (data) => {
       if (data.from === currentUserId) return;
       
-      console.log('Received call offer from:', data.from);
+      console.log('Received call offer from:', data.from, 'isRenegotiation:', data.isRenegotiation);
+      
+      // Handle renegotiation (for screen share)
+      if (data.isRenegotiation && peerConnectionRef.current && callStatus === 'connected') {
+        try {
+          await peerConnectionRef.current.setRemoteDescription(
+            new RTCSessionDescription(data.offer)
+          );
+          // Create and send answer for renegotiation
+          const answer = await peerConnectionRef.current.createAnswer({
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: true,
+          });
+          await peerConnectionRef.current.setLocalDescription(answer);
+          socket.emit('answer', {
+            chatSessionId,
+            answer,
+            isRenegotiation: true
+          });
+          console.log('Renegotiation answer sent');
+          return;
+        } catch (error) {
+          console.error('Error handling renegotiation offer:', error);
+          return;
+        }
+      }
+      
+      // Regular call offer
       setIsCallIncoming(true);
       setIsCallActive(true);
       setCallStatus('ringing');
@@ -69,6 +164,16 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       if (data.from === currentUserId) return;
 
       try {
+        // Handle renegotiation answer (for screen share)
+        if (data.isRenegotiation && peerConnectionRef.current && callStatus === 'connected') {
+          await peerConnectionRef.current.setRemoteDescription(
+            new RTCSessionDescription(data.answer)
+          );
+          console.log('Renegotiation answer received and set');
+          return;
+        }
+        
+        // Regular answer
         answerReceivedRef.current = true;
         await peerConnectionRef.current.setRemoteDescription(
           new RTCSessionDescription(data.answer)
@@ -77,7 +182,9 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
         console.log('Answer received, waiting for connection...');
       } catch (error) {
         console.error('Error handling answer:', error);
-        endCall();
+        if (!data.isRenegotiation) {
+          endCall();
+        }
       }
     };
 
@@ -158,43 +265,87 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
         }
       };
 
-      // Handle ICE connection state
+      // Handle ICE connection state - with edge case handling
+      let iceStateTimeout = null;
       pc.oniceconnectionstatechange = () => {
         console.log('ICE connection state:', pc.iceConnectionState);
-        if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-          console.warn('ICE connection failed or disconnected');
+        
+        // Clear any existing timeout
+        if (iceStateTimeout) {
+          clearTimeout(iceStateTimeout);
+          iceStateTimeout = null;
+        }
+        
+        if (pc.iceConnectionState === 'failed') {
+          console.warn('ICE connection failed - attempting to reconnect');
+          // Try to restart ICE
+          if (peerConnectionRef.current && peerConnectionRef.current.restartIce) {
+            peerConnectionRef.current.restartIce();
+          }
+        } else if (pc.iceConnectionState === 'disconnected') {
+          console.warn('ICE connection disconnected - waiting for reconnection');
+          // Wait a bit before ending call in case it reconnects
+          iceStateTimeout = setTimeout(() => {
+            if (peerConnectionRef.current && 
+                peerConnectionRef.current.iceConnectionState === 'disconnected') {
+              console.log('ICE still disconnected after timeout, ending call');
+              endCall();
+            }
+          }, 5000); // Wait 5 seconds
+        } else if (pc.iceConnectionState === 'closed') {
+          console.log('ICE connection closed');
+          endCall();
+        } else if (pc.iceConnectionState === 'checking' && callStatus === 'calling') {
+          setCallStatus('ringing');
+        } else if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+          // Clear timeout if connection is restored
+          if (iceStateTimeout) {
+            clearTimeout(iceStateTimeout);
+            iceStateTimeout = null;
+          }
         }
       };
 
-      // Handle connection state changes
+      // Handle connection state changes - with edge case handling
       pc.onconnectionstatechange = () => {
         console.log('Peer connection state:', pc.connectionState);
-        if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-          console.warn('Connection failed or disconnected');
-          // Don't auto-end, let user handle it
+        if (pc.connectionState === 'failed') {
+          console.warn('Connection failed - attempting to reconnect');
+          // Try to reconnect by creating new offer/answer
+          setTimeout(() => {
+            if (peerConnectionRef.current && 
+                peerConnectionRef.current.connectionState === 'failed') {
+              console.log('Connection still failed, ending call');
+              endCall();
+            }
+          }, 3000);
+        } else if (pc.connectionState === 'disconnected') {
+          console.warn('Connection disconnected - waiting for reconnection');
+          // Wait before ending call
+          setTimeout(() => {
+            if (peerConnectionRef.current && 
+                peerConnectionRef.current.connectionState === 'disconnected') {
+              console.log('Connection still disconnected, ending call');
+              endCall();
+            }
+          }, 5000);
+        } else if (pc.connectionState === 'closed') {
+          console.log('Connection closed');
+          endCall();
         } else if (pc.connectionState === 'connected') {
           setCallStatus('connected');
           setIsCallIncoming(false);
           setIsCallOutgoing(false);
-          setCallStartTime(Date.now());
+          const startTime = Date.now();
+          setCallStartTime(startTime);
           // Start call duration timer
           if (callDurationIntervalRef.current) {
             clearInterval(callDurationIntervalRef.current);
           }
           callDurationIntervalRef.current = setInterval(() => {
-            if (callStartTime) {
-              setCallDuration(Math.floor((Date.now() - callStartTime) / 1000));
-            }
+            setCallDuration(Math.floor((Date.now() - startTime) / 1000));
           }, 1000);
           console.log('Call connected successfully');
-        }
-      };
-
-      // Handle ICE connection state for better status tracking
-      pc.oniceconnectionstatechange = () => {
-        console.log('ICE connection state:', pc.iceConnectionState);
-        if (pc.iceConnectionState === 'checking' && callStatus === 'calling') {
-          setCallStatus('ringing');
         }
       };
 
@@ -359,7 +510,10 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
           cursor: 'always',
-          displaySurface: 'monitor'
+          displaySurface: 'monitor',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 30 }
         },
         audio: false
       });
@@ -368,11 +522,14 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       setScreenShareStream(stream);
       setIsScreenSharing(true);
 
-      // Add video track to peer connection
+      // Add video track to peer connection - CRITICAL for bidirectional sharing
       stream.getVideoTracks().forEach((track) => {
+        // Handle when user stops sharing from browser
         track.onended = () => {
+          console.log('Screen share track ended by user');
           stopScreenShare();
         };
+
         if (peerConnectionRef.current) {
           // Find existing video sender or add new track
           const sender = peerConnectionRef.current.getSenders().find(s => 
@@ -380,21 +537,57 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
           );
           
           if (sender) {
-            sender.replaceTrack(track).catch(err => {
+            // Replace existing video track with screen share
+            sender.replaceTrack(track).then(() => {
+              console.log('Screen share track replaced successfully');
+              // Create new offer to negotiate the new track
+              if (peerConnectionRef.current && peerConnectionRef.current.localDescription) {
+                peerConnectionRef.current.createOffer().then(offer => {
+                  return peerConnectionRef.current.setLocalDescription(offer);
+                }).then(() => {
+                  // Send renegotiation offer
+                  socket.emit('offer', {
+                    chatSessionId,
+                    offer: peerConnectionRef.current.localDescription,
+                    isRenegotiation: true
+                  });
+                  console.log('Renegotiation offer sent for screen share');
+                }).catch(err => {
+                  console.error('Error creating renegotiation offer:', err);
+                });
+              }
+            }).catch(err => {
               console.error('Error replacing video track:', err);
             });
           } else {
+            // Add new video track
             peerConnectionRef.current.addTrack(track, stream);
+            console.log('Screen share track added to peer connection');
+            
+            // Create new offer to negotiate the new track
+            peerConnectionRef.current.createOffer().then(offer => {
+              return peerConnectionRef.current.setLocalDescription(offer);
+            }).then(() => {
+              socket.emit('offer', {
+                chatSessionId,
+                offer: peerConnectionRef.current.localDescription,
+                isRenegotiation: true
+              });
+              console.log('Offer sent for new screen share track');
+            }).catch(err => {
+              console.error('Error creating offer for screen share:', err);
+            });
           }
         }
       });
 
-      console.log('Screen share started');
+      console.log('Screen share started successfully');
     } catch (error) {
       console.error('Error starting screen share:', error);
       if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') {
         alert('Failed to start screen share. Please check permissions.');
       }
+      setIsScreenSharing(false);
     }
   };
 

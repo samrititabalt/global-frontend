@@ -24,6 +24,7 @@ import { useWebRTC } from '../../hooks/useWebRTC';
 import MessageItem from './MessageItem';
 import VoiceNote from './VoiceNote';
 import VoiceCallUI from './VoiceCallUI';
+import CallHistory from './CallHistory';
 
 /**
  * ChatInterface
@@ -56,6 +57,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const [replyingTo, setReplyingTo] = useState(null);
   const [selectedMessages, setSelectedMessages] = useState(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [showCallHistory, setShowCallHistory] = useState(false);
   const messagesEndRef = useRef(null);
   const menuRef = useRef(null);
   const replyPreviewRef = useRef(null);
@@ -688,6 +690,17 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           </div>
         </div>
         <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setShowCallHistory(!showCallHistory)}
+            className={`p-2 rounded-lg transition-colors ${
+              showCallHistory 
+                ? 'bg-blue-100 text-blue-600' 
+                : 'hover:bg-gray-100 text-gray-600'
+            }`}
+            title="Call history"
+          >
+            <Phone className="w-5 h-5" />
+          </button>
           {!isCallActive ? (
             <button
               onClick={startCall}
@@ -958,6 +971,35 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           </button>
         </motion.div>
       )}
+
+      {/* Call History Panel */}
+      <AnimatePresence>
+        {showCallHistory && (
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl z-40 border-l border-gray-200 overflow-y-auto"
+          >
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Call History</h3>
+              <button
+                onClick={() => setShowCallHistory(false)}
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="p-4">
+              <CallHistory 
+                chatSessionId={chatSession?._id} 
+                currentUser={currentUser}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Selection Mode Header */}
       <AnimatePresence>
