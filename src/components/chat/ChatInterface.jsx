@@ -683,7 +683,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   };
 
   return (
-    <div className={`flex flex-col h-full bg-gray-50 ${isCallMinimized ? '' : isCallActive ? 'pointer-events-none' : ''}`}>
+    <div className="flex flex-col h-full bg-gray-50">
       {/* Chat Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">

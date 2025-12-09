@@ -465,6 +465,7 @@ const VoiceCallUI = ({
             ref={remoteAudioRef} 
             autoPlay 
             playsInline
+            webkit-playsinline="true"
             controls={false}
             style={{ display: 'none' }}
           />
@@ -473,6 +474,7 @@ const VoiceCallUI = ({
             autoPlay 
             playsInline 
             muted
+            webkit-playsinline="true"
             controls={false}
             style={{ display: 'none' }}
           />

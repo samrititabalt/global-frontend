@@ -239,7 +239,7 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       // Get local stream and add tracks
       await setLocalStream();
 
-      // Create offer with proper audio and video constraints (video for screen share)
+      // Create offer with audio and video support (video for screen sharing)
       const offer = await peerConnectionRef.current.createOffer({
         offerToReceiveAudio: true,
         offerToReceiveVideo: true, // Allow video for screen sharing
@@ -348,12 +348,15 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
           stopScreenShare();
         };
         if (peerConnectionRef.current) {
+          // Find existing video sender or add new track
           const sender = peerConnectionRef.current.getSenders().find(s => 
             s.track && s.track.kind === 'video'
           );
           
           if (sender) {
-            sender.replaceTrack(track);
+            sender.replaceTrack(track).catch(err => {
+              console.error('Error replacing video track:', err);
+            });
           } else {
             peerConnectionRef.current.addTrack(track, stream);
           }
@@ -363,7 +366,9 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       console.log('Screen share started');
     } catch (error) {
       console.error('Error starting screen share:', error);
-      alert('Failed to start screen share. Please check permissions.');
+      if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') {
+        alert('Failed to start screen share. Please check permissions.');
+      }
     }
   };
 
@@ -372,6 +377,19 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       screenShareStreamRef.current.getTracks().forEach((track) => track.stop());
       screenShareStreamRef.current = null;
     }
+    
+    // Remove video track from peer connection
+    if (peerConnectionRef.current) {
+      const sender = peerConnectionRef.current.getSenders().find(s => 
+        s.track && s.track.kind === 'video'
+      );
+      if (sender) {
+        sender.replaceTrack(null).catch(err => {
+          console.error('Error removing video track:', err);
+        });
+      }
+    }
+    
     setScreenShareStream(null);
     setIsScreenSharing(false);
     console.log('Screen share stopped');
@@ -384,7 +402,6 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   const endCall = () => {
     // Stop screen share
     stopScreenShare();
-
     // Stop local stream
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => track.stop());
