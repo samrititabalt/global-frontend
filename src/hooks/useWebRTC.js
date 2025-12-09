@@ -13,15 +13,19 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   const [remoteScreenShareStream, setRemoteScreenShareStream] = useState(null);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isCallMinimized, setIsCallMinimized] = useState(false);
+  const [callDuration, setCallDuration] = useState(0);
+  const [callStartTime, setCallStartTime] = useState(null);
   
   // Track if answer was received (for status updates)
   const answerReceivedRef = useRef(false);
+  const isCleaningUpRef = useRef(false);
   
   const localStreamRef = useRef(null);
   const screenShareStreamRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const remoteStreamRef = useRef(null);
   const callInitiatorRef = useRef(null);
+  const callDurationIntervalRef = useRef(null);
 
   // WebRTC Configuration
   const rtcConfiguration = {
@@ -91,8 +95,16 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       }
     };
 
-    const handleCallEnded = () => {
-      endCall();
+    const handleCallEnded = (data) => {
+      // If other party ended the call, use their duration if provided
+      const duration = data?.duration || null;
+      endCall(duration);
+    };
+
+    const handleCallEnded = (data) => {
+      // If other party ended the call, use their duration if provided
+      const duration = data?.duration || null;
+      endCall(duration);
     };
 
     socket.on('offer', handleOffer);
@@ -170,6 +182,16 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
           setCallStatus('connected');
           setIsCallIncoming(false);
           setIsCallOutgoing(false);
+          setCallStartTime(Date.now());
+          // Start call duration timer
+          if (callDurationIntervalRef.current) {
+            clearInterval(callDurationIntervalRef.current);
+          }
+          callDurationIntervalRef.current = setInterval(() => {
+            if (callStartTime) {
+              setCallDuration(Math.floor((Date.now() - callStartTime) / 1000));
+            }
+          }, 1000);
           console.log('Call connected successfully');
         }
       };
@@ -227,11 +249,21 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       return;
     }
 
+    // Prevent starting a new call if one is already active or cleaning up
+    if (isCallActive || isCleaningUpRef.current) {
+      console.log('Call already active or cleanup in progress');
+      return;
+    }
+
     try {
+      // Reset any previous state
       setIsCallOutgoing(true);
       setIsCallActive(true);
       setCallStatus('calling');
+      setCallDuration(0);
+      setCallStartTime(null);
       callInitiatorRef.current = currentUserId;
+      answerReceivedRef.current = false;
 
       // Create peer connection first
       await createPeerConnection();
@@ -399,40 +431,102 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     setIsCallMinimized(prev => !prev);
   };
 
-  const endCall = () => {
+  const endCall = async (duration = null) => {
+    // Prevent multiple cleanup calls
+    if (isCleaningUpRef.current) {
+      console.log('Cleanup already in progress');
+      return;
+    }
+    isCleaningUpRef.current = true;
+
+    // Stop call duration timer
+    if (callDurationIntervalRef.current) {
+      clearInterval(callDurationIntervalRef.current);
+      callDurationIntervalRef.current = null;
+    }
+
+    // Calculate final call duration
+    const finalDuration = duration !== null ? duration : (callStartTime ? Math.floor((Date.now() - callStartTime) / 1000) : callDuration);
+    
     // Stop screen share
     stopScreenShare();
+    
     // Stop local stream
     if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => track.stop());
+      localStreamRef.current.getTracks().forEach((track) => {
+        track.stop();
+        track.enabled = false;
+      });
       localStreamRef.current = null;
     }
 
-    // Close peer connection
+    // Close peer connection properly
     if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
+      try {
+        // Remove all tracks
+        peerConnectionRef.current.getSenders().forEach(sender => {
+          if (sender.track) {
+            sender.track.stop();
+          }
+        });
+        // Close connection
+        peerConnectionRef.current.close();
+      } catch (error) {
+        console.error('Error closing peer connection:', error);
+      }
       peerConnectionRef.current = null;
     }
 
-    // Reset state
-    setIsCallActive(false);
-    setIsCallIncoming(false);
-    setIsCallOutgoing(false);
-    setCallStatus('idle');
-    setRemoteStream(null);
-    setScreenShareStream(null);
-    setRemoteScreenShareStream(null);
-    setIsScreenSharing(false);
-    setIsCallMinimized(false);
-    remoteStreamRef.current = null;
-    callInitiatorRef.current = null;
-    answerReceivedRef.current = false;
-
-    // Notify other party
-    if (socket && chatSessionId) {
+    // Notify other party with call duration
+    if (socket && chatSessionId && finalDuration > 0) {
+      socket.emit('callEnded', { 
+        chatSessionId, 
+        duration: finalDuration,
+        initiator: callInitiatorRef.current,
+        currentUser: currentUserId
+      });
+    } else if (socket && chatSessionId) {
       socket.emit('callEnded', { chatSessionId });
     }
+
+    // Reset state after a small delay to ensure cleanup
+    setTimeout(() => {
+      setIsCallActive(false);
+      setIsCallIncoming(false);
+      setIsCallOutgoing(false);
+      setCallStatus('idle');
+      setRemoteStream(null);
+      setScreenShareStream(null);
+      setRemoteScreenShareStream(null);
+      setIsScreenSharing(false);
+      setIsCallMinimized(false);
+      setCallDuration(0);
+      setCallStartTime(null);
+      remoteStreamRef.current = null;
+      callInitiatorRef.current = null;
+      answerReceivedRef.current = false;
+      isCleaningUpRef.current = false;
+      console.log('Call state fully reset, ready for new call');
+    }, 200); // Increased delay to ensure proper cleanup
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (callDurationIntervalRef.current) {
+        clearInterval(callDurationIntervalRef.current);
+      }
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (screenShareStreamRef.current) {
+        screenShareStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+      }
+    };
+  }, []);
 
   return {
     isCallActive,
@@ -445,6 +539,7 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     remoteScreenShareStream,
     isScreenSharing,
     isCallMinimized,
+    callDuration,
     startCall,
     acceptCall,
     rejectCall,

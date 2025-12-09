@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { X, Check, Edit, Trash2, Reply, MoreVertical, FileText, CheckCheck } from 'lucide-react';
+import { X, Check, Edit, Trash2, Reply, MoreVertical, FileText, CheckCheck, Phone, PhoneOff } from 'lucide-react';
 import { useSwipe } from '../../hooks/useSwipe';
 import { useLongPress } from '../../hooks/useLongPress';
 import VoiceNote from './VoiceNote';
@@ -162,12 +162,34 @@ const MessageItem = ({
         </div>
       )}
 
+      {/* Call Message */}
+      {message.messageType === 'call' && (
+        <div className="flex items-center space-x-2 py-1">
+          {message.callDirection === 'outgoing' ? (
+            <Phone className="w-4 h-4" />
+          ) : (
+            <PhoneOff className="w-4 h-4" />
+          )}
+          <div className="flex-1">
+            <p className="text-sm font-medium">{message.content || 'Voice call'}</p>
+            {message.callDuration > 0 && (
+              <p className="text-xs opacity-70">
+                Duration: {formatCallDuration(message.callDuration)}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Message Content */}
       {message.isDeleted ? (
         <div className="flex items-center space-x-2">
           <X className="w-4 h-4" />
           <span className="text-sm">This message was deleted</span>
         </div>
+      ) : message.messageType === 'call' ? (
+        // Call messages don't show additional content
+        null
       ) : editingMessageId === message._id ? (
         <div className="space-y-2">
           <textarea
@@ -227,6 +249,14 @@ const MessageItem = ({
       </div>
     </div>
   );
+};
+
+// Helper function to format call duration
+const formatCallDuration = (seconds) => {
+  if (!seconds || seconds === 0) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
 export default MessageItem;

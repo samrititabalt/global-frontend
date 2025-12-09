@@ -80,6 +80,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     remoteScreenShareStream,
     isScreenSharing,
     isCallMinimized,
+    callDuration,
     startCall,
     acceptCall,
     rejectCall,
