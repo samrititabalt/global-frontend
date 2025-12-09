@@ -556,22 +556,6 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Calculate call duration
-  const [callDuration, setCallDuration] = useState(0);
-  useEffect(() => {
-    let interval = null;
-    if (callStatus === 'connected' && remoteStream) {
-      interval = setInterval(() => {
-        setCallDuration(prev => prev + 1);
-      }, 1000);
-    } else {
-      setCallDuration(0);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [callStatus, remoteStream]);
-
   const handleEditMessage = (message) => {
     setEditingMessageId(message._id);
     setEditContent(message.content || '');
