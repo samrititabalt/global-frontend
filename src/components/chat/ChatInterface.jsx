@@ -78,17 +78,12 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     callStatus,
     remoteStream,
     localStream,
-    screenShareStream,
-    remoteScreenShareStream,
-    isScreenSharing,
     isCallMinimized,
     callDuration,
     startCall,
     acceptCall,
     rejectCall,
     endCall,
-    startScreenShare,
-    stopScreenShare,
     toggleCallMinimize,
   } = useWebRTC(socket, chatSession?._id, currentUser?._id || currentUser?.id);
 
@@ -926,9 +921,6 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           callStatus={callStatus}
           remoteStream={remoteStream}
           localStream={localStream}
-          screenShareStream={screenShareStream}
-          remoteScreenShareStream={remoteScreenShareStream}
-          isScreenSharing={isScreenSharing}
           isCallMinimized={isCallMinimized}
           otherUser={otherUser}
           currentUser={currentUser}
@@ -936,8 +928,6 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           onAccept={acceptCall}
           onReject={rejectCall}
           onEnd={endCall}
-          onStartScreenShare={startScreenShare}
-          onStopScreenShare={stopScreenShare}
           onToggleMinimize={toggleCallMinimize}
         />
       )}

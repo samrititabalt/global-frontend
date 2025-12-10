@@ -69,6 +69,15 @@ const CustomerLogin = () => {
             />
           </div>
 
+          <div className="flex justify-end">
+            <Link
+              to="/customer/forgot-password"
+              className="text-sm text-primary-600 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+
           <button
             type="submit"
             disabled={loading}

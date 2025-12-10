@@ -6,6 +6,8 @@ import { SocketProvider } from './context/SocketContext';
 // Customer Routes
 import CustomerLogin from './pages/customer/Login';
 import CustomerSignup from './pages/customer/Signup';
+import ForgotPassword from './pages/customer/ForgotPassword';
+import ResetPassword from './pages/customer/ResetPassword';
 import CustomerPlans from './pages/customer/Plans';
 import CustomerPaymentSuccess from './pages/customer/PaymentSuccess';
 import CustomerDashboard from './pages/customer/Dashboard';
@@ -13,11 +15,15 @@ import CustomerChat from './pages/customer/Chat';
 
 // Agent Routes
 import AgentLogin from './pages/agent/Login';
+import AgentForgotPassword from './pages/agent/ForgotPassword';
+import AgentResetPassword from './pages/agent/ResetPassword';
 import AgentDashboard from './pages/agent/Dashboard';
 import AgentChat from './pages/agent/Chat';
 
 // Admin Routes
 import AdminLogin from './pages/admin/Login';
+import AdminForgotPassword from './pages/admin/ForgotPassword';
+import AdminResetPassword from './pages/admin/ResetPassword';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminServices from './pages/admin/Services';
 import AdminSubServices from './pages/admin/SubServices';
@@ -50,6 +56,8 @@ function App() {
             {/* Customer Routes */}
             <Route path="/customer/login" element={<CustomerLogin />} />
             <Route path="/customer/signup" element={<CustomerSignup />} />
+            <Route path="/customer/forgot-password" element={<ForgotPassword />} />
+            <Route path="/customer/reset-password/:token" element={<ResetPassword />} />
             <Route 
               path="/customer/plans" 
               element={
@@ -85,6 +93,8 @@ function App() {
 
             {/* Agent Routes */}
             <Route path="/agent/login" element={<AgentLogin />} />
+            <Route path="/agent/forgot-password" element={<AgentForgotPassword />} />
+            <Route path="/agent/reset-password/:token" element={<AgentResetPassword />} />
             <Route 
               path="/agent/dashboard" 
               element={
@@ -104,6 +114,8 @@ function App() {
 
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
+            <Route path="/admin/reset-password/:token" element={<AdminResetPassword />} />
             <Route 
               path="/admin/dashboard" 
               element={

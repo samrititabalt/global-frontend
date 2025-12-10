@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const AdminLogin = () => {
@@ -67,6 +67,15 @@ const AdminLogin = () => {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="Enter your password"
             />
+          </div>
+
+          <div className="flex justify-end">
+            <Link
+              to="/admin/forgot-password"
+              className="text-sm text-purple-600 hover:underline"
+            >
+              Forgot password?
+            </Link>
           </div>
 
           <button

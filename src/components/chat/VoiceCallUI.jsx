@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, Monitor, Minimize2, Maximize2, X } from 'lucide-react';
+import { Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, Minimize2, Maximize2 } from 'lucide-react';
 
 const VoiceCallUI = ({
   isCallActive,
@@ -9,9 +9,6 @@ const VoiceCallUI = ({
   callStatus,
   remoteStream,
   localStream,
-  screenShareStream,
-  remoteScreenShareStream,
-  isScreenSharing,
   isCallMinimized,
   otherUser,
   currentUser,
@@ -21,8 +18,6 @@ const VoiceCallUI = ({
   onEnd,
   onToggleMute,
   onToggleSpeaker,
-  onStartScreenShare,
-  onStopScreenShare,
   onToggleMinimize,
 }) => {
   const remoteAudioRef = useRef(null);
@@ -34,9 +29,6 @@ const VoiceCallUI = ({
   const [availableAudioOutputs, setAvailableAudioOutputs] = useState([]);
   const [earpieceDeviceId, setEarpieceDeviceId] = useState(null);
   const [speakerDeviceId, setSpeakerDeviceId] = useState(null);
-  const [isScreenShareMinimized, setIsScreenShareMinimized] = useState(false);
-  const screenShareVideoRef = useRef(null);
-  const remoteScreenShareVideoRef = useRef(null);
 
   // Get available audio outputs (for speaker/earpiece)
   useEffect(() => {
@@ -132,26 +124,6 @@ const VoiceCallUI = ({
       // localAudioRef.current.volume = 0; // Mute local audio
     }
   }, [localStream]);
-
-  // Update screen share video when stream changes
-  useEffect(() => {
-    if (screenShareVideoRef.current && screenShareStream) {
-      screenShareVideoRef.current.srcObject = screenShareStream;
-      screenShareVideoRef.current.play().catch(err => {
-        console.error('Error playing screen share:', err);
-      });
-    }
-  }, [screenShareStream]);
-
-  // Update remote screen share video when stream changes
-  useEffect(() => {
-    if (remoteScreenShareVideoRef.current && remoteScreenShareStream) {
-      remoteScreenShareVideoRef.current.srcObject = remoteScreenShareStream;
-      remoteScreenShareVideoRef.current.play().catch(err => {
-        console.error('Error playing remote screen share:', err);
-      });
-    }
-  }, [remoteScreenShareStream]);
 
   // Call duration timer - ONLY start when connected
   useEffect(() => {
@@ -479,94 +451,7 @@ const VoiceCallUI = ({
             style={{ display: 'none' }}
           />
 
-          {/* Screen Share Display - Mobile layout (takes 60-70% of screen) */}
-          {(isScreenSharing || remoteScreenShareStream) && !isScreenShareMinimized && (
-            <div className="flex-1 relative bg-black overflow-hidden min-h-0" style={{ flex: '0 0 70%' }}>
-              {/* Screen Share Video */}
-              <video
-                ref={remoteScreenShareVideoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-contain"
-                style={{ display: remoteScreenShareStream ? 'block' : 'none' }}
-              />
-              <video
-                ref={screenShareVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-contain"
-                style={{ display: screenShareStream ? 'block' : 'none' }}
-              />
-              
-              {/* Screen Share Controls - Top Right */}
-              <div className="absolute top-2 right-2 flex items-center space-x-1 z-10">
-                <button
-                  onClick={() => setIsScreenShareMinimized(true)}
-                  className="p-1.5 bg-black/60 hover:bg-black/80 rounded transition-colors"
-                  title="Minimize"
-                >
-                  <Minimize2 className="w-3.5 h-3.5 text-white" />
-                </button>
-                {isScreenSharing && (
-                  <button
-                    onClick={onStopScreenShare}
-                    className="p-1.5 bg-red-500 hover:bg-red-600 rounded transition-colors"
-                    title="Stop"
-                  >
-                    <X className="w-3.5 h-3.5 text-white" />
-                  </button>
-                )}
-              </div>
-
-              {/* Screen Share Label - Top Left */}
-              <div className="absolute top-2 left-2 bg-black/60 px-2 py-1 rounded">
-                <p className="text-white text-xs font-medium">Screen Share</p>
-              </div>
-            </div>
-          )}
-
-          {/* Minimized Screen Share (small floating window) */}
-          {(isScreenSharing || remoteScreenShareStream) && isScreenShareMinimized && (
-            <div className="absolute top-16 right-4 w-40 h-28 sm:w-48 sm:h-32 bg-black rounded-lg overflow-hidden shadow-2xl z-10 border-2 border-white/20">
-              <video
-                ref={remoteScreenShareVideoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-contain"
-                style={{ display: remoteScreenShareStream ? 'block' : 'none' }}
-              />
-              <video
-                ref={screenShareVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-contain"
-                style={{ display: screenShareStream ? 'block' : 'none' }}
-              />
-              <div className="absolute top-1 right-1 flex items-center space-x-0.5">
-                <button
-                  onClick={() => setIsScreenShareMinimized(false)}
-                  className="p-1 bg-black/60 hover:bg-black/80 rounded transition-colors"
-                  title="Maximize"
-                >
-                  <Maximize2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
-                </button>
-                {isScreenSharing && (
-                  <button
-                    onClick={onStopScreenShare}
-                    className="p-1 bg-red-500 hover:bg-red-600 rounded transition-colors"
-                    title="Stop"
-                  >
-                    <X className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Call Info - Only show when screen share is minimized or not active */}
-          <div className={`text-center px-6 w-full max-w-md flex-1 flex flex-col justify-center ${(isScreenSharing || remoteScreenShareStream) && !isScreenShareMinimized ? 'hidden' : 'flex'}`}>
+          <div className="text-center px-6 w-full max-w-md">
             {/* Avatar - Only show when speaker is ON */}
             <motion.div
               animate={{ scale: [1, 1.05, 1] }}
@@ -641,23 +526,6 @@ const VoiceCallUI = ({
               >
                 <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />
               </motion.button>
-
-              {/* Screen Share Button - Only when connected */}
-              {callStatus === 'connected' && (
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={isScreenSharing ? onStopScreenShare : onStartScreenShare}
-                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-lg transition-colors text-white ${
-                    isScreenSharing
-                      ? 'bg-green-500 hover:bg-green-600'
-                      : 'bg-white/20 hover:bg-white/30 backdrop-blur-sm'
-                  }`}
-                  title={isScreenSharing ? 'Stop screen share' : 'Start screen share'}
-                >
-                  <Monitor className="w-5 h-5 sm:w-6 sm:h-6" />
-                </motion.button>
-              )}
 
               {/* Minimize Call Button */}
               {callStatus === 'connected' && (

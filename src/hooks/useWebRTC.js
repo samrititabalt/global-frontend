@@ -9,9 +9,6 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   const [isCallOutgoing, setIsCallOutgoing] = useState(false);
   const [callStatus, setCallStatus] = useState('idle'); // idle, calling, ringing, connected, ended
   const [remoteStream, setRemoteStream] = useState(null);
-  const [screenShareStream, setScreenShareStream] = useState(null);
-  const [remoteScreenShareStream, setRemoteScreenShareStream] = useState(null);
-  const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isCallMinimized, setIsCallMinimized] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
   const [callStartTime, setCallStartTime] = useState(null);
@@ -21,7 +18,6 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   const isCleaningUpRef = useRef(false);
   
   const localStreamRef = useRef(null);
-  const screenShareStreamRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const remoteStreamRef = useRef(null);
   const callInitiatorRef = useRef(null);
@@ -52,9 +48,6 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
         // Cleanup
         if (localStreamRef.current) {
           localStreamRef.current.getTracks().forEach(track => track.stop());
-        }
-        if (screenShareStreamRef.current) {
-          screenShareStreamRef.current.getTracks().forEach(track => track.stop());
         }
         if (peerConnectionRef.current) {
           peerConnectionRef.current.close();
@@ -109,49 +102,9 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     const handleOffer = async (data) => {
       if (data.from === currentUserId) return;
       
-      console.log('Received offer from:', data.from, 'isRenegotiation:', data.isRenegotiation);
+      console.log('Received call offer from:', data.from);
       
-      // CRITICAL: Handle renegotiation FIRST (for screen share) - DO NOT change call state
-      if (data.isRenegotiation) {
-        // STRICT GUARD: Only process renegotiation if call is already connected
-        // This prevents any state changes during screen share
-        if (!peerConnectionRef.current || callStatus !== 'connected' || !isCallActive) {
-          console.warn('Renegotiation offer received but call not connected, ignoring');
-          return; // Ignore renegotiation if call isn't connected
-        }
-        
-        try {
-          console.log('Processing screen share renegotiation offer - NO state change');
-          // Set remote description for renegotiation
-          await peerConnectionRef.current.setRemoteDescription(
-            new RTCSessionDescription(data.offer)
-          );
-          
-          // Create and send answer for renegotiation
-          const answer = await peerConnectionRef.current.createAnswer({
-            offerToReceiveAudio: true,
-            offerToReceiveVideo: true,
-          });
-          
-          await peerConnectionRef.current.setLocalDescription(answer);
-          
-          // Send renegotiation answer with flag
-          socket.emit('answer', {
-            chatSessionId,
-            answer,
-            isRenegotiation: true // CRITICAL: Prevents state change on sender side
-          });
-          
-          console.log('Renegotiation answer sent - screen share will be visible');
-          return; // Exit early - do NOT change ANY call state
-        } catch (error) {
-          console.error('Error handling renegotiation offer:', error);
-          // Don't end call on renegotiation error, just log it
-          return;
-        }
-      }
-      
-      // Regular call offer - only process if NOT a renegotiation
+      // Regular call offer
       // Guard: Don't process if call is already active (prevents re-calling)
       if (isCallActive && callStatus !== 'idle') {
         console.warn('Call offer received but call already active, ignoring');
@@ -185,43 +138,21 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       if (data.from === currentUserId) return;
 
       try {
-        // CRITICAL: Handle renegotiation answer FIRST (for screen share) - DO NOT change call state
-        if (data.isRenegotiation) {
-          // STRICT GUARD: Only process if call is already connected
-          if (!peerConnectionRef.current || callStatus !== 'connected' || !isCallActive) {
-            console.warn('Renegotiation answer received but call not connected, ignoring');
-            return;
-          }
-          
-          // Set remote description for renegotiation - NO state changes
-          await peerConnectionRef.current.setRemoteDescription(
-            new RTCSessionDescription(data.answer)
-          );
-          console.log('Renegotiation answer received and set - screen share active, NO state change');
-          return; // Exit early - do NOT change ANY call state
+        // Guard: Don't process if call is already connected (prevents duplicate processing)
+        if (callStatus === 'connected' && isCallActive) {
+          console.warn('Answer received but call already connected, ignoring');
+          return;
         }
         
-        // Regular answer - only process if NOT a renegotiation and call is not connected
-        if (!data.isRenegotiation) {
-          // Guard: Don't process if call is already connected (prevents duplicate processing)
-          if (callStatus === 'connected' && isCallActive) {
-            console.warn('Answer received but call already connected, ignoring');
-            return;
-          }
-          
-          answerReceivedRef.current = true;
-          await peerConnectionRef.current.setRemoteDescription(
-            new RTCSessionDescription(data.answer)
-          );
-          // Status will be updated when connection state changes to 'connected'
-          console.log('Answer received, waiting for connection...');
-        }
+        answerReceivedRef.current = true;
+        await peerConnectionRef.current.setRemoteDescription(
+          new RTCSessionDescription(data.answer)
+        );
+        // Status will be updated when connection state changes to 'connected'
+        console.log('Answer received, waiting for connection...');
       } catch (error) {
         console.error('Error handling answer:', error);
-        // Only end call if it's NOT a renegotiation
-        if (!data.isRenegotiation) {
-          endCall();
-        }
+        endCall();
       }
     };
 
@@ -262,33 +193,20 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     try {
       const pc = new RTCPeerConnection(rtcConfiguration);
 
-      // Handle remote stream - CRITICAL for audio and screen share
+      // Handle remote stream - CRITICAL for audio
       pc.ontrack = (event) => {
-        console.log('Received remote track:', event.track.kind, event.track.id);
+        console.log('Received remote track:', event.track.kind);
         if (event.streams && event.streams[0]) {
           const stream = event.streams[0];
-          
-          // Check if it's a video track (screen share) or audio track
-          if (event.track.kind === 'video') {
-            // This is screen share
-            setRemoteScreenShareStream(stream);
-            console.log('Remote screen share stream received');
-          } else if (event.track.kind === 'audio') {
-            // This is audio
-            remoteStreamRef.current = stream;
-            setRemoteStream(stream);
-            console.log('Remote audio stream set:', stream.getAudioTracks().length, 'audio tracks');
-          }
+          remoteStreamRef.current = stream;
+          setRemoteStream(stream);
+          console.log('Remote stream set:', stream.getAudioTracks().length, 'audio tracks');
         } else if (event.track) {
           // Fallback: create stream from track
           const stream = new MediaStream([event.track]);
-          if (event.track.kind === 'video') {
-            setRemoteScreenShareStream(stream);
-          } else {
-            remoteStreamRef.current = stream;
-            setRemoteStream(stream);
-          }
-          console.log('Remote stream created from track:', event.track.kind);
+          remoteStreamRef.current = stream;
+          setRemoteStream(stream);
+          console.log('Remote stream created from track');
         }
       };
 
@@ -453,20 +371,10 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       // Get local stream and add tracks
       await setLocalStream();
 
-      // Add video transceiver upfront to make screen sharing smoother
-      // This ensures video track can be replaced later without renegotiation issues
-      const existingVideoTransceiver = peerConnectionRef.current.getTransceivers().find(
-        t => t.sender && t.sender.track && t.sender.track.kind === 'video'
-      );
-      if (!existingVideoTransceiver) {
-        peerConnectionRef.current.addTransceiver('video', { direction: 'sendrecv' });
-        console.log('Video transceiver added for future screen sharing');
-      }
-
-      // Create offer with audio and video support (video for screen sharing)
+      // Create offer with audio only
       const offer = await peerConnectionRef.current.createOffer({
         offerToReceiveAudio: true,
-        offerToReceiveVideo: true, // Allow video for screen sharing
+        offerToReceiveVideo: false,
       });
 
       // Set codec preferences for better audio quality
@@ -513,15 +421,10 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
         await setLocalStream();
       }
       
-      // Create and send answer (allow video for screen sharing)
-      // Add video transceiver upfront to make screen sharing smoother
-      if (peerConnectionRef.current.getTransceivers().length === 0) {
-        peerConnectionRef.current.addTransceiver('video', { direction: 'sendrecv' });
-      }
-      
+      // Create and send answer
       const answer = await peerConnectionRef.current.createAnswer({
         offerToReceiveAudio: true,
-        offerToReceiveVideo: true, // Allow video for screen sharing
+        offerToReceiveVideo: false,
       });
 
       // Set codec preferences
@@ -551,176 +454,9 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     endCall();
   };
 
-  const startScreenShare = async () => {
-    try {
-      // Guard: Only allow screen share if call is connected
-      if (!peerConnectionRef.current || callStatus !== 'connected' || !isCallActive) {
-        console.error('Cannot start screen share: call not connected');
-        alert('Please wait for the call to connect before sharing your screen.');
-        return;
-      }
-
-      // Get screen share stream
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          cursor: 'always',
-          displaySurface: 'monitor',
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          frameRate: { ideal: 30 }
-        },
-        audio: false
-      });
-
-      screenShareStreamRef.current = stream;
-      setScreenShareStream(stream);
-      setIsScreenSharing(true);
-
-      // Add video track to peer connection using replaceTrack() - CRITICAL for stable renegotiation
-      const videoTrack = stream.getVideoTracks()[0];
-      if (!videoTrack) {
-        console.error('No video track in screen share stream');
-        setIsScreenSharing(false);
-        return;
-      }
-
-      // Handle when user stops sharing from browser
-      videoTrack.onended = () => {
-        console.log('Screen share track ended by user');
-        stopScreenShare();
-      };
-
-      // Find existing video sender or transceiver - use transceiver for better control
-      let sender = null;
-      let videoTransceiver = peerConnectionRef.current.getTransceivers().find(t => 
-        t.sender && (!t.sender.track || t.sender.track.kind === 'video')
-      );
-      
-      if (videoTransceiver && videoTransceiver.sender) {
-        sender = videoTransceiver.sender;
-      } else {
-        // Fallback: find sender directly
-        sender = peerConnectionRef.current.getSenders().find(s => 
-          s.track && s.track.kind === 'video'
-        );
-      }
-      
-      if (sender) {
-        // Replace existing video track with screen share - this is the correct approach
-        try {
-          await sender.replaceTrack(videoTrack);
-          console.log('Screen share track replaced successfully via replaceTrack()');
-          
-          // Create offer for renegotiation - this updates SDP without creating new call
-          const offer = await peerConnectionRef.current.createOffer({
-            offerToReceiveAudio: true,
-            offerToReceiveVideo: true,
-          });
-          
-          await peerConnectionRef.current.setLocalDescription(offer);
-          
-          // Send renegotiation offer with flag - remote will NOT trigger call state change
-          socket.emit('offer', {
-            chatSessionId,
-            offer: peerConnectionRef.current.localDescription,
-            isRenegotiation: true // CRITICAL: This prevents call state change on remote
-          });
-          
-          console.log('Screen share renegotiation offer sent - remote will NOT see calling state');
-        } catch (error) {
-          console.error('Error replacing video track:', error);
-          setIsScreenSharing(false);
-          stream.getTracks().forEach(track => track.stop());
-        }
-      } else {
-        // No existing video sender - add new track via transceiver
-        try {
-          // Create or get video transceiver
-          if (!videoTransceiver) {
-            videoTransceiver = peerConnectionRef.current.addTransceiver('video', {
-              direction: 'sendrecv',
-              streams: [stream]
-            });
-          } else {
-            videoTransceiver.sender.replaceTrack(videoTrack);
-          }
-          
-          console.log('Screen share track added via transceiver');
-          
-          // Create offer for renegotiation
-          const offer = await peerConnectionRef.current.createOffer({
-            offerToReceiveAudio: true,
-            offerToReceiveVideo: true,
-          });
-          
-          await peerConnectionRef.current.setLocalDescription(offer);
-          
-          socket.emit('offer', {
-            chatSessionId,
-            offer: peerConnectionRef.current.localDescription,
-            isRenegotiation: true // CRITICAL: This prevents call state change on remote
-          });
-          
-          console.log('Screen share offer sent (new track) - remote will NOT see calling state');
-        } catch (error) {
-          console.error('Error adding screen share track:', error);
-          setIsScreenSharing(false);
-          stream.getTracks().forEach(track => track.stop());
-        }
-      }
-    } catch (error) {
-      console.error('Error starting screen share:', error);
-      if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') {
-        alert('Failed to start screen share. Please check permissions.');
-      }
-      setIsScreenSharing(false);
-    }
-  };
-
-  const stopScreenShare = async () => {
-    if (screenShareStreamRef.current) {
-      screenShareStreamRef.current.getTracks().forEach((track) => track.stop());
-      screenShareStreamRef.current = null;
-    }
-    
-    // Remove video track from peer connection using replaceTrack(null)
-    if (peerConnectionRef.current && callStatus === 'connected') {
-      const sender = peerConnectionRef.current.getSenders().find(s => 
-        s.track && s.track.kind === 'video'
-      );
-      if (sender) {
-        try {
-          // Replace with null to remove video track
-          await sender.replaceTrack(null);
-          
-          // Renegotiate to update SDP (remove video from offer)
-          const offer = await peerConnectionRef.current.createOffer({
-            offerToReceiveAudio: true,
-            offerToReceiveVideo: false, // No video after stopping screen share
-          });
-          
-          await peerConnectionRef.current.setLocalDescription(offer);
-          
-          // Send renegotiation offer with flag
-          socket.emit('offer', {
-            chatSessionId,
-            offer: peerConnectionRef.current.localDescription,
-            isRenegotiation: true // CRITICAL: Prevents call state change
-          });
-          
-          console.log('Screen share stopped, renegotiation sent');
-        } catch (err) {
-          console.error('Error removing video track:', err);
-        }
-      }
-    }
-    
-    setScreenShareStream(null);
-    setIsScreenSharing(false);
-    console.log('Screen share stopped');
-  };
-
   const toggleCallMinimize = () => {
+    setIsCallMinimized(prev => !prev);
+  };
     setIsCallMinimized(prev => !prev);
   };
 
@@ -740,9 +476,6 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
 
     // Calculate final call duration
     const finalDuration = duration !== null ? duration : (callStartTime ? Math.floor((Date.now() - callStartTime) / 1000) : callDuration);
-    
-    // Stop screen share
-    stopScreenShare();
     
     // Stop local stream
     if (localStreamRef.current) {
@@ -789,9 +522,6 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       setIsCallOutgoing(false);
       setCallStatus('idle');
       setRemoteStream(null);
-      setScreenShareStream(null);
-      setRemoteScreenShareStream(null);
-      setIsScreenSharing(false);
       setIsCallMinimized(false);
       setCallDuration(0);
       setCallStartTime(null);
@@ -812,9 +542,6 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(track => track.stop());
       }
-      if (screenShareStreamRef.current) {
-        screenShareStreamRef.current.getTracks().forEach(track => track.stop());
-      }
       if (peerConnectionRef.current) {
         peerConnectionRef.current.close();
       }
@@ -828,17 +555,12 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     callStatus,
     remoteStream,
     localStream: localStreamRef.current,
-    screenShareStream,
-    remoteScreenShareStream,
-    isScreenSharing,
     isCallMinimized,
     callDuration,
     startCall,
     acceptCall,
     rejectCall,
     endCall,
-    startScreenShare,
-    stopScreenShare,
     toggleCallMinimize,
   };
 };

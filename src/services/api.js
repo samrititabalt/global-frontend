@@ -37,6 +37,21 @@ export const authAPI = {
    * @returns {Promise} Response with user data
    */
   getCurrentUser: () => api.get('/auth/me'),
+
+  /**
+   * Request password reset
+   * @param {Object} data - { email }
+   * @returns {Promise} Response
+   */
+  forgotPassword: (data) => api.post('/auth/forgot-password', data),
+
+  /**
+   * Reset password with token
+   * @param {String} token - Reset token
+   * @param {Object} data - { password }
+   * @returns {Promise} Response
+   */
+  resetPassword: (token, data) => api.post(`/auth/reset-password/${token}`, data),
 };
 
 // ============================================================================
