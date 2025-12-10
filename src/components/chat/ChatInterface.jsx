@@ -25,6 +25,7 @@ import MessageItem from './MessageItem';
 import VoiceNote from './VoiceNote';
 import VoiceCallUI from './VoiceCallUI';
 import CallHistory from './CallHistory';
+import MinimizedCallWindow from './MinimizedCallWindow';
 
 /**
  * ChatInterface
@@ -58,6 +59,9 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const [selectedMessages, setSelectedMessages] = useState(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [showCallHistory, setShowCallHistory] = useState(false);
+  const [callMuteState, setCallMuteState] = useState(false);
+  const [callSpeakerState, setCallSpeakerState] = useState(true);
+  const speakerToggleRef = useRef(null); // Ref to store speaker toggle function from VoiceCallUI
   const messagesEndRef = useRef(null);
   const menuRef = useRef(null);
   const replyPreviewRef = useRef(null);
@@ -912,8 +916,8 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
         </div>
       )}
 
-      {/* WhatsApp-style Voice Call UI - Only show when not minimized */}
-      {!isCallMinimized && (
+      {/* WhatsApp-style Voice Call UI - Only show when not minimized and call is active */}
+      {!isCallMinimized && isCallActive && (
         <VoiceCallUI
           isCallActive={isCallActive}
           isCallIncoming={isCallIncoming}
@@ -922,6 +926,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           remoteStream={remoteStream}
           localStream={localStream}
           isCallMinimized={isCallMinimized}
+          callDuration={callDuration}
           otherUser={otherUser}
           currentUser={currentUser}
           otherUserOnline={otherUserOnline}
@@ -929,38 +934,36 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           onReject={rejectCall}
           onEnd={endCall}
           onToggleMinimize={toggleCallMinimize}
+          onMuteStateChange={setCallMuteState}
+          onSpeakerStateChange={setCallSpeakerState}
+          onSpeakerToggleReady={(toggleFn) => {
+            speakerToggleRef.current = toggleFn;
+          }}
         />
       )}
       
-      {/* Minimized call floating window */}
-      {isCallMinimized && isCallActive && callStatus === 'connected' && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          className="fixed bottom-4 right-4 z-50 bg-blue-500 rounded-lg shadow-2xl p-3 flex items-center space-x-3"
-        >
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold">
-            {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
-          </div>
-          <div className="text-white">
-            <p className="text-sm font-semibold">{otherUser?.name || 'User'}</p>
-            <p className="text-xs opacity-80">{formatDuration(callDuration)}</p>
-          </div>
-          <button
-            onClick={toggleCallMinimize}
-            className="p-1.5 hover:bg-white/20 rounded transition-colors"
-          >
-            <Maximize2 className="w-4 h-4 text-white" />
-          </button>
-          <button
-            onClick={endCall}
-            className="p-1.5 bg-red-500 hover:bg-red-600 rounded transition-colors"
-          >
-            <PhoneOff className="w-4 h-4 text-white" />
-          </button>
-        </motion.div>
-      )}
+      {/* Minimized call floating window - Draggable */}
+      <AnimatePresence>
+        {isCallMinimized && isCallActive && (callStatus === 'connected' || callStatus === 'ringing' || callStatus === 'calling') && (
+          <MinimizedCallWindow
+            otherUser={otherUser}
+            callDuration={callDuration}
+            callStatus={callStatus}
+            onMaximize={toggleCallMinimize}
+            onEnd={endCall}
+            onToggleMute={localStream ? () => {
+              const newMuteState = !callMuteState;
+              localStream.getAudioTracks().forEach(track => {
+                track.enabled = newMuteState;
+              });
+              setCallMuteState(newMuteState);
+            } : undefined}
+            onToggleSpeaker={speakerToggleRef.current || undefined}
+            isMuted={callMuteState}
+            isSpeakerOn={callSpeakerState}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Call History Panel */}
       <AnimatePresence>

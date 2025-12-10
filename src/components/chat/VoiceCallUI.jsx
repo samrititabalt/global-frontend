@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, Minimize2, Maximize2 } from 'lucide-react';
 
@@ -10,6 +10,7 @@ const VoiceCallUI = ({
   remoteStream,
   localStream,
   isCallMinimized,
+  callDuration = 0,
   otherUser,
   currentUser,
   otherUserOnline,
@@ -19,13 +20,15 @@ const VoiceCallUI = ({
   onToggleMute,
   onToggleSpeaker,
   onToggleMinimize,
+  onMuteStateChange,
+  onSpeakerStateChange,
+  onSpeakerToggleReady, // New prop: callback to expose toggle function
 }) => {
   const remoteAudioRef = useRef(null);
   const localAudioRef = useRef(null);
   const ringtoneRef = useRef(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true); // true = speaker, false = earpiece
-  const [callDuration, setCallDuration] = useState(0);
   const [availableAudioOutputs, setAvailableAudioOutputs] = useState([]);
   const [earpieceDeviceId, setEarpieceDeviceId] = useState(null);
   const [speakerDeviceId, setSpeakerDeviceId] = useState(null);
@@ -125,21 +128,7 @@ const VoiceCallUI = ({
     }
   }, [localStream]);
 
-  // Call duration timer - ONLY start when connected
-  useEffect(() => {
-    let interval = null;
-    if (callStatus === 'connected' && remoteStream) {
-      // Only start timer when call is actually connected
-      interval = setInterval(() => {
-        setCallDuration(prev => prev + 1);
-      }, 1000);
-    } else {
-      setCallDuration(0);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [callStatus, remoteStream]);
+  // Note: callDuration is now managed by useWebRTC hook, not local state
 
   // Generate simple ringtone using Web Audio API (fallback)
   const generateRingtone = () => {
@@ -246,15 +235,17 @@ const VoiceCallUI = ({
 
   const handleToggleMute = () => {
     if (localStream) {
+      const newMuteState = !isMuted;
       localStream.getAudioTracks().forEach(track => {
-        track.enabled = isMuted;
+        track.enabled = newMuteState;
       });
-      setIsMuted(!isMuted);
-      if (onToggleMute) onToggleMute(!isMuted);
+      setIsMuted(newMuteState);
+      if (onToggleMute) onToggleMute(newMuteState);
+      if (onMuteStateChange) onMuteStateChange(newMuteState);
     }
   };
 
-  const handleToggleSpeaker = async () => {
+  const handleToggleSpeaker = useCallback(async () => {
     const audioElement = remoteAudioRef.current;
     if (!audioElement) return;
 
@@ -295,7 +286,15 @@ const VoiceCallUI = ({
 
     setIsSpeakerOn(newSpeakerState);
     if (onToggleSpeaker) onToggleSpeaker(newSpeakerState);
-  };
+    if (onSpeakerStateChange) onSpeakerStateChange(newSpeakerState);
+  }, [isSpeakerOn, speakerDeviceId, earpieceDeviceId, availableAudioOutputs, onToggleSpeaker, onSpeakerStateChange]);
+
+  // Expose toggle function to parent component
+  useEffect(() => {
+    if (onSpeakerToggleReady) {
+      onSpeakerToggleReady(handleToggleSpeaker);
+    }
+  }, [onSpeakerToggleReady, handleToggleSpeaker]);
 
   // Removed black screen feature as per user request
 
@@ -390,40 +389,13 @@ const VoiceCallUI = ({
     );
   }
 
-  // Minimized call UI (floating window like WhatsApp)
-  if (isCallMinimized && isCallActive && callStatus === 'connected') {
-    return (
-      <motion.div
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-4 right-4 z-50 bg-blue-500 rounded-lg shadow-2xl p-3 flex items-center space-x-3"
-      >
-        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold">
-          {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
-        </div>
-        <div className="text-white">
-          <p className="text-sm font-semibold">{otherUser?.name || 'User'}</p>
-          <p className="text-xs opacity-80">{formatDuration(callDuration)}</p>
-        </div>
-        <button
-          onClick={onToggleMinimize}
-          className="p-1.5 hover:bg-white/20 rounded transition-colors"
-        >
-          <Maximize2 className="w-4 h-4 text-white" />
-        </button>
-        <button
-          onClick={onEnd}
-          className="p-1.5 bg-red-500 hover:bg-red-600 rounded transition-colors"
-        >
-          <PhoneOff className="w-4 h-4 text-white" />
-        </button>
-      </motion.div>
-    );
+  // Don't render minimized UI here - it's handled in ChatInterface
+  if (isCallMinimized) {
+    return null;
   }
 
-  // Active call UI (outgoing or connected)
-  if (isCallActive && (isCallOutgoing || callStatus === 'connected')) {
+  // Active call UI (outgoing, incoming, ringing, or connected)
+  if (isCallActive && (isCallOutgoing || isCallIncoming || callStatus === 'ringing' || callStatus === 'connected' || callStatus === 'calling')) {
     return (
       <AnimatePresence>
         <motion.div
@@ -527,8 +499,8 @@ const VoiceCallUI = ({
                 <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />
               </motion.button>
 
-              {/* Minimize Call Button */}
-              {callStatus === 'connected' && (
+              {/* Minimize Call Button - Show when connected or ringing */}
+              {(callStatus === 'connected' || callStatus === 'ringing') && (
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}

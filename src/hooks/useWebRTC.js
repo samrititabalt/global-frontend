@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
 /**
  * WebRTC Hook for Voice Calls
@@ -17,6 +17,10 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   const answerReceivedRef = useRef(false);
   const isCleaningUpRef = useRef(false);
   
+  // Refs to track current state (avoid stale closures)
+  const callStatusRef = useRef('idle');
+  const isCallActiveRef = useRef(false);
+  
   const localStreamRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const remoteStreamRef = useRef(null);
@@ -24,6 +28,16 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   const callDurationIntervalRef = useRef(null);
   const iceStateTimeoutRef = useRef(null);
   const connectionStateTimeoutRef = useRef(null);
+  const callTimeoutRef = useRef(null);
+  
+  // Keep refs in sync with state
+  useEffect(() => {
+    callStatusRef.current = callStatus;
+  }, [callStatus]);
+  
+  useEffect(() => {
+    isCallActiveRef.current = isCallActive;
+  }, [isCallActive]);
 
   // WebRTC Configuration
   const rtcConfiguration = {
@@ -97,6 +111,93 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       window.removeEventListener('offline', handleOffline);
     };
   }, [isCallActive]);
+
+  const endCall = useCallback(async (duration = null) => {
+    // Prevent multiple cleanup calls
+    if (isCleaningUpRef.current) {
+      console.log('Cleanup already in progress');
+      return;
+    }
+    isCleaningUpRef.current = true;
+
+    // Clear all timers
+    if (callDurationIntervalRef.current) {
+      clearInterval(callDurationIntervalRef.current);
+      callDurationIntervalRef.current = null;
+    }
+    if (iceStateTimeoutRef.current) {
+      clearTimeout(iceStateTimeoutRef.current);
+      iceStateTimeoutRef.current = null;
+    }
+    if (connectionStateTimeoutRef.current) {
+      clearTimeout(connectionStateTimeoutRef.current);
+      connectionStateTimeoutRef.current = null;
+    }
+    if (callTimeoutRef.current) {
+      clearTimeout(callTimeoutRef.current);
+      callTimeoutRef.current = null;
+    }
+
+    // Calculate final call duration
+    const finalDuration = duration !== null ? duration : (callStartTime ? Math.floor((Date.now() - callStartTime) / 1000) : callDuration);
+    
+    // Stop local stream
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => {
+        track.stop();
+        track.enabled = false;
+      });
+      localStreamRef.current = null;
+    }
+
+    // Close peer connection properly
+    if (peerConnectionRef.current) {
+      try {
+        // Remove all tracks
+        peerConnectionRef.current.getSenders().forEach(sender => {
+          if (sender.track) {
+            sender.track.stop();
+          }
+        });
+        // Close connection
+        peerConnectionRef.current.close();
+      } catch (error) {
+        console.error('Error closing peer connection:', error);
+      }
+      peerConnectionRef.current = null;
+    }
+
+    // Notify other party with call duration - ALWAYS send initiator info
+    if (socket && chatSessionId) {
+      const initiator = callInitiatorRef.current || currentUserId;
+      socket.emit('callEnded', { 
+        chatSessionId, 
+        duration: finalDuration || 0,
+        initiator: initiator,
+        currentUser: currentUserId
+      });
+      console.log('Call ended event sent:', { duration: finalDuration, initiator, currentUser: currentUserId });
+    }
+
+    // Reset state IMMEDIATELY for UI responsiveness
+    setIsCallActive(false);
+    setIsCallIncoming(false);
+    setIsCallOutgoing(false);
+    setCallStatus('idle');
+    setRemoteStream(null);
+    setIsCallMinimized(false);
+    setCallDuration(0);
+    setCallStartTime(null);
+    
+    // Clear refs after a small delay to ensure cleanup completes
+    setTimeout(() => {
+      remoteStreamRef.current = null;
+      callInitiatorRef.current = null;
+      answerReceivedRef.current = false;
+      isCleaningUpRef.current = false;
+      console.log('Call state fully reset, ready for new call');
+    }, 100);
+  }, [socket, chatSessionId, currentUserId, callStartTime, callDuration]);
 
   useEffect(() => {
     if (!socket || !chatSessionId) return;
@@ -173,8 +274,10 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     };
 
     const handleCallEnded = (data) => {
+      console.log('Call ended event received:', data);
       // If other party ended the call, use their duration if provided
-      const duration = data?.duration || null;
+      const duration = data?.duration !== undefined ? data.duration : null;
+      // Immediately end the call
       endCall(duration);
     };
 
@@ -189,7 +292,7 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       socket.off('ice-candidate', handleIceCandidate);
       socket.off('callEnded', handleCallEnded);
     };
-  }, [socket, chatSessionId, currentUserId]);
+  }, [socket, chatSessionId, currentUserId, isCallActive, callStatus, endCall]);
 
   const createPeerConnection = async () => {
     try {
@@ -260,6 +363,11 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
             clearTimeout(iceStateTimeoutRef.current);
             iceStateTimeoutRef.current = null;
           }
+          // Clear call timeout when connected
+          if (callTimeoutRef.current) {
+            clearTimeout(callTimeoutRef.current);
+            callTimeoutRef.current = null;
+          }
         }
       };
 
@@ -303,6 +411,11 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
           if (connectionStateTimeoutRef.current) {
             clearTimeout(connectionStateTimeoutRef.current);
             connectionStateTimeoutRef.current = null;
+          }
+          // Clear call timeout when connected
+          if (callTimeoutRef.current) {
+            clearTimeout(callTimeoutRef.current);
+            callTimeoutRef.current = null;
           }
           setCallStatus('connected');
           setIsCallIncoming(false);
@@ -408,12 +521,18 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
 
       console.log('Call offer sent, waiting for answer...');
       
-      // Set timeout for call (60 seconds)
-      setTimeout(() => {
-        if (callStatus === 'calling' || callStatus === 'ringing') {
-          console.log('Call timeout, ending call');
+      // Set timeout for call (60 seconds) - clear any existing timeout first
+      if (callTimeoutRef.current) {
+        clearTimeout(callTimeoutRef.current);
+      }
+      callTimeoutRef.current = setTimeout(() => {
+        // Check current state using refs to avoid stale closure
+        if (isCallActiveRef.current && 
+            (callStatusRef.current === 'calling' || callStatusRef.current === 'ringing')) {
+          console.log('Call timeout (60s), ending call');
           endCall();
         }
+        callTimeoutRef.current = null;
       }, 60000); // 60 seconds timeout
     } catch (error) {
       console.error('Error starting call:', error);
@@ -474,87 +593,6 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     setIsCallMinimized(prev => !prev);
   };
 
-  const endCall = async (duration = null) => {
-    // Prevent multiple cleanup calls
-    if (isCleaningUpRef.current) {
-      console.log('Cleanup already in progress');
-      return;
-    }
-    isCleaningUpRef.current = true;
-
-    // Clear all timers
-    if (callDurationIntervalRef.current) {
-      clearInterval(callDurationIntervalRef.current);
-      callDurationIntervalRef.current = null;
-    }
-    if (iceStateTimeoutRef.current) {
-      clearTimeout(iceStateTimeoutRef.current);
-      iceStateTimeoutRef.current = null;
-    }
-    if (connectionStateTimeoutRef.current) {
-      clearTimeout(connectionStateTimeoutRef.current);
-      connectionStateTimeoutRef.current = null;
-    }
-
-    // Calculate final call duration
-    const finalDuration = duration !== null ? duration : (callStartTime ? Math.floor((Date.now() - callStartTime) / 1000) : callDuration);
-    
-    // Stop local stream
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => {
-        track.stop();
-        track.enabled = false;
-      });
-      localStreamRef.current = null;
-    }
-
-    // Close peer connection properly
-    if (peerConnectionRef.current) {
-      try {
-        // Remove all tracks
-        peerConnectionRef.current.getSenders().forEach(sender => {
-          if (sender.track) {
-            sender.track.stop();
-          }
-        });
-        // Close connection
-        peerConnectionRef.current.close();
-      } catch (error) {
-        console.error('Error closing peer connection:', error);
-      }
-      peerConnectionRef.current = null;
-    }
-
-    // Notify other party with call duration - ALWAYS send initiator info
-    if (socket && chatSessionId) {
-      const initiator = callInitiatorRef.current || currentUserId;
-      socket.emit('callEnded', { 
-        chatSessionId, 
-        duration: finalDuration || 0,
-        initiator: initiator,
-        currentUser: currentUserId
-      });
-      console.log('Call ended event sent:', { duration: finalDuration, initiator, currentUser: currentUserId });
-    }
-
-    // Reset state after a small delay to ensure cleanup
-    setTimeout(() => {
-      setIsCallActive(false);
-      setIsCallIncoming(false);
-      setIsCallOutgoing(false);
-      setCallStatus('idle');
-      setRemoteStream(null);
-      setIsCallMinimized(false);
-      setCallDuration(0);
-      setCallStartTime(null);
-      remoteStreamRef.current = null;
-      callInitiatorRef.current = null;
-      answerReceivedRef.current = false;
-      isCleaningUpRef.current = false;
-      console.log('Call state fully reset, ready for new call');
-    }, 200); // Increased delay to ensure proper cleanup
-  };
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -570,6 +608,10 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       if (connectionStateTimeoutRef.current) {
         clearTimeout(connectionStateTimeoutRef.current);
         connectionStateTimeoutRef.current = null;
+      }
+      if (callTimeoutRef.current) {
+        clearTimeout(callTimeoutRef.current);
+        callTimeoutRef.current = null;
       }
       // Stop all media tracks
       if (localStreamRef.current) {
