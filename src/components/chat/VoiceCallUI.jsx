@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, Minimize2, Maximize2 } from 'lucide-react';
+import { Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, Minimize2 } from 'lucide-react';
 
 const VoiceCallUI = ({
   isCallActive,
@@ -298,247 +298,246 @@ const VoiceCallUI = ({
 
   // Removed black screen feature as per user request
 
-  // Incoming call UI
-  if (isCallIncoming) {
-    return (
+  const hiddenAudioLayer = (
+    <>
+      <audio
+        ref={remoteAudioRef}
+        autoPlay
+        playsInline
+        webkit-playsinline="true"
+        controls={false}
+        style={{ display: 'none' }}
+      />
+      <audio
+        ref={localAudioRef}
+        autoPlay
+        playsInline
+        muted
+        webkit-playsinline="true"
+        controls={false}
+        style={{ display: 'none' }}
+      />
+      <audio
+        ref={ringtoneRef}
+        src="/ringtone.mp3"
+        preload="auto"
+        loop
+        style={{ display: 'none' }}
+      />
+    </>
+  );
+
+  const shouldShowIncoming = isCallIncoming && !isCallMinimized;
+  const shouldShowActiveOverlay =
+    !isCallIncoming &&
+    !isCallMinimized &&
+    isCallActive &&
+    (isCallOutgoing ||
+      callStatus === 'ringing' ||
+      callStatus === 'calling' ||
+      callStatus === 'connected');
+
+  const statusLabel = (() => {
+    if (callStatus === 'connected') return 'On call';
+    if (callStatus === 'ringing') return otherUserOnline ? 'Ringing...' : 'Calling...';
+    if (callStatus === 'calling') return 'Calling...';
+    return callStatus || 'Connecting...';
+  })();
+
+  const controlButtonBase =
+    'w-14 h-14 rounded-2xl flex items-center justify-center border border-white/10 shadow-lg transition-all backdrop-blur-xl';
+
+  return (
+    <>
+      {hiddenAudioLayer}
+
       <AnimatePresence>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-gradient-to-br from-green-500 via-green-600 to-green-700 z-50 flex items-center justify-center"
-        >
-          {/* Hidden audio elements - CRITICAL for mobile */}
-          <audio 
-            ref={remoteAudioRef} 
-            autoPlay 
-            playsInline
-            webkit-playsinline="true"
-            controls={false}
-            style={{ display: 'none' }}
-          />
-          <audio 
-            ref={localAudioRef} 
-            autoPlay 
-            playsInline 
-            muted
-            webkit-playsinline="true"
-            controls={false}
-            style={{ display: 'none' }}
-          />
-
-          <div className="text-center text-white px-6">
-            {/* Avatar */}
-            <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              className="mb-8"
-            >
-              <div className="w-32 h-32 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-4xl font-bold mx-auto mb-4 ring-4 ring-white/30">
-                {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
-              </div>
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="absolute inset-0 w-32 h-32 rounded-full bg-white/10 mx-auto"
-                style={{ marginTop: '-8rem' }}
-              />
-            </motion.div>
-
-            {/* Name */}
-            <h2 className="text-3xl font-bold mb-2">{otherUser?.name || 'Unknown'}</h2>
-            <p className="text-green-100 text-lg mb-2">Incoming voice call</p>
-            {/* Status based on online/offline */}
-            <p className="text-green-200 text-sm mb-8">
-              {otherUserOnline ? 'Ringing...' : 'Calling...'}
-            </p>
-            
-            {/* Hidden ringtone */}
-            <audio
-              ref={ringtoneRef}
-              src="/ringtone.mp3"
-              preload="auto"
-              loop
-            />
-
-            {/* Action Buttons */}
-            <div className="flex justify-center space-x-6">
-              {/* Reject */}
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={onReject}
-                className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
-              >
-                <PhoneOff className="w-8 h-8" />
-              </motion.button>
-
-              {/* Accept */}
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={onAccept}
-                className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg hover:bg-green-50 transition-colors"
-              >
-                <Phone className="w-8 h-8 text-green-600" />
-              </motion.button>
+        {shouldShowIncoming && (
+          <motion.div
+            key="incoming-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-[#04070d]">
+              <div className="absolute -top-32 -left-10 w-96 h-96 bg-emerald-500/30 blur-[140px]" />
+              <div className="absolute -bottom-40 -right-10 w-96 h-96 bg-cyan-500/30 blur-[140px]" />
             </div>
-          </div>
-        </motion.div>
+
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 120, damping: 18 }}
+              className="relative z-10 w-full max-w-md px-6"
+            >
+              <div className="rounded-[32px] border border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl text-center text-white px-8 py-10 space-y-8">
+                <div className="flex flex-col items-center gap-6 relative">
+                  <div className="absolute inset-0 -z-10">
+                    <div className="w-48 h-48 mx-auto bg-white/5 blur-[120px]" />
+                  </div>
+                  <div className="relative">
+                    <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-emerald-400 to-sky-500 flex items-center justify-center text-4xl font-bold shadow-lg shadow-emerald-500/30">
+                      {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                    <motion.span
+                      animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.2, 1] }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                      className="absolute inset-0 -m-3 rounded-[36px] border border-white/20"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-3xl font-semibold">{otherUser?.name || 'Unknown user'}</p>
+                    <p className="text-white/70 text-lg mt-1">
+                      {otherUserOnline ? 'Ringing on their device' : 'Calling user'}
+                    </p>
+                    <p className="text-white/50 text-sm mt-2">Incoming voice call</p>
+                  </div>
+                </div>
+
+                <div className="flex justify-center gap-6">
+                  <motion.button
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={onReject}
+                    className={`${controlButtonBase} bg-red-500/80 hover:bg-red-500 text-white`}
+                    title="Decline call"
+                  >
+                    <PhoneOff className="w-6 h-6" />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={onAccept}
+                    className={`${controlButtonBase} bg-emerald-500 hover:bg-emerald-400 text-white`}
+                    title="Answer call"
+                  >
+                    <Phone className="w-6 h-6" />
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
-    );
-  }
 
-  // Don't render minimized UI here - it's handled in ChatInterface
-  if (isCallMinimized) {
-    return null;
-  }
-
-  // Active call UI (outgoing, incoming, ringing, or connected)
-  if (isCallActive && (isCallOutgoing || isCallIncoming || callStatus === 'ringing' || callStatus === 'connected' || callStatus === 'calling')) {
-    return (
       <AnimatePresence>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex flex-col bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700"
-        >
-          {/* Hidden audio elements - CRITICAL for mobile */}
-          <audio 
-            ref={remoteAudioRef} 
-            autoPlay 
-            playsInline
-            webkit-playsinline="true"
-            controls={false}
-            style={{ display: 'none' }}
-          />
-          <audio 
-            ref={localAudioRef} 
-            autoPlay 
-            playsInline 
-            muted
-            webkit-playsinline="true"
-            controls={false}
-            style={{ display: 'none' }}
-          />
+        {shouldShowActiveOverlay && (
+          <motion.div
+            key="active-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 flex items-center justify-center overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-[#03050a]">
+              <div className="absolute -top-40 -left-24 w-[28rem] h-[28rem] bg-fuchsia-600/20 blur-[160px]" />
+              <div className="absolute -bottom-48 -right-10 w-[25rem] h-[25rem] bg-blue-500/20 blur-[150px]" />
+            </div>
 
-          <div className="text-center px-6 w-full max-w-md">
-            {/* Avatar - Only show when speaker is ON */}
             <motion.div
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ repeat: Infinity, duration: 3 }}
-              className="mb-8 relative"
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 120, damping: 18 }}
+              className="relative z-10 w-full max-w-xl px-6"
             >
-              <div className="w-40 h-40 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-5xl font-bold mx-auto mb-4 ring-4 ring-white/30">
-                {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
+              <div className="rounded-[36px] border border-white/10 bg-white/5 backdrop-blur-3xl shadow-2xl px-10 py-12 text-center text-white space-y-8">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="relative">
+                    <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-sky-500 to-indigo-500 flex items-center justify-center text-4xl font-bold shadow-xl shadow-sky-500/30">
+                      {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                    <motion.div
+                      animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.2, 0.4] }}
+                      transition={{ repeat: Infinity, duration: 3 }}
+                      className="absolute inset-0 -m-4 rounded-[40px] border border-white/20"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-3xl font-semibold">{otherUser?.name || 'Unknown user'}</p>
+                    <p className="text-white/60 text-sm mt-1">
+                      {otherUserOnline ? 'Online now' : 'Offline'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap justify-center gap-3">
+                  <span className="px-4 py-1.5 rounded-full border border-white/20 text-white/80 text-sm">
+                    {statusLabel}
+                  </span>
+                  {callStatus === 'connected' && (
+                    <span className="px-4 py-1.5 rounded-full border border-white/20 text-white font-mono text-sm">
+                      {formatDuration(callDuration)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap justify-center gap-4">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleToggleMute}
+                    className={`${controlButtonBase} ${
+                      isMuted
+                        ? 'bg-red-500/80 text-white border-red-400/40'
+                        : 'bg-white/5 hover:bg-white/10 text-white'
+                    }`}
+                    title={isMuted ? 'Unmute microphone' : 'Mute microphone'}
+                  >
+                    {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleToggleSpeaker}
+                    className={`${controlButtonBase} ${
+                      isSpeakerOn
+                        ? 'bg-white/20 text-white ring-2 ring-white/30'
+                        : 'bg-white/5 hover:bg-white/10 text-white'
+                    }`}
+                    title={isSpeakerOn ? 'Switch to earpiece' : 'Switch to speaker'}
+                  >
+                    {isSpeakerOn ? <Volume2 className="w-6 h-6" /> : <VolumeX className="w-6 h-6" />}
+                  </motion.button>
+
+                  {(callStatus === 'connected' || callStatus === 'ringing') && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={onToggleMinimize}
+                      className={`${controlButtonBase} bg-white/5 hover:bg-white/10 text-white`}
+                      title="Minimize call"
+                    >
+                      <Minimize2 className="w-6 h-6" />
+                    </motion.button>
+                  )}
+
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={onEnd}
+                    className={`${controlButtonBase} bg-red-500/80 hover:bg-red-500 text-white border-red-400/40`}
+                    title="End call"
+                  >
+                    <PhoneOff className="w-6 h-6" />
+                  </motion.button>
+                </div>
+
+                {isMuted && (
+                  <p className="text-xs uppercase tracking-[0.2em] text-red-200">
+                    Microphone muted
+                  </p>
+                )}
               </div>
-              {/* Pulsing rings */}
-              <motion.div
-                animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="absolute inset-0 w-40 h-40 rounded-full bg-white/20 mx-auto"
-                style={{ marginTop: '-10rem', marginLeft: '50%', transform: 'translateX(-50%)' }}
-              />
             </motion.div>
-
-            {/* Name - Only show when speaker is ON */}
-            <h2 className="text-3xl font-bold mb-2 text-white">{otherUser?.name || 'Unknown'}</h2>
-            
-            {/* Call Status */}
-            <div className="mb-8">
-              {callStatus === 'calling' ? (
-                <p className="text-blue-100 text-lg">
-                  {otherUserOnline ? 'Ringing...' : 'Calling...'}
-                </p>
-              ) : callStatus === 'ringing' ? (
-                <p className="text-blue-100 text-lg">Ringing...</p>
-              ) : callStatus === 'connected' ? (
-                <p className="text-blue-100 text-lg font-mono">{formatDuration(callDuration)}</p>
-              ) : (
-                <p className="text-blue-100 text-lg">{callStatus}</p>
-              )}
-            </div>
-            
-            {/* Hidden ringtone */}
-            <audio
-              ref={ringtoneRef}
-              src="/ringtone.mp3"
-              preload="auto"
-              loop
-            />
-
-            {/* Control Buttons Bar - Always visible at bottom (like WhatsApp) */}
-            <div className="absolute bottom-0 left-0 right-0 bg-blue-600/95 backdrop-blur-sm px-4 py-3 flex justify-center items-center space-x-3 sm:space-x-4 z-50">
-              {/* Mute/Unmute */}
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={handleToggleMute}
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-lg transition-colors ${
-                  isMuted 
-                    ? 'bg-red-500 hover:bg-red-600 text-white' 
-                    : 'bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white'
-                }`}
-              >
-                {isMuted ? <MicOff className="w-5 h-5 sm:w-6 sm:h-6" /> : <Mic className="w-5 h-5 sm:w-6 sm:h-6" />}
-              </motion.button>
-
-              {/* Speaker/Earpiece Toggle - WhatsApp style */}
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={handleToggleSpeaker}
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-lg transition-all text-white ${
-                  isSpeakerOn 
-                    ? 'bg-white/40 hover:bg-white/50 backdrop-blur-sm ring-2 ring-white/50'
-                    : 'bg-white/15 hover:bg-white/25 backdrop-blur-sm'
-                }`}
-                title={isSpeakerOn ? 'Speaker' : 'Earpiece'}
-              >
-                <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />
-              </motion.button>
-
-              {/* Minimize Call Button - Show when connected or ringing */}
-              {(callStatus === 'connected' || callStatus === 'ringing') && (
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={onToggleMinimize}
-                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-lg transition-colors bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white"
-                  title="Minimize call"
-                >
-                  <Minimize2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                </motion.button>
-              )}
-
-              {/* End Call */}
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={onEnd}
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-500 flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors text-white"
-              >
-                <PhoneOff className="w-6 h-6 sm:w-8 sm:h-8" />
-              </motion.button>
-            </div>
-
-            {/* Status indicators */}
-            <div className="flex justify-center space-x-2 mt-4">
-              {isMuted && (
-                <span className="text-xs bg-red-500/50 px-3 py-1 rounded-full text-white">Muted</span>
-              )}
-              {callStatus === 'connected' && remoteStream && (
-                <span className="text-xs bg-green-500/50 px-3 py-1 rounded-full text-white">Connected</span>
-              )}
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
-    );
-  }
-
-  return null;
+    </>
+  );
 };
 
 export default VoiceCallUI;

@@ -916,8 +916,8 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
         </div>
       )}
 
-      {/* WhatsApp-style Voice Call UI - Only show when not minimized and call is active */}
-      {!isCallMinimized && isCallActive && (
+      {/* Call UI (audio controller stays mounted even when minimized) */}
+      {isCallActive && (
         <VoiceCallUI
           isCallActive={isCallActive}
           isCallIncoming={isCallIncoming}
