@@ -11,7 +11,6 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   const [remoteStream, setRemoteStream] = useState(null);
   const [isCallMinimized, setIsCallMinimized] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
-  const [callStartTime, setCallStartTime] = useState(null);
   
   // Track if answer was received (for status updates)
   const answerReceivedRef = useRef(false);
@@ -29,6 +28,12 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   const iceStateTimeoutRef = useRef(null);
   const connectionStateTimeoutRef = useRef(null);
   const callTimeoutRef = useRef(null);
+  const callStartTimeRef = useRef(null);
+  const callDurationRef = useRef(0);
+
+  useEffect(() => {
+    callDurationRef.current = callDuration;
+  }, [callDuration]);
   
   // Keep refs in sync with state
   useEffect(() => {
@@ -53,7 +58,7 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       if (isCallActive) {
         // End call when tab is closing
         if (socket && chatSessionId) {
-          const finalDuration = callStartTime ? Math.floor((Date.now() - callStartTime) / 1000) : callDuration;
+          const finalDuration = callStartTimeRef.current ? Math.floor((Date.now() - callStartTimeRef.current) / 1000) : callDurationRef.current;
           socket.emit('callEnded', { 
             chatSessionId, 
             duration: finalDuration,
@@ -87,7 +92,7 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       window.removeEventListener('unload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isCallActive, socket, chatSessionId, callStartTime, callDuration, currentUserId]);
+  }, [isCallActive, socket, chatSessionId, currentUserId]);
 
   // Handle network disconnection
   useEffect(() => {
@@ -112,7 +117,7 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     };
   }, [isCallActive]);
 
-  const endCall = useCallback(async (duration = null) => {
+  const endCall = useCallback(async ({ duration = null, emitSignal = true } = {}) => {
     // Prevent multiple cleanup calls
     if (isCleaningUpRef.current) {
       console.log('Cleanup already in progress');
@@ -139,7 +144,9 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     }
 
     // Calculate final call duration
-    const finalDuration = duration !== null ? duration : (callStartTime ? Math.floor((Date.now() - callStartTime) / 1000) : callDuration);
+    const finalDuration = duration !== null 
+      ? duration 
+      : (callStartTimeRef.current ? Math.floor((Date.now() - callStartTimeRef.current) / 1000) : callDurationRef.current);
     
     // Stop local stream
     if (localStreamRef.current) {
@@ -168,7 +175,7 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     }
 
     // Notify other party with call duration - ALWAYS send initiator info
-    if (socket && chatSessionId) {
+    if (emitSignal && socket && chatSessionId) {
       const initiator = callInitiatorRef.current || currentUserId;
       socket.emit('callEnded', { 
         chatSessionId, 
@@ -187,7 +194,8 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     setRemoteStream(null);
     setIsCallMinimized(false);
     setCallDuration(0);
-    setCallStartTime(null);
+    callStartTimeRef.current = null;
+    callDurationRef.current = 0;
     
     // Clear refs after a small delay to ensure cleanup completes
     setTimeout(() => {
@@ -197,7 +205,7 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       isCleaningUpRef.current = false;
       console.log('Call state fully reset, ready for new call');
     }, 100);
-  }, [socket, chatSessionId, currentUserId, callStartTime, callDuration]);
+  }, [socket, chatSessionId, currentUserId]);
 
   useEffect(() => {
     if (!socket || !chatSessionId) return;
@@ -278,7 +286,7 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       // If other party ended the call, use their duration if provided
       const duration = data?.duration !== undefined ? data.duration : null;
       // Immediately end the call
-      endCall(duration);
+      endCall({ duration, emitSignal: false });
     };
 
     socket.on('offer', handleOffer);
@@ -421,13 +429,15 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
           setIsCallIncoming(false);
           setIsCallOutgoing(false);
           const startTime = Date.now();
-          setCallStartTime(startTime);
+          callStartTimeRef.current = startTime;
           // Start call duration timer
           if (callDurationIntervalRef.current) {
             clearInterval(callDurationIntervalRef.current);
           }
           callDurationIntervalRef.current = setInterval(() => {
-            setCallDuration(Math.floor((Date.now() - startTime) / 1000));
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            callDurationRef.current = elapsed;
+            setCallDuration(elapsed);
           }, 1000);
           console.log('Call connected successfully');
         }
@@ -490,7 +500,8 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       setIsCallActive(true);
       setCallStatus('calling');
       setCallDuration(0);
-      setCallStartTime(null);
+      callDurationRef.current = 0;
+      callStartTimeRef.current = null;
       callInitiatorRef.current = currentUserId;
       answerReceivedRef.current = false;
 
@@ -583,9 +594,6 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   };
 
   const rejectCall = () => {
-    if (socket && chatSessionId) {
-      socket.emit('callEnded', { chatSessionId });
-    }
     endCall();
   };
 
