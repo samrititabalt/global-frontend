@@ -22,6 +22,8 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   const remoteStreamRef = useRef(null);
   const callInitiatorRef = useRef(null);
   const callDurationIntervalRef = useRef(null);
+  const iceStateTimeoutRef = useRef(null);
+  const connectionStateTimeoutRef = useRef(null);
 
   // WebRTC Configuration
   const rtcConfiguration = {
@@ -221,14 +223,13 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       };
 
       // Handle ICE connection state - with edge case handling
-      let iceStateTimeout = null;
       pc.oniceconnectionstatechange = () => {
         console.log('ICE connection state:', pc.iceConnectionState);
         
         // Clear any existing timeout
-        if (iceStateTimeout) {
-          clearTimeout(iceStateTimeout);
-          iceStateTimeout = null;
+        if (iceStateTimeoutRef.current) {
+          clearTimeout(iceStateTimeoutRef.current);
+          iceStateTimeoutRef.current = null;
         }
         
         if (pc.iceConnectionState === 'failed') {
@@ -240,12 +241,13 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
         } else if (pc.iceConnectionState === 'disconnected') {
           console.warn('ICE connection disconnected - waiting for reconnection');
           // Wait a bit before ending call in case it reconnects
-          iceStateTimeout = setTimeout(() => {
+          iceStateTimeoutRef.current = setTimeout(() => {
             if (peerConnectionRef.current && 
                 peerConnectionRef.current.iceConnectionState === 'disconnected') {
               console.log('ICE still disconnected after timeout, ending call');
               endCall();
             }
+            iceStateTimeoutRef.current = null;
           }, 5000); // Wait 5 seconds
         } else if (pc.iceConnectionState === 'closed') {
           console.log('ICE connection closed');
@@ -254,9 +256,9 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
           setCallStatus('ringing');
         } else if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
           // Clear timeout if connection is restored
-          if (iceStateTimeout) {
-            clearTimeout(iceStateTimeout);
-            iceStateTimeout = null;
+          if (iceStateTimeoutRef.current) {
+            clearTimeout(iceStateTimeoutRef.current);
+            iceStateTimeoutRef.current = null;
           }
         }
       };
@@ -264,30 +266,44 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       // Handle connection state changes - with edge case handling
       pc.onconnectionstatechange = () => {
         console.log('Peer connection state:', pc.connectionState);
+        
+        // Clear any existing connection state timeout
+        if (connectionStateTimeoutRef.current) {
+          clearTimeout(connectionStateTimeoutRef.current);
+          connectionStateTimeoutRef.current = null;
+        }
+        
         if (pc.connectionState === 'failed') {
           console.warn('Connection failed - attempting to reconnect');
           // Try to reconnect by creating new offer/answer
-          setTimeout(() => {
+          connectionStateTimeoutRef.current = setTimeout(() => {
             if (peerConnectionRef.current && 
                 peerConnectionRef.current.connectionState === 'failed') {
               console.log('Connection still failed, ending call');
               endCall();
             }
+            connectionStateTimeoutRef.current = null;
           }, 3000);
         } else if (pc.connectionState === 'disconnected') {
           console.warn('Connection disconnected - waiting for reconnection');
           // Wait before ending call
-          setTimeout(() => {
+          connectionStateTimeoutRef.current = setTimeout(() => {
             if (peerConnectionRef.current && 
                 peerConnectionRef.current.connectionState === 'disconnected') {
               console.log('Connection still disconnected, ending call');
               endCall();
             }
+            connectionStateTimeoutRef.current = null;
           }, 5000);
         } else if (pc.connectionState === 'closed') {
           console.log('Connection closed');
           endCall();
         } else if (pc.connectionState === 'connected') {
+          // Clear timeout if connection is restored
+          if (connectionStateTimeoutRef.current) {
+            clearTimeout(connectionStateTimeoutRef.current);
+            connectionStateTimeoutRef.current = null;
+          }
           setCallStatus('connected');
           setIsCallIncoming(false);
           setIsCallOutgoing(false);
@@ -457,8 +473,6 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   const toggleCallMinimize = () => {
     setIsCallMinimized(prev => !prev);
   };
-    setIsCallMinimized(prev => !prev);
-  };
 
   const endCall = async (duration = null) => {
     // Prevent multiple cleanup calls
@@ -468,10 +482,18 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
     }
     isCleaningUpRef.current = true;
 
-    // Stop call duration timer
+    // Clear all timers
     if (callDurationIntervalRef.current) {
       clearInterval(callDurationIntervalRef.current);
       callDurationIntervalRef.current = null;
+    }
+    if (iceStateTimeoutRef.current) {
+      clearTimeout(iceStateTimeoutRef.current);
+      iceStateTimeoutRef.current = null;
+    }
+    if (connectionStateTimeoutRef.current) {
+      clearTimeout(connectionStateTimeoutRef.current);
+      connectionStateTimeoutRef.current = null;
     }
 
     // Calculate final call duration
@@ -536,15 +558,43 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      // Clear all timers
       if (callDurationIntervalRef.current) {
         clearInterval(callDurationIntervalRef.current);
+        callDurationIntervalRef.current = null;
       }
+      if (iceStateTimeoutRef.current) {
+        clearTimeout(iceStateTimeoutRef.current);
+        iceStateTimeoutRef.current = null;
+      }
+      if (connectionStateTimeoutRef.current) {
+        clearTimeout(connectionStateTimeoutRef.current);
+        connectionStateTimeoutRef.current = null;
+      }
+      // Stop all media tracks
       if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => track.stop());
+        localStreamRef.current.getTracks().forEach(track => {
+          track.stop();
+          track.enabled = false;
+        });
+        localStreamRef.current = null;
       }
+      // Close peer connection
       if (peerConnectionRef.current) {
-        peerConnectionRef.current.close();
+        try {
+          peerConnectionRef.current.getSenders().forEach(sender => {
+            if (sender.track) {
+              sender.track.stop();
+            }
+          });
+          peerConnectionRef.current.close();
+        } catch (error) {
+          console.error('Error closing peer connection on unmount:', error);
+        }
+        peerConnectionRef.current = null;
       }
+      // Clear remote stream ref
+      remoteStreamRef.current = null;
     };
   }, []);
 
