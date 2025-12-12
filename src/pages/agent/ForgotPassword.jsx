@@ -16,7 +16,7 @@ const AgentForgotPassword = () => {
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/forgot-password', { email });
+      const response = await api.post('/auth/forgot-password', { email, role: 'agent' });
       if (response.data.success) {
         setSuccess(true);
       }
