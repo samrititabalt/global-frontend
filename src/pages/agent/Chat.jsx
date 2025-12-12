@@ -105,6 +105,7 @@ const AgentChat = () => {
         chatSessions={chatSessions}
         currentChatId={chatId}
         onNewChat={handleNewChat}
+        currentUser={user}
       />
       <div className="flex-1 flex flex-col">
         {chatSession ? (

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Search, MessageSquare, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const ChatSidebar = ({ chatSessions, currentChatId, onNewChat }) => {
+const ChatSidebar = ({ chatSessions, currentChatId, onNewChat, currentUser }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
@@ -32,9 +32,68 @@ const ChatSidebar = ({ chatSessions, currentChatId, onNewChat }) => {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const getChatTitle = (chat) => {
-    return chat.service?.name || chat.customer?.name || 'New Chat';
-  };
+  const colorPalette = useMemo(
+    () => ['bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500', 'bg-rose-500', 'bg-sky-500', 'bg-indigo-500'],
+    []
+  );
+
+  const getColorForKey = useCallback(
+    (key) => {
+      const safeKey = key || 'default';
+      let hash = 0;
+      for (let i = 0; i < safeKey.length; i += 1) {
+        hash = safeKey.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const index = Math.abs(hash) % colorPalette.length;
+      return colorPalette[index];
+    },
+    [colorPalette]
+  );
+
+  const getChatParticipant = useCallback(
+    (chat) => {
+      if (!currentUser) return chat.agent || chat.customer;
+      if (currentUser.role === 'customer') return chat.agent || null;
+      if (currentUser.role === 'agent') return chat.customer || null;
+      return chat.customer || chat.agent;
+    },
+    [currentUser]
+  );
+
+  const getChatTitle = useCallback(
+    (chat) => {
+      const participant = getChatParticipant(chat);
+      if (participant?.name) return participant.name;
+      return chat.service?.name || chat.customer?.name || chat.agent?.name || 'New Chat';
+    },
+    [getChatParticipant]
+  );
+
+  const renderAvatar = useCallback(
+    (chat) => {
+      const participant = getChatParticipant(chat);
+      if (participant?.avatar) {
+        return (
+          <img
+            src={participant.avatar}
+            alt={participant?.name || 'Participant'}
+            className="w-12 h-12 rounded-full object-cover border border-gray-100"
+          />
+        );
+      }
+      const label = getChatTitle(chat);
+      const initial = label?.charAt(0)?.toUpperCase() || 'U';
+      const colorClass = getColorForKey(
+        participant?._id || participant?.email || participant?.name || chat._id || label
+      );
+      return (
+        <div className={`w-12 h-12 rounded-full ${colorClass} flex items-center justify-center text-white font-semibold`}>
+          {initial}
+        </div>
+      );
+    },
+    [getChatParticipant, getChatTitle, getColorForKey]
+  );
 
   const getChatPreview = (chat) => {
     if (chat.lastMessage) {
@@ -129,12 +188,10 @@ const ChatSidebar = ({ chatSessions, currentChatId, onNewChat }) => {
                     isActive ? 'bg-blue-50 border-l-4 border-blue-500' : ''
                   }`}
                 >
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-                        {getChatTitle(chat).charAt(0)}
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0">
+                        {renderAvatar(chat)}
                       </div>
-                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <h3 className={`font-semibold truncate ${
