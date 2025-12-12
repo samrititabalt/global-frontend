@@ -1143,6 +1143,14 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                     <p className="text-sm font-medium text-gray-900 break-all">{otherUser.country}</p>
                   </div>
                 )}
+                {otherUserRole === 'agent' && (
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50/60 px-4 py-3">
+                    <p className="text-xs uppercase tracking-wide text-blue-600">Service speciality</p>
+                    <p className="text-sm font-semibold text-blue-900">
+                      {otherUser?.serviceCategory?.name || otherUser?.serviceCategoryName || 'Not assigned'}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end">

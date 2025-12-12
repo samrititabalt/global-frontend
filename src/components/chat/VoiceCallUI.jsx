@@ -358,63 +358,52 @@ const VoiceCallUI = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/70 backdrop-blur-sm px-4"
+            onMouseDown={(e) => e.stopPropagation()}
           >
-            <div className="absolute inset-0 bg-[#04070d]">
-              <div className="absolute -top-32 -left-10 w-96 h-96 bg-emerald-500/30 blur-[140px]" />
-              <div className="absolute -bottom-40 -right-10 w-96 h-96 bg-cyan-500/30 blur-[140px]" />
-            </div>
-
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 120, damping: 18 }}
-              className="relative z-10 w-full max-w-md px-6"
+              initial={{ scale: 0.92, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', stiffness: 160, damping: 18 }}
+              className="w-full max-w-md"
             >
-              <div className="rounded-[32px] border border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl text-center text-white px-8 py-10 space-y-8">
-                <div className="flex flex-col items-center gap-6 relative">
-                  <div className="absolute inset-0 -z-10">
-                    <div className="w-48 h-48 mx-auto bg-white/5 blur-[120px]" />
-                  </div>
+              <div className="rounded-3xl border border-gray-100 bg-white shadow-2xl px-8 py-10 space-y-8 text-center text-gray-900">
+                <div className="flex flex-col items-center gap-4">
                   <div className="relative">
-                    <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-emerald-400 to-sky-500 flex items-center justify-center text-4xl font-bold shadow-lg shadow-emerald-500/30">
+                    <div className="w-28 h-28 rounded-3xl bg-gray-900 text-white flex items-center justify-center text-4xl font-bold shadow-xl shadow-gray-300/60">
                       {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                     <motion.span
-                      animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.2, 1] }}
-                      transition={{ duration: 3, repeat: Infinity }}
-                      className="absolute inset-0 -m-3 rounded-[36px] border border-white/20"
+                      animate={{ opacity: [0.25, 0.5, 0.25], scale: [1, 1.1, 1] }}
+                      transition={{ duration: 2.5, repeat: Infinity }}
+                      className="absolute inset-0 -m-3 rounded-[32px] border border-gray-200"
                     />
                   </div>
                   <div>
                     <p className="text-3xl font-semibold">{otherUser?.name || 'Unknown user'}</p>
-                    <p className="text-white/70 text-lg mt-1">
-                      {otherUserOnline ? 'Ringing on their device' : 'Calling user'}
+                    <p className="text-sm text-gray-500 mt-1">
+                      {otherUserOnline ? 'Ringing on their device' : 'Calling'}
                     </p>
-                    <p className="text-white/50 text-sm mt-2">Incoming voice call</p>
+                    <p className="text-base text-gray-900 font-medium mt-3">Incoming voice call</p>
                   </div>
                 </div>
 
-                <div className="flex justify-center gap-6">
-                  <motion.button
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.95 }}
+                <div className="flex justify-center gap-4">
+                  <button
                     onClick={onReject}
-                    className={`${controlButtonBase} bg-red-500/80 hover:bg-red-500 text-white`}
+                    className="w-16 h-16 rounded-2xl bg-red-500 text-white flex items-center justify-center shadow-lg shadow-red-200 hover:bg-red-600 transition-colors"
                     title="Decline call"
                   >
-                    <PhoneOff className="w-6 h-6" />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.95 }}
+                    <PhoneOff className="w-7 h-7" />
+                  </button>
+                  <button
                     onClick={onAccept}
-                    className={`${controlButtonBase} bg-emerald-500 hover:bg-emerald-400 text-white`}
+                    className="w-16 h-16 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-200 hover:bg-emerald-600 transition-colors"
                     title="Answer call"
                   >
-                    <Phone className="w-6 h-6" />
-                  </motion.button>
+                    <Phone className="w-7 h-7" />
+                  </button>
                 </div>
               </div>
             </motion.div>
@@ -429,105 +418,85 @@ const VoiceCallUI = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 flex items-center justify-center overflow-hidden"
+            className="fixed inset-0 z-40 flex items-center justify-center bg-gray-950/60 backdrop-blur-sm px-4"
           >
-            <div className="absolute inset-0 bg-[#03050a]">
-              <div className="absolute -top-40 -left-24 w-[28rem] h-[28rem] bg-fuchsia-600/20 blur-[160px]" />
-              <div className="absolute -bottom-48 -right-10 w-[25rem] h-[25rem] bg-blue-500/20 blur-[150px]" />
-            </div>
-
             <motion.div
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 40, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 120, damping: 18 }}
-              className="relative z-10 w-full max-w-xl px-6"
+              initial={{ y: 30, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 30, opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 150, damping: 20 }}
+              className="relative z-10 w-full max-w-xl"
             >
-              <div className="rounded-[36px] border border-white/10 bg-white/5 backdrop-blur-3xl shadow-2xl px-10 py-12 text-center text-white space-y-8">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="relative">
-                    <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-sky-500 to-indigo-500 flex items-center justify-center text-4xl font-bold shadow-xl shadow-sky-500/30">
-                      {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
-                    </div>
-                    <motion.div
-                      animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.2, 0.4] }}
-                      transition={{ repeat: Infinity, duration: 3 }}
-                      className="absolute inset-0 -m-4 rounded-[40px] border border-white/20"
-                    />
+              <div className="rounded-[28px] border border-gray-100 bg-white shadow-2xl px-10 py-12 text-center text-gray-900 space-y-8">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-28 h-28 rounded-3xl bg-gray-900 text-white flex items-center justify-center text-4xl font-bold shadow-lg shadow-gray-300">
+                    {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
                   </div>
                   <div>
                     <p className="text-3xl font-semibold">{otherUser?.name || 'Unknown user'}</p>
-                    <p className="text-white/60 text-sm mt-1">
+                    <p className="text-sm text-gray-500 mt-1">
                       {otherUserOnline ? 'Online now' : 'Offline'}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap justify-center gap-3">
-                  <span className="px-4 py-1.5 rounded-full border border-white/20 text-white/80 text-sm">
+                <div className="flex flex-wrap justify-center gap-3 text-sm font-semibold">
+                  <span className="px-4 py-1.5 rounded-full bg-gray-100 text-gray-700">
                     {statusLabel}
                   </span>
                   {callStatus === 'connected' && (
-                    <span className="px-4 py-1.5 rounded-full border border-white/20 text-white font-mono text-sm">
+                    <span className="px-4 py-1.5 rounded-full bg-gray-900 text-white font-mono">
                       {formatDuration(callDuration)}
                     </span>
                   )}
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-4">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  <button
                     onClick={handleToggleMute}
-                    className={`${controlButtonBase} ${
+                    className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors ${
                       isMuted
-                        ? 'bg-red-500/80 text-white border-red-400/40'
-                        : 'bg-white/5 hover:bg-white/10 text-white'
+                        ? 'bg-red-50 border-red-200 text-red-600'
+                        : 'bg-white border-gray-200 text-gray-900 hover:border-gray-300'
                     }`}
                     title={isMuted ? 'Unmute microphone' : 'Mute microphone'}
                   >
                     {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-                  </motion.button>
+                  </button>
 
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  <button
                     onClick={handleToggleSpeaker}
-                    className={`${controlButtonBase} ${
+                    className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors ${
                       isSpeakerOn
-                        ? 'bg-white/20 text-white ring-2 ring-white/30'
-                        : 'bg-white/5 hover:bg-white/10 text-white'
+                        ? 'bg-blue-50 border-blue-200 text-blue-600'
+                        : 'bg-white border-gray-200 text-gray-900 hover:border-gray-300'
                     }`}
                     title={isSpeakerOn ? 'Switch to earpiece' : 'Switch to speaker'}
                   >
                     {isSpeakerOn ? <Volume2 className="w-6 h-6" /> : <VolumeX className="w-6 h-6" />}
-                  </motion.button>
+                  </button>
 
                   {(callStatus === 'connected' || callStatus === 'ringing') && (
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                    <button
                       onClick={onToggleMinimize}
-                      className={`${controlButtonBase} bg-white/5 hover:bg-white/10 text-white`}
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center border border-gray-200 text-gray-900 hover:border-gray-300"
                       title="Minimize call"
                     >
                       <Minimize2 className="w-6 h-6" />
-                    </motion.button>
+                    </button>
                   )}
 
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  <button
                     onClick={onEnd}
-                    className={`${controlButtonBase} bg-red-500/80 hover:bg-red-500 text-white border-red-400/40`}
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
                     title="End call"
                   >
                     <PhoneOff className="w-6 h-6" />
-                  </motion.button>
+                  </button>
                 </div>
 
                 {isMuted && (
-                  <p className="text-xs uppercase tracking-[0.2em] text-red-200">
+                  <p className="text-xs uppercase tracking-[0.2em] text-red-500">
                     Microphone muted
                   </p>
                 )}
