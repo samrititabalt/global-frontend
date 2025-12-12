@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Send,
   Paperclip,
@@ -16,6 +16,7 @@ import {
   Reply,
   CornerDownLeft,
   Maximize2,
+  History,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/axios';
@@ -61,6 +62,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const [showCallHistory, setShowCallHistory] = useState(false);
   const [callMuteState, setCallMuteState] = useState(false);
   const [callSpeakerState, setCallSpeakerState] = useState(true);
+  const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
   const speakerToggleRef = useRef(null); // Ref to store speaker toggle function from VoiceCallUI
   const messagesEndRef = useRef(null);
   const menuRef = useRef(null);
@@ -73,6 +75,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const audioRef = useRef(null);
   const editInputRef = useRef(null);
   const messageRefs = useRef({}); // Store refs for each message to enable scrolling
+  const headerMenuRef = useRef(null);
 
   // WebRTC for voice calls
   const {
@@ -100,6 +103,47 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const otherUser = chatSession?.customer?._id?.toString() === currentUser?._id?.toString()
     ? chatSession?.agent
     : chatSession?.customer;
+
+  const otherUserRole = useMemo(() => {
+    if (otherUser?.role) return otherUser.role;
+    if (!currentUser?.role) return '';
+    if (currentUser.role === 'customer') return 'agent';
+    if (currentUser.role === 'agent') return 'customer';
+    return '';
+  }, [otherUser, currentUser?.role]);
+
+  const colorPalette = useMemo(
+    () => ['bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500', 'bg-rose-500', 'bg-sky-500', 'bg-indigo-500'],
+    []
+  );
+
+  const getColorForUser = useCallback((user) => {
+    const key = user?._id || user?.id || user?.email || user?.name || 'default';
+    let hash = 0;
+    for (let i = 0; i < key.length; i += 1) {
+      hash = key.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % colorPalette.length;
+    return colorPalette[index];
+  }, [colorPalette]);
+
+  const renderAvatar = useCallback((user, sizeClasses = 'w-10 h-10', textClasses = 'text-base') => {
+    if (user?.avatar) {
+      return (
+        <img
+          src={user.avatar}
+          alt={user?.name || 'User'}
+          className={`${sizeClasses} rounded-full object-cover`}
+        />
+      );
+    }
+    const initial = user?.name?.charAt(0)?.toUpperCase() || 'U';
+    return (
+      <div className={`${sizeClasses} ${textClasses} ${getColorForUser(user)} rounded-full flex items-center justify-center text-white font-semibold`}>
+        {initial}
+      </div>
+    );
+  }, [getColorForUser]);
 
   useEffect(() => {
     if (!socket || !chatSession?._id || !currentUser?._id) return;
@@ -660,6 +704,21 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     };
   }, [openMenuMessageId]);
 
+  useEffect(() => {
+    if (!isHeaderMenuOpen) return;
+
+    const handleHeaderMenuOutside = (event) => {
+      if (headerMenuRef.current && !headerMenuRef.current.contains(event.target)) {
+        setIsHeaderMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleHeaderMenuOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleHeaderMenuOutside);
+    };
+  }, [isHeaderMenuOpen]);
+
   const toggleMessageMenu = (messageId) => {
     if (openMenuMessageId === messageId) {
       setOpenMenuMessageId(null);
@@ -674,32 +733,26 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-              {otherUser?.name?.charAt(0) || 'U'}
-            </div>
+            {renderAvatar(otherUser)}
             {otherUserOnline && (
               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
             )}
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">{otherUser?.name || 'User'}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-gray-900">{otherUser?.name || 'User'}</h3>
+              {otherUserRole === 'agent' && (
+                <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold uppercase tracking-wide">
+                  Agent
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-500">
               {otherUserOnline ? 'Online' : 'Offline'}
             </p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setShowCallHistory(!showCallHistory)}
-            className={`p-2 rounded-lg transition-colors ${
-              showCallHistory 
-                ? 'bg-blue-100 text-blue-600' 
-                : 'hover:bg-gray-100 text-gray-600'
-            }`}
-            title="Call history"
-          >
-            <Phone className="w-5 h-5" />
-          </button>
           {!isCallActive ? (
             <button
               onClick={startCall}
@@ -717,6 +770,40 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
               <PhoneOff className="w-5 h-5" />
             </button>
           )}
+          <div className="relative">
+            <button
+              onClick={() => setIsHeaderMenuOpen((prev) => !prev)}
+              className={`p-2 rounded-lg transition-colors ${
+                isHeaderMenuOpen ? 'bg-gray-100 text-gray-800' : 'hover:bg-gray-100 text-gray-600'
+              }`}
+              title="More options"
+            >
+              <MoreVertical className="w-5 h-5" />
+            </button>
+            <AnimatePresence>
+              {isHeaderMenuOpen && (
+                <motion.div
+                  ref={headerMenuRef}
+                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-20"
+                >
+                  <button
+                    onClick={() => {
+                      setShowCallHistory(true);
+                      setIsHeaderMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <History className="w-4 h-4 text-gray-500" />
+                    <span>Call history</span>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
@@ -749,8 +836,8 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
             >
               <div className={`flex items-end space-x-2 max-w-[70%] ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 {!isOwn && showAvatar && (
-                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
-                    {otherUser?.name?.charAt(0) || 'U'}
+                  <div className="flex-shrink-0">
+                    {renderAvatar(otherUser, 'w-8 h-8', 'text-sm')}
                   </div>
                 )}
                 <div 
