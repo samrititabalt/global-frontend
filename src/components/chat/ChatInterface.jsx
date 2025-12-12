@@ -64,6 +64,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const [callSpeakerState, setCallSpeakerState] = useState(true);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false);
   const speakerToggleRef = useRef(null); // Ref to store speaker toggle function from VoiceCallUI
   const messagesEndRef = useRef(null);
   const menuRef = useRef(null);
@@ -1094,7 +1095,10 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
-            onClick={() => setIsProfileModalOpen(false)}
+            onClick={() => {
+              setIsProfileModalOpen(false);
+              setIsAvatarPreviewOpen(false);
+            }}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -1105,12 +1109,17 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex flex-col items-center text-center space-y-4">
-                <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsAvatarPreviewOpen(true)}
+                  className="relative group focus:outline-none"
+                >
                   {renderAvatar(otherUser, 'w-24 h-24 text-2xl')}
                   {otherUserOnline && (
                     <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white bg-green-500"></span>
                   )}
-                </div>
+                  <span className="absolute inset-0 rounded-3xl bg-black/0 group-hover:bg-black/10 transition-colors"></span>
+                </button>
                 <div>
                   <div className="flex items-center justify-center gap-2">
                     <p className="text-2xl font-semibold text-gray-900">{otherUser?.name || 'User'}</p>
@@ -1156,11 +1165,57 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
               <div className="flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setIsProfileModalOpen(false)}
+                  onClick={() => {
+                    setIsProfileModalOpen(false);
+                    setIsAvatarPreviewOpen(false);
+                  }}
                   className="px-5 py-2 rounded-2xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition-colors"
                 >
                   Close
                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Avatar preview */}
+      <AnimatePresence>
+        {isAvatarPreviewOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
+            onClick={() => setIsAvatarPreviewOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 180, damping: 18 }}
+              className="relative max-w-xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setIsAvatarPreviewOpen(false)}
+                className="absolute -top-10 right-0 text-white/80 hover:text-white"
+              >
+                ✕
+              </button>
+              <div className="bg-white rounded-[32px] overflow-hidden shadow-2xl border border-gray-100">
+                {otherUser?.avatar ? (
+                  <img
+                    src={otherUser.avatar}
+                    alt={otherUser?.name || 'User'}
+                    className="w-full h-full object-cover max-h-[28rem]"
+                  />
+                ) : (
+                  <div className="w-full h-[28rem] flex items-center justify-center bg-gray-900 text-white text-6xl font-bold">
+                    {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>
