@@ -21,6 +21,12 @@ const Layout = ({ children, title }) => {
     return '/admin/dashboard';
   };
 
+  const getProfilePath = () => {
+    if (user.role === 'customer') return '/customer/profile';
+    if (user.role === 'agent') return '/agent/profile';
+    return '/admin/profile';
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
@@ -46,6 +52,12 @@ const Layout = ({ children, title }) => {
                   className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
                 >
                   Dashboard
+                </Link>
+                <Link 
+                  to={getProfilePath()} 
+                  className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                >
+                  Profile
                 </Link>
               </div>
             </div>

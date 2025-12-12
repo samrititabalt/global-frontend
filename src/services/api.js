@@ -39,6 +39,22 @@ export const authAPI = {
   getCurrentUser: () => api.get('/auth/me'),
 
   /**
+   * Update current user's profile
+   * @param {FormData} data - Profile fields/attachments
+   * @returns {Promise} Response with updated user
+   */
+  updateProfile: (data) =>
+    api.put('/auth/profile', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
+  /**
+   * Fetch services list (for dropdowns)
+   * @returns {Promise} Response with services
+   */
+  getServices: () => api.get('/auth/services'),
+
+  /**
    * Request password reset
    * @param {Object} data - { email }
    * @returns {Promise} Response

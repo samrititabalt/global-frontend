@@ -40,6 +40,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import WhyUsPage from './pages/WhyUsPage';
 import Plans from './pages/Plans';
+import Profile from './pages/profile/Profile';
 
 function App() {
   return (
@@ -83,6 +84,14 @@ function App() {
               } 
             />
             <Route 
+              path="/customer/profile" 
+              element={
+                <ProtectedRoute role="customer">
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route 
               path="/customer/chat/:chatId" 
               element={
                 <ProtectedRoute role="customer">
@@ -104,6 +113,14 @@ function App() {
               } 
             />
             <Route 
+              path="/agent/profile" 
+              element={
+                <ProtectedRoute role="agent">
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route 
               path="/agent/chat/:chatId" 
               element={
                 <ProtectedRoute role="agent">
@@ -123,6 +140,14 @@ function App() {
                   <AdminDashboard />
                 </ProtectedRoute>
               } 
+            />
+            <Route 
+              path="/admin/profile" 
+              element={
+                <ProtectedRoute role="admin">
+                  <Profile />
+                </ProtectedRoute>
+              }
             />
             <Route 
               path="/admin/services" 

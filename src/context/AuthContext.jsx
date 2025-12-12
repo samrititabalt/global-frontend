@@ -17,22 +17,39 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
 
   // Check if user is authenticated
+  const refreshUser = async () => {
+    if (!token) {
+      setUser(null);
+      return { success: false, message: 'Not authenticated' };
+    }
+
+    try {
+      const response = await authAPI.getCurrentUser();
+      setUser(response.data.user);
+      return { success: true, user: response.data.user };
+    } catch (error) {
+      localStorage.removeItem('token');
+      setToken(null);
+      setUser(null);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Session expired' 
+      };
+    }
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       if (token) {
-        try {
-          const response = await authAPI.getCurrentUser();
-          setUser(response.data.user);
-        } catch (error) {
-          localStorage.removeItem('token');
-          setToken(null);
-          setUser(null);
-        }
+        await refreshUser();
+      } else {
+        setUser(null);
       }
       setLoading(false);
     };
 
     checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const login = async (email, password) => {
@@ -83,6 +100,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    refreshUser,
     isAuthenticated: !!user
   };
 
