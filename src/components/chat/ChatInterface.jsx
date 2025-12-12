@@ -63,6 +63,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const [callMuteState, setCallMuteState] = useState(false);
   const [callSpeakerState, setCallSpeakerState] = useState(true);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const speakerToggleRef = useRef(null); // Ref to store speaker toggle function from VoiceCallUI
   const messagesEndRef = useRef(null);
   const menuRef = useRef(null);
@@ -731,7 +732,11 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     <div className="flex flex-col h-full bg-gray-50">
       {/* Chat Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+        <button
+          type="button"
+          onClick={() => setIsProfileModalOpen(true)}
+          className="flex items-center space-x-3 text-left hover:bg-gray-50 rounded-xl px-2 py-1 transition-colors"
+        >
           <div className="relative">
             {renderAvatar(otherUser)}
             {otherUserOnline && (
@@ -751,7 +756,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
               {otherUserOnline ? 'Online' : 'Offline'}
             </p>
           </div>
-        </div>
+        </button>
         <div className="flex items-center space-x-2">
           {!isCallActive ? (
             <button
@@ -949,8 +954,8 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
               exit={{ opacity: 0 }}
               className="flex items-center space-x-2"
             >
-              <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold">
-                {typingUser?.charAt(0) || 'U'}
+              <div className="flex-shrink-0">
+                {renderAvatar(otherUser, 'w-8 h-8', 'text-sm')}
               </div>
               <div className="bg-white rounded-2xl rounded-bl-sm px-4 py-2 border border-gray-200">
                 <div className="flex space-x-1">
@@ -1077,6 +1082,79 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                 currentUser={currentUser}
               />
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Profile Modal */}
+      <AnimatePresence>
+        {isProfileModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+            onClick={() => setIsProfileModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', stiffness: 180, damping: 20 }}
+              className="bg-white rounded-3xl shadow-2xl border border-gray-100 w-full max-w-md p-8 space-y-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="relative">
+                  {renderAvatar(otherUser, 'w-24 h-24 text-2xl')}
+                  {otherUserOnline && (
+                    <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white bg-green-500"></span>
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center justify-center gap-2">
+                    <p className="text-2xl font-semibold text-gray-900">{otherUser?.name || 'User'}</p>
+                    {otherUserRole === 'agent' && (
+                      <span className="px-3 py-0.5 text-xs font-semibold rounded-full bg-blue-50 text-blue-600 uppercase tracking-wide">
+                        Agent
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">{otherUserOnline ? 'Online now' : 'Offline'}</p>
+                </div>
+              </div>
+
+              <div className="grid gap-3">
+                {otherUser?.email && (
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                    <p className="text-xs uppercase tracking-wide text-gray-500">Email</p>
+                    <p className="text-sm font-medium text-gray-900 break-all">{otherUser.email}</p>
+                  </div>
+                )}
+                {otherUser?.phone && (
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                    <p className="text-xs uppercase tracking-wide text-gray-500">Phone</p>
+                    <p className="text-sm font-medium text-gray-900 break-all">{otherUser.phone}</p>
+                  </div>
+                )}
+                {otherUser?.country && (
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                    <p className="text-xs uppercase tracking-wide text-gray-500">Country</p>
+                    <p className="text-sm font-medium text-gray-900 break-all">{otherUser.country}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsProfileModalOpen(false)}
+                  className="px-5 py-2 rounded-2xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
