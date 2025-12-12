@@ -233,6 +233,27 @@ const VoiceCallUI = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const renderProfileAvatar = useCallback(
+    (sizeClasses = 'w-28 h-28', textClasses = 'text-4xl') => {
+      if (otherUser?.avatar) {
+        return (
+          <img
+            src={otherUser.avatar}
+            alt={otherUser?.name || 'User'}
+            className={`${sizeClasses} rounded-3xl object-cover border border-gray-200 shadow-lg shadow-gray-200/70`}
+          />
+        );
+      }
+      const initial = otherUser?.name?.charAt(0)?.toUpperCase() || 'U';
+      return (
+        <div className={`${sizeClasses} rounded-3xl bg-gray-900 text-white flex items-center justify-center ${textClasses} font-bold shadow-xl shadow-gray-300`}>
+          {initial}
+        </div>
+      );
+    },
+    [otherUser]
+  );
+
   const handleToggleMute = () => {
     if (localStream) {
       const newMuteState = !isMuted;
@@ -371,9 +392,7 @@ const VoiceCallUI = ({
               <div className="rounded-3xl border border-gray-100 bg-white shadow-2xl px-8 py-10 space-y-8 text-center text-gray-900">
                 <div className="flex flex-col items-center gap-4">
                   <div className="relative">
-                    <div className="w-28 h-28 rounded-3xl bg-gray-900 text-white flex items-center justify-center text-4xl font-bold shadow-xl shadow-gray-300/60">
-                      {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
-                    </div>
+                    {renderProfileAvatar('w-28 h-28', 'text-4xl')}
                     <motion.span
                       animate={{ opacity: [0.25, 0.5, 0.25], scale: [1, 1.1, 1] }}
                       transition={{ duration: 2.5, repeat: Infinity }}
@@ -429,9 +448,7 @@ const VoiceCallUI = ({
             >
               <div className="rounded-[28px] border border-gray-100 bg-white shadow-2xl px-10 py-12 text-center text-gray-900 space-y-8">
                 <div className="flex flex-col items-center gap-3">
-                  <div className="w-28 h-28 rounded-3xl bg-gray-900 text-white flex items-center justify-center text-4xl font-bold shadow-lg shadow-gray-300">
-                    {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
-                  </div>
+                  {renderProfileAvatar('w-28 h-28', 'text-4xl')}
                   <div>
                     <p className="text-3xl font-semibold">{otherUser?.name || 'Unknown user'}</p>
                     <p className="text-sm text-gray-500 mt-1">
