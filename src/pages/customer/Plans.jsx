@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import api from '../../utils/axios';
+import { PLAN_SLUG_TO_NAME, normalizePlanName } from '../../constants/planMappings';
 
 const CustomerPlans = () => {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
+  const [autoPurchaseTriggered, setAutoPurchaseTriggered] = useState(false);
 
   useEffect(() => {
     loadPlans();
@@ -96,7 +99,7 @@ const CustomerPlans = () => {
     }
   };
 
-  const handlePurchase = async (planId) => {
+  const handlePurchase = useCallback(async (planId) => {
     try {
       const response = await api.post('/payment/create', { planId });
       if (response.data.approvalUrl) {
@@ -106,7 +109,20 @@ const CustomerPlans = () => {
       console.error('Error creating payment:', error);
       alert(error.response?.data?.message || 'Payment creation failed');
     }
-  };
+  }, []);
+
+  const findPlanBySlug = useCallback(
+    (slug) => {
+      if (!slug || !plans?.length) return null;
+      const normalizedTarget = PLAN_SLUG_TO_NAME[slug]
+        ? normalizePlanName(PLAN_SLUG_TO_NAME[slug])
+        : normalizePlanName(slug);
+      return plans.find(
+        (plan) => normalizePlanName(plan.name) === normalizedTarget
+      );
+    },
+    [plans]
+  );
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-US', {
