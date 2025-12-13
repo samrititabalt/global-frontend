@@ -1,73 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import api from '../../utils/axios';
-import { PLAN_SLUG_TO_NAME, normalizePlanName } from '../../constants/planMappings';
 
 const CustomerPlans = () => {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const location = useLocation();
-  const [autoPurchaseTriggered, setAutoPurchaseTriggered] = useState(false);
-
-  const findPlanBySlug = useCallback(
-    (slug) => {
-      if (!slug || !plans?.length) return null;
-      const normalizedTarget = PLAN_SLUG_TO_NAME[slug]
-        ? normalizePlanName(PLAN_SLUG_TO_NAME[slug])
-        : normalizePlanName(slug);
-      return plans.find(
-        (plan) => normalizePlanName(plan.name) === normalizedTarget
-      );
-    },
-    [plans]
-  );
 
   useEffect(() => {
     loadPlans();
   }, []);
-
-  useEffect(() => {
-    if (loading || autoPurchaseTriggered) return;
-
-    const params = new URLSearchParams(location.search);
-    const querySlug = params.get('planSlug') || params.get('plan');
-    let storedSlug = null;
-
-    const storedSelection = localStorage.getItem('pendingPlanSelection');
-    if (storedSelection) {
-      try {
-        const parsed = JSON.parse(storedSelection);
-        storedSlug = parsed?.slug;
-      } catch (error) {
-        console.warn('Failed to parse pendingPlanSelection:', error);
-      }
-    }
-
-    const slugToUse = querySlug || storedSlug;
-    if (!slugToUse || !plans?.length) {
-      return;
-    }
-
-    const matchingPlan = findPlanBySlug(slugToUse);
-    setAutoPurchaseTriggered(true);
-
-    if (matchingPlan) {
-      localStorage.removeItem('pendingPlanSelection');
-      handlePurchase(matchingPlan._id);
-    } else {
-      console.warn('Unable to find plan for slug:', slugToUse);
-      localStorage.removeItem('pendingPlanSelection');
-    }
-  }, [
-    loading,
-    plans,
-    location.search,
-    autoPurchaseTriggered,
-    findPlanBySlug,
-    handlePurchase,
-  ]);
 
   const loadPlans = async () => {
     try {
@@ -112,7 +55,7 @@ const CustomerPlans = () => {
     }
   };
 
-  const handlePurchase = useCallback(async (planId) => {
+  const handlePurchase = async (planId) => {
     try {
       const response = await api.post('/payment/create', { planId });
       if (response.data.approvalUrl) {
@@ -122,7 +65,7 @@ const CustomerPlans = () => {
       console.error('Error creating payment:', error);
       alert(error.response?.data?.message || 'Payment creation failed');
     }
-  }, []);
+  };
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-US', {

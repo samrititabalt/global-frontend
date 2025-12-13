@@ -73,18 +73,6 @@ const CustomerSignup = () => {
 
       if (response.data.success) {
         localStorage.setItem('token', response.data.token);
-        const pendingSelectionRaw = localStorage.getItem('pendingPlanSelection');
-        if (pendingSelectionRaw) {
-          try {
-            const pendingSelection = JSON.parse(pendingSelectionRaw);
-            if (pendingSelection?.slug) {
-              navigate(`/customer/plans?planSlug=${pendingSelection.slug}&autoPurchase=true`);
-              return;
-            }
-          } catch (parseError) {
-            console.error('Failed to parse pendingPlanSelection:', parseError);
-          }
-        }
         navigate('/customer/plans');
       }
     } catch (err) {

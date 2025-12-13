@@ -10,25 +10,12 @@ const Plans = () => {
   const handleSelectPlan = (plan) => {
     // Redirect to customer signup or login if not authenticated
     const isAuthenticated = localStorage.getItem('token');
-    const selectedSlug = plan?.slug || plan?.id;
-
-    if (selectedSlug) {
-      localStorage.setItem(
-        'pendingPlanSelection',
-        JSON.stringify({
-          slug: selectedSlug,
-          name: plan?.name,
-          savedAt: Date.now(),
-        })
-      );
-    }
-
     if (isAuthenticated) {
       // If authenticated, go to payment
-      navigate(`/customer/plans?planSlug=${selectedSlug}&autoPurchase=true`);
+      navigate(`/customer/plans?plan=${plan.id}`);
     } else {
       // If not authenticated, go to signup
-      navigate('/customer/signup');
+      navigate('/customer/signup', { state: { selectedPlan: plan.id } });
     }
   };
 

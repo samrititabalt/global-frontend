@@ -1,9 +1,41 @@
 import React from 'react';
 import { ShoppingCart } from 'lucide-react';
-import { MARKETING_PLANS } from '../constants/planMappings';
 
 const PricingPlans = ({ onSelectPlan }) => {
-  const plans = MARKETING_PLANS;
+  const plans = [
+    {
+      id: 'trial',
+      name: 'BASIC TRIAL PACK',
+      price: 49.99,
+      hours: '5 hours / month',
+      features: [],
+      isPopular: false,
+    },
+    {
+      id: 'starter',
+      name: 'STARTER PACK',
+      price: 99.99,
+      hours: '20 hours / month',
+      features: [],
+      isPopular: false,
+    },
+    {
+      id: 'fulltime',
+      name: 'FULL TIME',
+      price: 3000,
+      hours: '160 hours / month',
+      features: ['Weekend Support'],
+      isPopular: true,
+    },
+    {
+      id: 'loadcash',
+      name: 'LOAD CASH MINIMUM',
+      price: 50.0,
+      hours: 'Minimum load (2 hours)',
+      features: [],
+      isPopular: false,
+    },
+  ];
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-US', {
@@ -66,7 +98,7 @@ const PricingPlans = ({ onSelectPlan }) => {
                             : 'text-gray-800'
                         }`}
                       >
-                        {plan.label || plan.name}
+                        {plan.name}
                       </h3>
                     </div>
 
