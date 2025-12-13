@@ -12,6 +12,47 @@ const CustomerPlans = () => {
     loadPlans();
   }, []);
 
+  useEffect(() => {
+    if (loading || autoPurchaseTriggered) return;
+
+    const params = new URLSearchParams(location.search);
+    const querySlug = params.get('planSlug') || params.get('plan');
+    let storedSlug = null;
+
+    const storedSelection = localStorage.getItem('pendingPlanSelection');
+    if (storedSelection) {
+      try {
+        const parsed = JSON.parse(storedSelection);
+        storedSlug = parsed?.slug;
+      } catch (error) {
+        console.warn('Failed to parse pendingPlanSelection:', error);
+      }
+    }
+
+    const slugToUse = querySlug || storedSlug;
+    if (!slugToUse || !plans?.length) {
+      return;
+    }
+
+    const matchingPlan = findPlanBySlug(slugToUse);
+    setAutoPurchaseTriggered(true);
+
+    if (matchingPlan) {
+      localStorage.removeItem('pendingPlanSelection');
+      handlePurchase(matchingPlan._id);
+    } else {
+      console.warn('Unable to find plan for slug:', slugToUse);
+      localStorage.removeItem('pendingPlanSelection');
+    }
+  }, [
+    loading,
+    plans,
+    location.search,
+    autoPurchaseTriggered,
+    findPlanBySlug,
+    handlePurchase,
+  ]);
+
   const loadPlans = async () => {
     try {
       const response = await api.get('/customer/plans');
