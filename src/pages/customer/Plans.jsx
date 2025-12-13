@@ -11,6 +11,19 @@ const CustomerPlans = () => {
   const location = useLocation();
   const [autoPurchaseTriggered, setAutoPurchaseTriggered] = useState(false);
 
+  const findPlanBySlug = useCallback(
+    (slug) => {
+      if (!slug || !plans?.length) return null;
+      const normalizedTarget = PLAN_SLUG_TO_NAME[slug]
+        ? normalizePlanName(PLAN_SLUG_TO_NAME[slug])
+        : normalizePlanName(slug);
+      return plans.find(
+        (plan) => normalizePlanName(plan.name) === normalizedTarget
+      );
+    },
+    [plans]
+  );
+
   useEffect(() => {
     loadPlans();
   }, []);
