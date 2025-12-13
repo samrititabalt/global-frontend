@@ -10,6 +10,7 @@ import ForgotPassword from './pages/customer/ForgotPassword';
 import ResetPassword from './pages/customer/ResetPassword';
 import CustomerPlans from './pages/customer/Plans';
 import CustomerPaymentSuccess from './pages/customer/PaymentSuccess';
+import CustomerPaymentCancel from './pages/customer/PaymentCancel';
 import CustomerDashboard from './pages/customer/Dashboard';
 import CustomerChat from './pages/customer/Chat';
 
@@ -74,6 +75,14 @@ function App() {
               element={
                 <ProtectedRoute role="customer">
                   <CustomerPaymentSuccess />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/payment/cancel" 
+              element={
+                <ProtectedRoute role="customer">
+                  <CustomerPaymentCancel />
                 </ProtectedRoute>
               } 
             />

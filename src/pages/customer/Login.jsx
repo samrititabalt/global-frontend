@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import PasswordInput from '../../components/form/PasswordInput';
 import SocialAuthButtons from '../../components/auth/SocialAuthButtons';
@@ -9,8 +9,28 @@ const CustomerLogin = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Handle OAuth callback with token
+  useEffect(() => {
+    const token = searchParams.get('token');
+    const oauthError = searchParams.get('error');
+    const oauthProvider = searchParams.get('oauth');
+
+    if (oauthError === 'oauth_failed') {
+      setError('OAuth authentication failed. Please try again or use email/password.');
+      // Clean URL
+      window.history.replaceState({}, '', '/customer/login');
+    } else if (token) {
+      // OAuth success - token is in URL
+      localStorage.setItem('token', token);
+      refreshUser().then(() => {
+        navigate('/customer/plans');
+      });
+    }
+  }, [searchParams, navigate, refreshUser]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
