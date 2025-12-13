@@ -243,6 +243,7 @@ const CustomerSignup = () => {
             </Link>
           </p>
         </div>
+        </div>
       </div>
     </div>
   );
