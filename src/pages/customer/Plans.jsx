@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import api from '../../utils/axios';
+import { normalizePlanSlug } from '../../utils/planHelpers';
 
 const CustomerPlans = () => {
   const [plans, setPlans] = useState([]);
@@ -31,10 +32,6 @@ const CustomerPlans = () => {
       
       console.log('Plans data to display:', plansData); // Debug log
       setPlans(plansData);
-      
-      if (plansData.length === 0) {
-        console.warn('No plans found in database. Run: node backend/scripts/createPlans.js');
-      }
     } catch (error) {
       console.error('Error loading plans:', error);
       console.error('Error response:', error.response?.data);
@@ -129,9 +126,11 @@ const CustomerPlans = () => {
         {/* Plans Grid */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-            {plans && plans.length > 0 ? plans.map((plan, index) => {
-              const isFullTime = plan.name === 'Full Time' || plan.name === 'FULL TIME';
-              const isLoadCash = plan.name === 'Load Cash Minimum' || plan.name === 'LOAD CASH MINIMUM';
+            {plans && plans.length > 0 ? plans.map((plan) => {
+              const planSlug = plan.slug || normalizePlanSlug(plan.name);
+              const isFullTime = planSlug === 'fulltime';
+              const isLoadCash = planSlug === 'loadcash';
+              const displayName = plan.marketingLabel || plan.name;
               
               return (
                 <div
@@ -151,7 +150,7 @@ const CustomerPlans = () => {
                   <div className="p-8">
                     <div className="mb-6">
                       <h3 className={`text-2xl font-bold text-gray-900 mb-2 ${isLoadCash ? 'font-extrabold' : ''}`}>
-                        {plan.name}
+                        {displayName}
                       </h3>
                       {plan.hoursPerMonth ? (
                         <p className="text-gray-600 text-sm mb-4">

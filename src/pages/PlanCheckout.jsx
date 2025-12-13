@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import Header from '../components/public/Header';
 import Footer from '../components/public/Footer';
-import { MARKETING_PLANS, normalizePlanName } from '../constants/planOptions';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/axios';
+import { enhancePlanWithSlug } from '../utils/planHelpers';
 
 const PlanCheckout = () => {
   const { planSlug } = useParams();
@@ -12,6 +12,9 @@ const PlanCheckout = () => {
   const { user, refreshUser } = useAuth();
   const isAuthenticated = !!user;
 
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [planLoading, setPlanLoading] = useState(true);
+  const [planError, setPlanError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,47 +25,38 @@ const PlanCheckout = () => {
   const [signupLoading, setSignupLoading] = useState(false);
   const [purchaseError, setPurchaseError] = useState('');
   const [purchaseLoading, setPurchaseLoading] = useState(false);
-  const [customerPlans, setCustomerPlans] = useState([]);
-  const [loadingPlans, setLoadingPlans] = useState(false);
+  useEffect(() => {
+    const fetchPlanDetails = async () => {
+      try {
+        setPlanLoading(true);
+        const response = await api.get('/public/plans');
+        const plans = (response.data?.plans || []).map(enhancePlanWithSlug);
+        const plan = plans.find((p) => p.slug === planSlug);
+        if (!plan) {
+          setPlanError('Plan not found.');
+        } else {
+          setSelectedPlan(plan);
+          setPlanError('');
+        }
+      } catch (error) {
+        console.error('Failed to load plan details:', error);
+        setPlanError('Unable to load plan details right now. Please try again later.');
+        setSelectedPlan(null);
+      } finally {
+        setPlanLoading(false);
+      }
+    };
 
-  const marketingPlan = useMemo(
-    () => MARKETING_PLANS.find((plan) => plan.slug === planSlug),
-    [planSlug]
-  );
+    fetchPlanDetails();
+  }, [planSlug]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchCustomerPlans();
-    }
-  }, [isAuthenticated]);
-
-  const fetchCustomerPlans = async () => {
-    setLoadingPlans(true);
-    try {
-      const response = await api.get('/customer/plans');
-      const data = Array.isArray(response.data)
-        ? response.data
-        : response.data?.plans || [];
-      setCustomerPlans(data);
-    } catch (error) {
-      console.error('Error fetching customer plans:', error);
-      setPurchaseError(error.response?.data?.message || 'Unable to load plan details. Please try again after logging in.');
-    } finally {
-      setLoadingPlans(false);
-    }
-  };
-
-  const resolveBackendPlan = () => {
-    if (!marketingPlan) return null;
-    const normalizedTarget = normalizePlanName(marketingPlan.name);
-    return customerPlans.find(
-      (plan) => normalizePlanName(plan.name) === normalizedTarget
-    );
-  };
+    setPurchaseError('');
+  }, [planSlug]);
 
   const startCheckout = async () => {
     setPurchaseError('');
-    if (!marketingPlan) return;
+    if (!selectedPlan?._id) return;
 
     if (!isAuthenticated) {
       setPurchaseError('Please complete the signup form or log in to continue.');
@@ -71,17 +65,7 @@ const PlanCheckout = () => {
 
     try {
       setPurchaseLoading(true);
-      if (!customerPlans.length && !loadingPlans) {
-        await fetchCustomerPlans();
-      }
-
-      const backendPlan = resolveBackendPlan();
-      if (!backendPlan?._id) {
-        setPurchaseError('Selected plan is not currently available. Please contact support.');
-        return;
-      }
-
-      const response = await api.post('/payment/create', { planId: backendPlan._id });
+      const response = await api.post('/payment/create', { planId: selectedPlan._id });
       if (response.data.approvalUrl) {
         window.location.href = response.data.approvalUrl;
       } else {
@@ -113,7 +97,7 @@ const PlanCheckout = () => {
       if (response.data.success) {
         localStorage.setItem('token', response.data.token);
         await refreshUser();
-        startCheckout();
+        await startCheckout();
       }
     } catch (error) {
       console.error('Signup error:', error);
@@ -123,11 +107,22 @@ const PlanCheckout = () => {
     }
   };
 
-  if (!marketingPlan) {
+  if (planLoading) {
     return (
       <div className="min-h-screen bg-[#0b0b0f] text-white flex items-center justify-center">
-        <div className="text-center px-6">
-          <p className="text-2xl font-semibold mb-4">Plan not found</p>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-300">Loading plan details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!selectedPlan || planError) {
+    return (
+      <div className="min-h-screen bg-[#0b0b0f] text-white flex items-center justify-center px-6 text-center">
+        <div>
+          <p className="text-2xl font-semibold mb-4">{planError || 'Plan not found'}</p>
           <button
             onClick={() => navigate('/plans')}
             className="px-4 py-2 rounded-full bg-white text-gray-900 font-semibold"
@@ -154,7 +149,7 @@ const PlanCheckout = () => {
                   You are logged in as <span className="font-semibold">{user?.name || user?.email}</span>.
                 </p>
                 <button
-                  disabled={purchaseLoading || loadingPlans}
+                  disabled={purchaseLoading}
                   onClick={startCheckout}
                   className="w-full py-3 rounded-full bg-white text-gray-900 font-semibold hover:bg-gray-100 disabled:opacity-60"
                 >
@@ -218,7 +213,7 @@ const PlanCheckout = () => {
                   disabled={signupLoading}
                   className="w-full py-3 rounded-full bg-white text-gray-900 font-semibold hover:bg-gray-100 disabled:opacity-60"
                 >
-                  {signupLoading ? 'Creating account...' : `Continue with ${marketingPlan.label}`}
+                  {signupLoading ? 'Creating account...' : `Continue with ${selectedPlan?.marketingLabel || selectedPlan?.name || 'this plan'}`}
                 </button>
                 <p className="text-sm text-gray-400 text-center">
                   Already a customer?{' '}
@@ -234,22 +229,30 @@ const PlanCheckout = () => {
             <p className="uppercase text-sm tracking-[0.3em] text-gray-400 mb-4">
               Horatio plans
             </p>
-            <h1 className="text-4xl font-bold mb-2">{marketingPlan.label}</h1>
-            <p className="text-gray-300 mb-6">{marketingPlan.description}</p>
+            <h1 className="text-4xl font-bold mb-2">{selectedPlan?.marketingLabel || selectedPlan?.name}</h1>
+            <p className="text-gray-300 mb-6">
+              {selectedPlan?.marketingSummary || selectedPlan?.description}
+            </p>
 
             <div className="mb-8">
               <span className="text-5xl font-extrabold text-white">
-                ${marketingPlan.price.toLocaleString()}
+                ${Number(selectedPlan?.price || 0).toLocaleString()}
               </span>
               <span className="ml-2 text-gray-400 text-lg">/ month</span>
-              <p className="text-gray-400 mt-2">{marketingPlan.hours}</p>
+              {selectedPlan?.hoursPerMonth && (
+                <p className="text-gray-400 mt-2">{selectedPlan.hoursPerMonth} hours / month</p>
+              )}
             </div>
 
             <div className="bg-white/5 rounded-2xl p-6 mb-8">
               <p className="text-sm text-gray-400 mb-2">What’s included</p>
               <ul className="space-y-3 text-gray-100">
-                {marketingPlan.features.map((feature) => (
-                  <li key={feature} className="flex items-start">
+                {(
+                  (Array.isArray(selectedPlan?.marketingFeatures) && selectedPlan.marketingFeatures.length > 0
+                    ? selectedPlan.marketingFeatures
+                    : selectedPlan?.bonusFeatures) || []
+                ).map((feature, idx) => (
+                  <li key={`${feature}-${idx}`} className="flex items-start">
                     <span className="text-emerald-400 mr-3 mt-1">✓</span>
                     <span>{feature}</span>
                   </li>
@@ -259,9 +262,9 @@ const PlanCheckout = () => {
 
             <div className="bg-[#1b1b1f] rounded-2xl p-6 border border-white/10">
               <p className="text-sm text-gray-400 uppercase tracking-wide mb-2">
-                Why teams choose {marketingPlan.label}
+                Why teams choose {selectedPlan?.marketingLabel || selectedPlan?.name}
               </p>
-              <p className="text-gray-100">{marketingPlan.highlight}</p>
+              <p className="text-gray-100">{selectedPlan?.marketingHighlight}</p>
             </div>
           </section>
         </div>
