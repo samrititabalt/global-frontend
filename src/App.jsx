@@ -61,7 +61,7 @@ function App() {
             <Route path="/customer/login" element={<CustomerLogin />} />
             <Route path="/customer/signup" element={<CustomerSignup />} />
             <Route path="/customer/forgot-password" element={<ForgotPassword />} />
-            <Route path="/customer/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/customer/reset-password" element={<ResetPassword />} />
             <Route 
               path="/customer/plans" 
               element={
@@ -114,7 +114,7 @@ function App() {
             {/* Agent Routes */}
             <Route path="/agent/login" element={<AgentLogin />} />
             <Route path="/agent/forgot-password" element={<AgentForgotPassword />} />
-            <Route path="/agent/reset-password/:token" element={<AgentResetPassword />} />
+            <Route path="/agent/reset-password" element={<AgentResetPassword />} />
             <Route 
               path="/agent/dashboard" 
               element={
@@ -143,7 +143,7 @@ function App() {
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
-            <Route path="/admin/reset-password/:token" element={<AdminResetPassword />} />
+            <Route path="/admin/reset-password" element={<AdminResetPassword />} />
             <Route 
               path="/admin/dashboard" 
               element={

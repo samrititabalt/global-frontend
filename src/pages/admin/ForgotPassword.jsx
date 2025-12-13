@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail } from 'lucide-react';
+import { Mail, CheckCircle } from 'lucide-react';
 import api from '../../utils/axios';
 
 const AdminForgotPassword = () => {
@@ -16,82 +16,110 @@ const AdminForgotPassword = () => {
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/forgot-password', { email, role: 'admin' });
+      const response = await api.post('/auth/forgot-password', { 
+        email, 
+        role: 'admin' 
+      });
       if (response.data.success) {
         setSuccess(true);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send reset email');
+      setError(err.response?.data?.message || 'Failed to send reset code');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
-        <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-            <Mail className="w-8 h-8 text-purple-600" />
-          </div>
-          <h1 className="text-3xl font-bold text-purple-600 mb-2">Forgot Password</h1>
-          <p className="text-gray-600">Enter your email to receive a password reset link</p>
-        </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
-        )}
-
-        {success ? (
-          <div className="text-center">
-            <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-              <p className="font-semibold">Email sent successfully!</p>
-              <p className="text-sm mt-2">
-                Please check your email for the password reset link. The link will expire in 10 minutes.
-              </p>
+    <div className="relative min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 py-16 px-4 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 opacity-60">
+        <div className="absolute -top-32 -right-8 w-72 h-72 bg-purple-200 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-pink-100 rounded-full blur-3xl"></div>
+      </div>
+      <div className="relative z-10 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white/80 border border-white/60 backdrop-blur-xl rounded-3xl shadow-2xl p-10">
+          <div className="text-center mb-8">
+            <div className="mx-auto w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-6">
+              <Mail className="w-10 h-10 text-purple-600" />
             </div>
+            <p className="text-sm font-semibold text-purple-600 tracking-[0.3em] uppercase">
+              Password Recovery
+            </p>
+            <h1 className="text-4xl font-bold text-gray-900 mt-2 mb-3">Forgot Password?</h1>
+            <p className="text-gray-600">
+              Enter your email to receive a verification code
+            </p>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          )}
+
+          {success ? (
+            <div className="text-center space-y-6">
+              <div className="p-6 bg-green-50 border border-green-200 rounded-xl">
+                <div className="flex items-center justify-center mb-3">
+                  <CheckCircle className="w-12 h-12 text-green-600" />
+                </div>
+                <p className="font-semibold text-green-900 mb-2">Verification Code Sent!</p>
+                <p className="text-sm text-green-700 mb-4">
+                  We've sent a 6-digit verification code to your email address.
+                </p>
+                <p className="text-sm text-green-600">
+                  Please check your inbox (and spam folder) and enter the code on the next page.
+                </p>
+              </div>
+              <div className="space-y-3">
+                <Link
+                  to="/admin/reset-password"
+                  className="block w-full bg-gray-900 text-white py-3 px-4 rounded-xl hover:bg-gray-800 font-semibold transition"
+                >
+                  Enter Verification Code
+                </Link>
+                <Link
+                  to="/admin/login"
+                  className="block text-purple-600 hover:underline text-sm"
+                >
+                  Back to Login
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Enter your email"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gray-900 text-white py-3 px-4 rounded-xl hover:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-200 disabled:opacity-60 transition font-semibold"
+              >
+                {loading ? 'Sending Code...' : 'Send Verification Code'}
+              </button>
+            </form>
+          )}
+
+          <div className="mt-8 text-center">
             <Link
               to="/admin/login"
-              className="text-purple-600 hover:underline"
+              className="text-purple-600 hover:underline text-sm font-medium"
             >
-              Back to Login
+              Remember your password? Sign in
             </Link>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Enter your email"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
-            >
-              {loading ? 'Sending...' : 'Send Reset Link'}
-            </button>
-          </form>
-        )}
-
-        <div className="mt-6 text-center">
-          <Link
-            to="/admin/login"
-            className="text-purple-600 hover:underline text-sm"
-          >
-            Back to Login
-          </Link>
         </div>
       </div>
     </div>
@@ -99,4 +127,3 @@ const AdminForgotPassword = () => {
 };
 
 export default AdminForgotPassword;
-
