@@ -116,6 +116,7 @@ const CustomerLogin = () => {
           </p>
         </div>
       </div>
+      </div>
     </div>
   );
 };

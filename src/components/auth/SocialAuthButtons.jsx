@@ -1,7 +1,7 @@
 import React from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { SiMicrosoft, SiApple } from 'react-icons/si';
-import { redirectToProvider } from '../../utils/socialAuth';
+import { getProviderUrl } from '../../utils/socialAuth';
 
 const providers = [
   {
@@ -29,18 +29,27 @@ const providers = [
 const SocialAuthButtons = () => {
   return (
     <div className="space-y-3">
-      {providers.map(({ id, label, Icon, theme, iconClass }) => (
-        <button
-          key={id}
-          type="button"
-          onClick={() => redirectToProvider(id)}
-          className={`w-full flex items-center justify-center gap-3 rounded-xl border px-4 py-3 font-semibold text-sm transition hover:translate-y-[-1px] hover:shadow-lg ${theme}`}
-          aria-label={label}
-        >
-          <Icon className={`h-5 w-5 ${iconClass || ''}`} />
-          <span>{label}</span>
-        </button>
-      ))}
+      {providers.map(({ id, label, Icon, theme, iconClass }) => {
+        const providerUrl = getProviderUrl(id);
+        const disabled = !providerUrl;
+
+        return (
+          <a
+            key={id}
+            href={providerUrl || '#'}
+            onClick={disabled ? (e) => e.preventDefault() : undefined}
+            className={`w-full flex items-center justify-center gap-3 rounded-xl border px-4 py-3 font-semibold text-sm transition ${
+              disabled ? 'cursor-not-allowed opacity-60' : 'hover:translate-y-[-1px] hover:shadow-lg'
+            } ${theme}`}
+            aria-label={label}
+            aria-disabled={disabled}
+            rel="noreferrer"
+          >
+            <Icon className={`h-5 w-5 ${iconClass || ''}`} />
+            <span>{label}</span>
+          </a>
+        );
+      })}
     </div>
   );
 };

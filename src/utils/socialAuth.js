@@ -24,8 +24,10 @@ export const SOCIAL_AUTH_URLS = {
   apple: import.meta.env.VITE_APPLE_AUTH_URL || buildDefaultAuthUrl('apple'),
 };
 
+export const getProviderUrl = (provider) => SOCIAL_AUTH_URLS[provider];
+
 export const redirectToProvider = (provider) => {
-  const targetUrl = SOCIAL_AUTH_URLS[provider];
+  const targetUrl = getProviderUrl(provider);
   if (!targetUrl) {
     console.warn(`Missing auth URL for provider: ${provider}`);
     return;
