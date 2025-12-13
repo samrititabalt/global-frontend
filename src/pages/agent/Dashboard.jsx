@@ -185,6 +185,7 @@ const AgentDashboard = () => {
             )}
           </div>
         </div>
+        </div>
       </div>
     </Layout>
   );
