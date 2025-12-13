@@ -40,6 +40,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import WhyUsPage from './pages/WhyUsPage';
 import Plans from './pages/Plans';
+import PlanCheckout from './pages/PlanCheckout';
 import Profile from './pages/profile/Profile';
 
 function App() {
@@ -53,6 +54,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/why-us" element={<WhyUsPage />} />
             <Route path="/plans" element={<Plans />} />
+            <Route path="/plans/:planSlug" element={<PlanCheckout />} />
 
             {/* Customer Routes */}
             <Route path="/customer/login" element={<CustomerLogin />} />

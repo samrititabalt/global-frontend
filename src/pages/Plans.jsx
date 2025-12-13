@@ -12,10 +12,10 @@ const Plans = () => {
     const isAuthenticated = localStorage.getItem('token');
     if (isAuthenticated) {
       // If authenticated, go to payment
-      navigate(`/customer/plans?plan=${plan.id}`);
+      navigate(`/plans/${plan.slug}`);
     } else {
       // If not authenticated, go to signup
-      navigate('/customer/signup', { state: { selectedPlan: plan.id } });
+      navigate(`/plans/${plan.slug}`);
     }
   };
 
