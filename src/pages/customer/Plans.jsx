@@ -131,6 +131,9 @@ const CustomerPlans = () => {
               const isFullTime = planSlug === 'fulltime';
               const isLoadCash = planSlug === 'loadcash';
               const displayName = plan.marketingLabel || plan.name;
+              const includedHours = plan.hoursPerMonth || plan.tokens;
+              const hasHoursValue = includedHours !== undefined && includedHours !== null && includedHours !== '';
+              const formattedHours = hasHoursValue ? Number(includedHours).toLocaleString() : null;
               
               return (
                 <div
@@ -188,12 +191,14 @@ const CustomerPlans = () => {
                       </div>
                     )}
 
-                    <div className="mb-6">
-                      <p className="text-sm text-gray-600 mb-1">Includes</p>
-                      <p className="text-gray-900 font-semibold">
-                        {plan.tokens.toLocaleString()} tokens
-                      </p>
-                    </div>
+                    {formattedHours && (
+                      <div className="mb-6">
+                        <p className="text-sm text-gray-600 mb-1">Included Hours</p>
+                        <p className="text-gray-900 font-semibold">
+                          {formattedHours} hrs
+                        </p>
+                      </div>
+                    )}
 
                     <button
                       onClick={() => handlePurchase(plan._id)}

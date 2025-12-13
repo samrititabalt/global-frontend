@@ -258,8 +258,8 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     socket.on('messageDeleted', handleMessageDeleted);
     socket.on('error', handleError);
     socket.on('tokenBalanceUpdate', (data) => {
-      // Update token balance if needed
-      console.log('Token balance updated:', data);
+      // Backend event name still uses "token" but represents available service hours
+      console.log('Service hours updated:', data);
     });
 
     return () => {

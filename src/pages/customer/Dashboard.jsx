@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { FiMessageSquare, FiClock, FiCheckCircle } from 'react-icons/fi';
 import { customerAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const CustomerDashboard = () => {
   const [services, setServices] = useState([]);
@@ -11,6 +12,8 @@ const CustomerDashboard = () => {
   const [selectedSubService, setSelectedSubService] = useState('');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const availableHours = Number(user?.tokenBalance ?? 0);
 
   useEffect(() => {
     loadData();
@@ -78,11 +81,52 @@ const CustomerDashboard = () => {
 
   return (
     <Layout title="Customer Dashboard">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="space-y-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-gradient-to-r from-gray-900 via-gray-800 to-blue-900 text-white rounded-3xl p-8 shadow-2xl">
+            <p className="text-sm uppercase tracking-[0.3em] text-blue-200 font-semibold">Overview</p>
+            <h2 className="text-4xl font-bold mt-3 mb-4">Service hours available</h2>
+            <div className="text-5xl font-extrabold tracking-tight">
+              {availableHours.toLocaleString()} hrs
+            </div>
+            <p className="mt-4 text-gray-200 max-w-2xl">
+              Request a service and connect with your dedicated team instantly. Running low on hours?
+              You can top up anytime with a new plan.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                onClick={() => document.getElementById('service-selection')?.scrollIntoView({ behavior: 'smooth' })}
+                className="px-6 py-3 rounded-full bg-white text-gray-900 font-semibold hover:bg-gray-100 transition"
+              >
+                Request a service
+              </button>
+              <Link
+                to="/customer/plans"
+                className="px-6 py-3 rounded-full border border-white/40 text-white font-semibold hover:bg-white/10 transition"
+              >
+                Add more hours
+              </Link>
+            </div>
+          </div>
+          <div className="bg-white/80 border border-white/60 rounded-3xl p-6 shadow-xl backdrop-blur">
+            <p className="text-sm font-semibold text-gray-500 uppercase tracking-[0.3em]">Quick stats</p>
+            <div className="mt-6 space-y-4">
+              <div>
+                <p className="text-3xl font-bold text-gray-900">{services.length}</p>
+                <p className="text-sm text-gray-500">Services available</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-gray-900">{chatSessions.length}</p>
+                <p className="text-sm text-gray-500">Chat sessions</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Service Selection */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+          <div id="service-selection" className="lg:col-span-2">
+            <div className="bg-white/80 rounded-3xl shadow-xl border border-white/60 p-8 backdrop-blur">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Request a Service</h2>
               
               {!selectedService ? (
@@ -91,7 +135,7 @@ const CustomerDashboard = () => {
                     <button
                       key={service._id}
                       onClick={() => handleServiceSelect(service)}
-                      className="p-6 border-2 border-gray-200 rounded-xl hover:border-primary-800 hover:bg-gray-50 transition-all text-left group"
+                      className="p-6 border-2 border-gray-200 rounded-xl hover:border-blue-500/60 hover:bg-blue-50/30 transition-all text-left group"
                     >
                       <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-primary-800 transition-colors">{service.name}</h3>
                       <p className="text-sm text-gray-600">{service.description}</p>
@@ -149,7 +193,7 @@ const CustomerDashboard = () => {
           </div>
 
           {/* Chat History */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+            <div className="bg-white/80 rounded-3xl shadow-xl border border-white/60 p-8 backdrop-blur">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Chat History</h2>
             <div className="space-y-3">
               {chatSessions.length === 0 ? (

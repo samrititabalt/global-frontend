@@ -50,7 +50,7 @@ const AdminTransactions = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tokens</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service Hours</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -69,7 +69,7 @@ const AdminTransactions = () => {
                   ${transaction.amount}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {transaction.tokens}
+                  {Number(transaction.tokens ?? 0).toLocaleString()} hrs
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 py-1 text-xs rounded-full ${

@@ -72,32 +72,31 @@ const AgentDashboard = () => {
 
   return (
     <Layout title="Agent Dashboard">
-      {/* Status Toggle */}
-      <div className="mb-6 bg-white rounded-lg shadow p-4">
-        <div className="flex items-center justify-between">
+      <div className="space-y-8">
+        <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-blue-900 text-white rounded-3xl p-8 shadow-2xl flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
-            <h3 className="font-semibold text-gray-900">Online Status</h3>
-            <p className="text-sm text-gray-600">
-              {isOnline ? 'You are online and available' : 'You are offline'}
+            <p className="text-sm uppercase tracking-[0.3em] text-blue-200 font-semibold">Status</p>
+            <h2 className="text-3xl font-bold mt-3">You are currently {isOnline ? 'online' : 'offline'}</h2>
+            <p className="text-gray-200 mt-2 max-w-2xl">
+              Stay online to instantly accept pending requests and keep chats moving. Toggle your availability at any time.
             </p>
           </div>
           <button
             onClick={handleToggleStatus}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+            className={`flex items-center justify-center gap-3 px-6 py-3 rounded-full text-base font-semibold transition shadow-lg ${
               isOnline
-                ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                ? 'bg-white text-gray-900 hover:bg-gray-100'
+                : 'bg-blue-600 text-white hover:bg-blue-500'
             }`}
           >
             {isOnline ? <FiToggleRight className="h-6 w-6" /> : <FiToggleLeft className="h-6 w-6" />}
-            <span>{isOnline ? 'Online' : 'Offline'}</span>
+            <span>{isOnline ? 'Go Offline' : 'Go Online'}</span>
           </button>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Pending Requests */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white/80 rounded-3xl shadow-xl border border-white/60 p-6 backdrop-blur">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold flex items-center space-x-2">
               <FiClock className="text-yellow-600" />
@@ -120,7 +119,7 @@ const AgentDashboard = () => {
                   <p className="text-xs text-gray-600 mb-2">{request.service?.name}</p>
                   <button
                     onClick={() => handleAcceptRequest(request._id)}
-                    className="w-full bg-primary-600 text-white py-1 px-3 rounded text-sm hover:bg-primary-700"
+                    className="w-full bg-gray-900 text-white py-2 px-3 rounded-lg text-sm hover:bg-gray-800 transition"
                   >
                     Accept
                   </button>
@@ -131,7 +130,7 @@ const AgentDashboard = () => {
         </div>
 
         {/* Active Chats */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white/80 rounded-3xl shadow-xl border border-white/60 p-6 backdrop-blur">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold flex items-center space-x-2">
               <FiMessageSquare className="text-green-600" />
@@ -148,7 +147,7 @@ const AgentDashboard = () => {
               dashboard.activeChats.map((chat) => (
                 <div
                   key={chat._id}
-                  className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                  className="p-3 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition"
                   onClick={() => navigate(`/agent/chat/${chat._id}`)}
                 >
                   <p className="font-medium text-sm mb-1">{chat.customer?.name}</p>
@@ -160,7 +159,7 @@ const AgentDashboard = () => {
         </div>
 
         {/* Completed Cases */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white/80 rounded-3xl shadow-xl border border-white/60 p-6 backdrop-blur">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold flex items-center space-x-2">
               <FiCheckCircle className="text-blue-600" />

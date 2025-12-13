@@ -12,7 +12,7 @@ const AdminPlans = () => {
     name: '',
     description: '',
     price: '',
-    tokens: '',
+    includedHours: '',
     hoursPerMonth: '',
     bonusFeatures: [],
     isActive: true
@@ -38,10 +38,12 @@ const AdminPlans = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const { includedHours, ...restForm } = formData;
+      const parsedHours = includedHours ? parseInt(includedHours, 10) : 0;
       const submitData = {
-        ...formData,
+        ...restForm,
         price: parseFloat(formData.price),
-        tokens: parseInt(formData.tokens),
+        tokens: parsedHours,
         hoursPerMonth: formData.hoursPerMonth ? parseInt(formData.hoursPerMonth) : null,
       };
 
@@ -67,7 +69,7 @@ const AdminPlans = () => {
       name: plan.name || '',
       description: plan.description || '',
       price: plan.price?.toString() || '',
-      tokens: plan.tokens?.toString() || '',
+      includedHours: plan.tokens?.toString() || '',
       hoursPerMonth: plan.hoursPerMonth?.toString() || '',
       bonusFeatures: plan.bonusFeatures || [],
       isActive: plan.isActive !== undefined ? plan.isActive : true
@@ -91,7 +93,7 @@ const AdminPlans = () => {
       name: '',
       description: '',
       price: '',
-      tokens: '',
+      includedHours: '',
       hoursPerMonth: '',
       bonusFeatures: [],
       isActive: true
@@ -157,7 +159,7 @@ const AdminPlans = () => {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tokens</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Included Hours</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hours/Month</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -183,7 +185,7 @@ const AdminPlans = () => {
                     {formatPrice(plan.price)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {plan.tokens?.toLocaleString() || '-'}
+                    {plan.tokens ? `${plan.tokens.toLocaleString()} hrs` : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {plan.hoursPerMonth ? `${plan.hoursPerMonth}hrs` : '-'}
@@ -269,15 +271,15 @@ const AdminPlans = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tokens *
+                    Included Hours *
                   </label>
                   <input
                     type="number"
-                    value={formData.tokens}
-                    onChange={(e) => setFormData({ ...formData, tokens: e.target.value })}
+                    value={formData.includedHours}
+                    onChange={(e) => setFormData({ ...formData, includedHours: e.target.value })}
                     required
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="10000"
+                    placeholder="160"
                   />
                 </div>
                 <div>

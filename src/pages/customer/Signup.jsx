@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { User, Upload, X } from 'lucide-react';
 import api from '../../utils/axios';
+import SocialAuthButtons from '../../components/auth/SocialAuthButtons';
 
 const CustomerSignup = () => {
   const [formData, setFormData] = useState({
@@ -83,12 +84,20 @@ const CustomerSignup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary-600 mb-2">GlobalCare</h1>
-          <p className="text-gray-600">Create Customer Account</p>
-        </div>
+    <div className="relative min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 py-16 px-4 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 opacity-60">
+        <div className="absolute -top-20 right-0 w-72 h-72 bg-blue-200 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-[-40px] w-96 h-96 bg-purple-100 rounded-full blur-3xl"></div>
+      </div>
+      <div className="relative z-10 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white/85 border border-white/60 backdrop-blur-xl rounded-3xl shadow-2xl p-10">
+          <div className="text-center mb-8">
+            <p className="text-sm font-semibold text-blue-600 tracking-[0.3em] uppercase">
+              Join Horatio
+            </p>
+            <h1 className="text-4xl font-bold text-gray-900 mt-2 mb-3">Create an Account</h1>
+            <p className="text-gray-600">Get started in minutes and track your service hours effortlessly.</p>
+          </div>
 
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -207,16 +216,29 @@ const CustomerSignup = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+            className="w-full bg-gray-900 text-white py-3 px-4 rounded-xl hover:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-200 disabled:opacity-60 transition"
           >
             {loading ? 'Creating account...' : 'Sign Up'}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-8">
+          <div className="relative flex items-center">
+            <span className="flex-grow border-t border-gray-200" />
+            <span className="mx-3 text-xs font-semibold text-gray-400 tracking-[0.3em]">
+              OR
+            </span>
+            <span className="flex-grow border-t border-gray-200" />
+          </div>
+          <div className="mt-6">
+            <SocialAuthButtons />
+          </div>
+        </div>
+
+        <div className="mt-8 text-center">
           <p className="text-gray-600">
             Already have an account?{' '}
-            <Link to="/customer/login" className="text-primary-600 hover:underline">
+            <Link to="/customer/login" className="text-blue-600 font-semibold hover:underline">
               Login
             </Link>
           </p>

@@ -5,10 +5,10 @@ import api from '../../utils/axios';
 const AdminCustomers = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showTokenModal, setShowTokenModal] = useState(false);
+  const [showHourModal, setShowHourModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [tokenAmount, setTokenAmount] = useState('');
-  const [tokenReason, setTokenReason] = useState('');
+  const [hourAmount, setHourAmount] = useState('');
+  const [hourReason, setHourReason] = useState('');
 
   useEffect(() => {
     loadCustomers();
@@ -25,24 +25,24 @@ const AdminCustomers = () => {
     }
   };
 
-  const handleAdjustTokens = (customer) => {
+  const handleAdjustHours = (customer) => {
     setSelectedCustomer(customer);
-    setTokenAmount('');
-    setTokenReason('');
-    setShowTokenModal(true);
+    setHourAmount('');
+    setHourReason('');
+    setShowHourModal(true);
   };
 
-  const handleTokenSubmit = async (e) => {
+  const handleHourSubmit = async (e) => {
     e.preventDefault();
     try {
       await api.put(`/admin/customers/${selectedCustomer._id}/tokens`, {
-        amount: parseInt(tokenAmount),
-        reason: tokenReason
+        amount: parseInt(hourAmount),
+        reason: hourReason
       });
-      setShowTokenModal(false);
+      setShowHourModal(false);
       loadCustomers();
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to adjust tokens');
+      alert(error.response?.data?.message || 'Failed to adjust hours');
     }
   };
 
@@ -54,7 +54,7 @@ const AdminCustomers = () => {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Token Balance</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service Hours</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
@@ -69,7 +69,7 @@ const AdminCustomers = () => {
                   {customer.email}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {customer.tokenBalance}
+                  {Number(customer.tokenBalance ?? 0).toLocaleString()} hrs
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 py-1 text-xs rounded-full ${
@@ -82,10 +82,10 @@ const AdminCustomers = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
-                    onClick={() => handleAdjustTokens(customer)}
+                    onClick={() => handleAdjustHours(customer)}
                     className="text-primary-600 hover:text-primary-900"
                   >
-                    Adjust Tokens
+                    Adjust Hours
                   </button>
                 </td>
               </tr>
@@ -94,22 +94,22 @@ const AdminCustomers = () => {
         </table>
       </div>
 
-      {/* Token Adjustment Modal */}
-      {showTokenModal && selectedCustomer && (
+      {/* Hours Adjustment Modal */}
+      {showHourModal && selectedCustomer && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h2 className="text-xl font-bold mb-4">
-              Adjust Tokens for {selectedCustomer.name}
+              Adjust Hours for {selectedCustomer.name}
             </h2>
-            <form onSubmit={handleTokenSubmit} className="space-y-4">
+            <form onSubmit={handleHourSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Amount (positive to add, negative to deduct)
                 </label>
                 <input
                   type="number"
-                  value={tokenAmount}
-                  onChange={(e) => setTokenAmount(e.target.value)}
+                  value={hourAmount}
+                  onChange={(e) => setHourAmount(e.target.value)}
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
@@ -120,8 +120,8 @@ const AdminCustomers = () => {
                 </label>
                 <input
                   type="text"
-                  value={tokenReason}
-                  onChange={(e) => setTokenReason(e.target.value)}
+                  value={hourReason}
+                  onChange={(e) => setHourReason(e.target.value)}
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
@@ -129,7 +129,7 @@ const AdminCustomers = () => {
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"
-                  onClick={() => setShowTokenModal(false)}
+                  onClick={() => setShowHourModal(false)}
                   className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Cancel
