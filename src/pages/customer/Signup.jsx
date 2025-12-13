@@ -77,7 +77,17 @@ const CustomerSignup = () => {
         navigate('/customer/plans');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      // Handle validation errors (array) or single error message
+      const errorData = err.response?.data;
+      if (errorData?.errors && Array.isArray(errorData.errors)) {
+        // Multiple validation errors
+        const errorMessages = errorData.errors.map(e => e.msg || e.message).join(', ');
+        setError(errorMessages || 'Please check your input and try again');
+      } else {
+        // Single error message
+        setError(errorData?.message || 'Registration failed. Please try again.');
+      }
+      console.error('Signup error:', err.response?.data || err.message);
     } finally {
       setLoading(false);
     }
