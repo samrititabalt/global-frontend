@@ -746,15 +746,22 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-gray-900">{otherUser?.name || 'User'}</h3>
+              <h3 className="font-semibold text-gray-900">
+                {chatSession?.service?.name || 'Service'}
+              </h3>
               {otherUserRole === 'agent' && (
                 <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold uppercase tracking-wide">
                   Agent
                 </span>
               )}
+              {otherUserRole === 'customer' && (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-semibold uppercase tracking-wide">
+                  Customer
+                </span>
+              )}
             </div>
             <p className="text-sm text-gray-500">
-              {otherUserOnline ? 'Online' : 'Offline'}
+              {otherUser?.name || 'User'} • {otherUserOnline ? 'Online' : 'Offline'}
             </p>
           </div>
         </button>
@@ -1126,6 +1133,11 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                     {otherUserRole === 'agent' && (
                       <span className="px-3 py-0.5 text-xs font-semibold rounded-full bg-blue-50 text-blue-600 uppercase tracking-wide">
                         Agent
+                      </span>
+                    )}
+                    {otherUserRole === 'customer' && (
+                      <span className="px-3 py-0.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-600 uppercase tracking-wide">
+                        Customer
                       </span>
                     )}
                   </div>

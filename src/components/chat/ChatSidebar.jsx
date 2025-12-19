@@ -62,9 +62,19 @@ const ChatSidebar = ({ chatSessions, currentChatId, onNewChat, currentUser }) =>
 
   const getChatTitle = useCallback(
     (chat) => {
+      // Show service name first, then agent name
+      const serviceName = chat.service?.name || '';
+      const agentName = chat.agent?.name || '';
+      
+      if (serviceName && agentName) {
+        return `${serviceName} • ${agentName}`;
+      }
+      if (serviceName) return serviceName;
+      if (agentName) return agentName;
+      
       const participant = getChatParticipant(chat);
       if (participant?.name) return participant.name;
-      return chat.service?.name || chat.customer?.name || chat.agent?.name || 'New Chat';
+      return chat.customer?.name || 'New Chat';
     },
     [getChatParticipant]
   );
@@ -183,7 +193,10 @@ const ChatSidebar = ({ chatSessions, currentChatId, onNewChat, currentUser }) =>
               return (
                 <button
                   key={chat._id}
-                  onClick={() => navigate(`/customer/chat/${chat._id}`)}
+                  onClick={() => {
+                    const role = currentUser?.role || 'customer';
+                    navigate(`/${role}/chat/${chat._id}`);
+                  }}
                   className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
                     isActive ? 'bg-blue-50 border-l-4 border-blue-500' : ''
                   }`}
