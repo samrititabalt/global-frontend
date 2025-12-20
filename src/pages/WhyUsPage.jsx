@@ -14,53 +14,53 @@ const WhyUsPage = () => {
   const carouselItems = [
     [
       {
-        category: 'Horatio Insights',
-        title: 'Horatio Hosts Successful Third Annual Client Summit',
+        category: 'Ask Sam Insights',
+        title: 'Ask Sam Hosts Successful Third Annual Client Summit',
         date: 'Mar 10 2025',
         description:
-          'Horatio, the modern outsourcing company revolutionizing CX services and the BPO industry, hosted its third annual Client Summit in Santo Domingo.',
+          'Ask Sam, the modern outsourcing company revolutionizing CX services and the BPO industry, hosted its third annual Client Summit in Santo Domingo.',
         link: '#',
       },
       {
-        category: 'Horatio Insights',
-        title: 'Horatio Honored As Dual Gold and Bronze Winner',
+        category: 'Ask Sam Insights',
+        title: 'Ask Sam Honored As Dual Gold and Bronze Winner',
         date: 'Apr 28 2025',
         description:
-          'Horatio has been named one of 2025 STEVIE® award winners in the 23rd annual American Business Awards.',
+          'Ask Sam has been named one of 2025 STEVIE® award winners in the 23rd annual American Business Awards.',
         link: '#',
       },
       {
-        category: 'Horatio Insights',
-        title: 'Inc. Names Horatio #27 on Fastest-Growing List',
+        category: 'Ask Sam Insights',
+        title: 'Inc. Names Ask Sam #27 on Fastest-Growing List',
         date: 'Apr 01 2025',
         description:
-          'Inc. revealed that Horatio has been ranked No. 27 on its 2025 List of the Fastest-Growing Private Companies in the Northeast.',
+          'Inc. revealed that Ask Sam has been ranked No. 27 on its 2025 List of the Fastest-Growing Private Companies in the Northeast.',
         link: '#',
       },
     ],
     [
       {
-        category: 'Horatio Insights',
+        category: 'Ask Sam Insights',
         title: 'New Partnership Announcement',
         date: 'May 15 2025',
         description:
-          'Horatio announces strategic partnership to expand services and reach new markets.',
+          'Ask Sam announces strategic partnership to expand services and reach new markets.',
         link: '#',
       },
       {
-        category: 'Horatio Insights',
+        category: 'Ask Sam Insights',
         title: 'Industry Recognition',
         date: 'Jun 01 2025',
         description:
-          'Horatio receives industry recognition for excellence in customer service outsourcing.',
+          'Ask Sam receives industry recognition for excellence in customer service outsourcing.',
         link: '#',
       },
       {
-        category: 'Horatio Insights',
+        category: 'Ask Sam Insights',
         title: 'Expansion News',
         date: 'Jun 20 2025',
         description:
-          'Horatio expands operations to serve more clients with dedicated teams and resources.',
+          'Ask Sam expands operations to serve more clients with dedicated teams and resources.',
         link: '#',
       },
     ],
@@ -77,7 +77,7 @@ const WhyUsPage = () => {
         <ContentSection
           eyebrow="Our Story"
           title="Born to Help Businesses Scale"
-          description="Horatio was born to help brand-focused, high-touch, innovative businesses turn customer interactions into revenue-generating opportunities."
+          description="Ask Sam was born to help brand-focused, high-touch, innovative businesses turn customer interactions into revenue-generating opportunities."
           features={[
             'Next-generation business process outsourcing',
             'Personalized solutions that redefine processes',

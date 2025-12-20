@@ -38,7 +38,7 @@ const Footer = () => {
           {/* Brand Column */}
           <div>
             <Link to="/" className="text-2xl font-bold text-white mb-4 block">
-              Horatio
+              Ask Sam
             </Link>
             <p className="text-gray-400 mb-6">
               Premier outsourcing services that help businesses scale without losing their identity.
@@ -118,7 +118,7 @@ const Footer = () => {
         <div className="border-t border-gray-800 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-gray-400">
-              © {new Date().getFullYear()} Horatio. All rights reserved.
+              © {new Date().getFullYear()} Ask Sam. All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm">
               <Link to="/terms" className="hover:text-white transition-colors">

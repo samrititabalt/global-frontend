@@ -51,7 +51,7 @@ const FAQItem = ({ question, answer, index }) => {
 const FAQ = () => {
   const faqs = [
     {
-      question: 'What makes Horatio different from other outsourcing companies?',
+      question: 'What makes Ask Sam different from other outsourcing companies?',
       answer:
         'Our dedicated team approach ensures you get a complete operations organization, not just individual agents. We invest heavily in professional growth and personal wellbeing, creating a sustainable and scalable solution.',
     },
@@ -85,7 +85,7 @@ const FAQ = () => {
             Frequently Asked Questions
           </h2>
           <p className="text-xl text-gray-600">
-            Everything you need to know about working with Horatio
+            Everything you need to know about working with Ask Sam
           </p>
         </div>
 

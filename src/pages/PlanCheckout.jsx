@@ -227,7 +227,7 @@ const PlanCheckout = () => {
 
           <section className="flex-1 bg-gradient-to-br from-purple-600/10 to-blue-500/5 border border-white/10 rounded-3xl p-8">
             <p className="uppercase text-sm tracking-[0.3em] text-gray-400 mb-4">
-              Horatio plans
+              Ask Sam plans
             </p>
             <h1 className="text-4xl font-bold mb-2">{selectedPlan?.marketingLabel || selectedPlan?.name}</h1>
             <p className="text-gray-300 mb-6">
