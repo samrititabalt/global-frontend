@@ -1,27 +1,36 @@
 import { API_CONFIG } from '../config/api';
 
-const sanitizeBaseUrl = () => {
-  const apiUrl = (API_CONFIG.API_URL || '').replace(/\/+$/, '');
-  if (!apiUrl) return '';
-  if (apiUrl === '/api') return '';
-  return apiUrl.endsWith('/api') ? apiUrl.replace(/\/api$/, '') : apiUrl;
-};
-
-const withLeadingSlash = (path) => (path.startsWith('/') ? path : `/${path}`);
-
 const buildDefaultAuthUrl = (provider) => {
-  const base = sanitizeBaseUrl();
-  const path = withLeadingSlash(`auth/${provider}`);
-  if (!base) {
-    return path;
+  // Get the API base URL (e.g., '/api' or 'http://localhost:5000/api')
+  let apiUrl = (API_CONFIG.API_URL || '/api').replace(/\/+$/, '');
+  
+  // Ensure apiUrl ends with /api
+  // If it's a full URL without /api, add it
+  // If it's just a base URL, ensure /api is present
+  if (apiUrl.startsWith('http')) {
+    // Full URL like 'https://global-backend-tj49.onrender.com'
+    if (!apiUrl.endsWith('/api')) {
+      // If it doesn't end with /api, add it
+      apiUrl = `${apiUrl}/api`;
+    }
+  } else if (apiUrl !== '/api' && !apiUrl.endsWith('/api')) {
+    // Relative URL that's not /api
+    apiUrl = '/api';
   }
-  return `${base}${path}`;
+  
+  // Build the OAuth URL: {API_URL}/auth/{provider}
+  // Examples:
+  // - '/api' + '/auth/google' = '/api/auth/google'
+  // - 'http://localhost:5000/api' + '/auth/google' = 'http://localhost:5000/api/auth/google'
+  // - 'https://global-backend-tj49.onrender.com/api' + '/auth/google' = 'https://global-backend-tj49.onrender.com/api/auth/google'
+  const authPath = `/auth/${provider}`;
+  
+  return `${apiUrl}${authPath}`;
 };
 
 export const SOCIAL_AUTH_URLS = {
   google: import.meta.env.VITE_GOOGLE_AUTH_URL || buildDefaultAuthUrl('google'),
   microsoft: import.meta.env.VITE_MICROSOFT_AUTH_URL || buildDefaultAuthUrl('microsoft'),
-  apple: import.meta.env.VITE_APPLE_AUTH_URL || buildDefaultAuthUrl('apple'),
 };
 
 export const getProviderUrl = (provider) => SOCIAL_AUTH_URLS[provider];

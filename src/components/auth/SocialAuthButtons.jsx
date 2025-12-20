@@ -1,6 +1,6 @@
 import React from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { SiMicrosoft, SiApple } from 'react-icons/si';
+import { SiMicrosoft } from 'react-icons/si';
 import { getProviderUrl } from '../../utils/socialAuth';
 
 const providers = [
@@ -15,13 +15,6 @@ const providers = [
     label: 'Continue with Microsoft',
     Icon: SiMicrosoft,
     theme: 'border-slate-200 bg-slate-900 text-white',
-    iconClass: 'text-white',
-  },
-  {
-    id: 'apple',
-    label: 'Continue with Apple',
-    Icon: SiApple,
-    theme: 'border-gray-900 bg-gray-900 text-white',
     iconClass: 'text-white',
   },
 ];
