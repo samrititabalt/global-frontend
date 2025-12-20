@@ -2,11 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, isAuthenticated } = useAuth();
+  
+  // Check if user is a customer
+  const isCustomer = isAuthenticated && user?.role === 'customer';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -62,10 +67,10 @@ const Header = () => {
               </Link>
             ))}
             <Link
-              to="/customer/signup"
+              to={isCustomer ? "/customer/dashboard" : "/customer/signup"}
               className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl"
             >
-              Let's Talk
+              {isCustomer ? "Dashboard" : "Let's Talk"}
             </Link>
           </div>
 
@@ -110,11 +115,11 @@ const Header = () => {
                 </Link>
               ))}
               <Link
-                to="/customer/signup"
+                to={isCustomer ? "/customer/dashboard" : "/customer/signup"}
                 className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Let's Talk
+                {isCustomer ? "Dashboard" : "Let's Talk"}
               </Link>
             </div>
           </motion.div>
