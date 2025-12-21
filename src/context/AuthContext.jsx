@@ -52,9 +52,9 @@ export const AuthProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  const login = async (email, password) => {
+  const login = async (email, password, expectedRole = null) => {
     try {
-      const response = await authAPI.login({ email, password });
+      const response = await authAPI.login({ email, password, expectedRole });
       const { token: newToken, user: userData } = response.data;
       
       localStorage.setItem('token', newToken);

@@ -37,7 +37,7 @@ const CustomerLogin = () => {
     setError('');
     setLoading(true);
 
-    const result = await login(email, password);
+    const result = await login(email, password, 'customer');
     
     if (result.success) {
       navigate('/customer/plans');
@@ -62,7 +62,7 @@ const CustomerLogin = () => {
             </p>
             <h1 className="text-4xl font-bold text-gray-900 mt-2 mb-3">Customer Portal</h1>
             <p className="text-gray-600">
-              Sign in to manage requests and track your service hours.
+              Sign in to manage requests and track your service minutes.
             </p>
           </div>
 

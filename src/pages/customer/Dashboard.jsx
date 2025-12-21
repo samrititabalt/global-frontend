@@ -13,7 +13,7 @@ const CustomerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const availableHours = Number(user?.tokenBalance ?? 0);
+  const availableMinutes = Number(user?.tokenBalance ?? 0);
 
   useEffect(() => {
     loadData();
@@ -85,12 +85,12 @@ const CustomerDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-gradient-to-r from-gray-900 via-gray-800 to-blue-900 text-white rounded-3xl p-8 shadow-2xl">
             <p className="text-sm uppercase tracking-[0.3em] text-blue-200 font-semibold">Overview</p>
-            <h2 className="text-4xl font-bold mt-3 mb-4">Service hours available</h2>
+            <h2 className="text-4xl font-bold mt-3 mb-4">Service minutes available</h2>
             <div className="text-5xl font-extrabold tracking-tight">
-              {availableHours.toLocaleString()} hrs
+              {availableMinutes.toLocaleString()} min
             </div>
             <p className="mt-4 text-gray-200 max-w-2xl">
-              Request a service and connect with your dedicated team instantly. Running low on hours?
+              Request a service and connect with your dedicated team instantly. Running low on minutes?
               You can top up anytime with a new plan.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
@@ -104,7 +104,7 @@ const CustomerDashboard = () => {
                 to="/customer/plans"
                 className="px-6 py-3 rounded-full border border-white/40 text-white font-semibold hover:bg-white/10 transition"
               >
-                Add more hours
+                Add more minutes
               </Link>
             </div>
           </div>

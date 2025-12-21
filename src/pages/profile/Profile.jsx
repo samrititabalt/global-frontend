@@ -93,7 +93,7 @@ const Profile = () => {
 
     if (profile.role === 'customer') {
       chips.push(
-        { label: 'Service Hours', value: `${profile.tokenBalance ?? 0} hrs` },
+        { label: 'Service Minutes', value: `${profile.tokenBalance ?? 0} min` },
         { label: 'Plan Status', value: profile.planStatus || 'None' },
         { label: 'Current Plan', value: profile.currentPlan?.name || 'Not subscribed' }
       );
@@ -220,7 +220,7 @@ const Profile = () => {
               </span>
               {role === 'customer' && (
                 <span className="px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-800">
-                  {profile?.tokenBalance ?? 0} hrs
+                  {profile?.tokenBalance ?? 0} min
                 </span>
               )}
               {role === 'agent' && (

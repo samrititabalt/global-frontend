@@ -25,14 +25,14 @@ const AdminCustomers = () => {
     }
   };
 
-  const handleAdjustHours = (customer) => {
+  const handleAdjustMinutes = (customer) => {
     setSelectedCustomer(customer);
     setHourAmount('');
     setHourReason('');
     setShowHourModal(true);
   };
 
-  const handleHourSubmit = async (e) => {
+  const handleMinuteSubmit = async (e) => {
     e.preventDefault();
     try {
       await api.put(`/admin/customers/${selectedCustomer._id}/tokens`, {
@@ -42,7 +42,7 @@ const AdminCustomers = () => {
       setShowHourModal(false);
       loadCustomers();
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to adjust hours');
+      alert(error.response?.data?.message || 'Failed to adjust minutes');
     }
   };
 
@@ -54,7 +54,7 @@ const AdminCustomers = () => {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service Hours</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service Minutes</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
@@ -69,7 +69,7 @@ const AdminCustomers = () => {
                   {customer.email}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {Number(customer.tokenBalance ?? 0).toLocaleString()} hrs
+                  {Number(customer.tokenBalance ?? 0).toLocaleString()} min
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 py-1 text-xs rounded-full ${
@@ -82,10 +82,10 @@ const AdminCustomers = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
-                    onClick={() => handleAdjustHours(customer)}
+                    onClick={() => handleAdjustMinutes(customer)}
                     className="text-primary-600 hover:text-primary-900"
                   >
-                    Adjust Hours
+                    Adjust Minutes
                   </button>
                 </td>
               </tr>
@@ -94,14 +94,14 @@ const AdminCustomers = () => {
         </table>
       </div>
 
-      {/* Hours Adjustment Modal */}
+      {/* Minutes Adjustment Modal */}
       {showHourModal && selectedCustomer && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h2 className="text-xl font-bold mb-4">
-              Adjust Hours for {selectedCustomer.name}
+              Adjust Minutes for {selectedCustomer.name}
             </h2>
-            <form onSubmit={handleHourSubmit} className="space-y-4">
+            <form onSubmit={handleMinuteSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Amount (positive to add, negative to deduct)

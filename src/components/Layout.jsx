@@ -7,7 +7,7 @@ const Layout = ({ children, title }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const role = user?.role;
-  const hourBalance = user?.tokenBalance ?? 0;
+  const minuteBalance = user?.tokenBalance ?? 0;
 
   const handleLogout = () => {
     logout();
@@ -77,7 +77,7 @@ const Layout = ({ children, title }) => {
                   )}
                   {role === 'customer' && (
                     <span className="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">
-                      {Number(hourBalance).toLocaleString()} hrs left
+                      {Number(minuteBalance).toLocaleString()} min left
                     </span>
                   )}
                 </div>

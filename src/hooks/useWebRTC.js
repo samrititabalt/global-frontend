@@ -439,6 +439,15 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
             callDurationRef.current = elapsed;
             setCallDuration(elapsed);
           }, 1000);
+          
+          // Emit callConnected event for per-minute tracking
+          if (socket && chatSessionId) {
+            socket.emit('callConnected', {
+              chatSessionId,
+            });
+            console.log('Call connected - per-minute tracking started');
+          }
+          
           console.log('Call connected successfully');
         }
       };
@@ -528,6 +537,11 @@ export const useWebRTC = (socket, chatSessionId, currentUserId) => {
       socket.emit('offer', {
         chatSessionId,
         offer,
+      });
+
+      // Emit callStarted event for minute tracking
+      socket.emit('callStarted', {
+        chatSessionId,
       });
 
       console.log('Call offer sent, waiting for answer...');

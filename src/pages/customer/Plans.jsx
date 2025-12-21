@@ -131,9 +131,9 @@ const CustomerPlans = () => {
               const isFullTime = planSlug === 'fulltime';
               const isLoadCash = planSlug === 'loadcash';
               const displayName = plan.marketingLabel || plan.name;
-              const includedHours = plan.hoursPerMonth || plan.tokens;
-              const hasHoursValue = includedHours !== undefined && includedHours !== null && includedHours !== '';
-              const formattedHours = hasHoursValue ? Number(includedHours).toLocaleString() : null;
+              const includedMinutes = plan.tokens; // tokens now represent minutes
+              const hasMinutesValue = includedMinutes !== undefined && includedMinutes !== null && includedMinutes !== '';
+              const formattedMinutes = hasMinutesValue ? Number(includedMinutes).toLocaleString() : null;
               
               return (
                 <div
@@ -157,7 +157,7 @@ const CustomerPlans = () => {
                       </h3>
                       {plan.hoursPerMonth ? (
                         <p className="text-gray-600 text-sm mb-4">
-                          {plan.hoursPerMonth}hrs/month
+                          {Math.floor(plan.tokens / 60)}hrs/month ({plan.tokens} min)
                         </p>
                       ) : plan.description ? (
                         <p className="text-gray-500 text-sm mb-4">
@@ -191,11 +191,11 @@ const CustomerPlans = () => {
                       </div>
                     )}
 
-                    {formattedHours && (
+                    {formattedMinutes && (
                       <div className="mb-6">
-                        <p className="text-sm text-gray-600 mb-1">Included Hours</p>
+                        <p className="text-sm text-gray-600 mb-1">Included Minutes</p>
                         <p className="text-gray-900 font-semibold">
-                          {formattedHours} hrs
+                          {formattedMinutes} min
                         </p>
                       </div>
                     )}
