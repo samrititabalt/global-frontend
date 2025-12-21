@@ -48,7 +48,7 @@ const Header = () => {
             <span className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
               Tabalt
             </span>
-            <span className="text-xs text-gray-600 font-medium">Delegate Task. Save Time</span>
+            <span className="text-xs text-gray-600 font-medium">UK Outsourcing Partners</span>
           </Link>
 
           {/* Desktop Navigation */}

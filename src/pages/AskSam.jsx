@@ -85,9 +85,12 @@ const AskSam = () => {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-2">
               <span className="text-blue-600">Ask Sam</span>
             </h1>
+            <p className="text-lg text-gray-500 mb-4 font-medium">
+              Delegate task. Save time
+            </p>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Discover our comprehensive services and flexible plans designed to help your business scale efficiently.
             </p>
