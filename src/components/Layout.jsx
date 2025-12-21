@@ -6,6 +6,7 @@ import { FiLogOut } from 'react-icons/fi';
 const Layout = ({ children, title }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [logoError, setLogoError] = useState(false);
   const role = user?.role;
   const minuteBalance = user?.tokenBalance ?? 0;
 
