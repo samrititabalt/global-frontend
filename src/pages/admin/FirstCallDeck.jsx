@@ -13,50 +13,56 @@ const FirstCallDeck = () => {
       tagline: 'What We\'ll Cover Today',
       content: (
         <div className="space-y-4">
-          <div className="flex items-center justify-between mb-8">
-            <div className="text-2xl font-semibold text-gray-800">Presentation Agenda</div>
-            <div className="flex flex-col items-end">
-              <img
-                src="/assets/tabalt-logo.png.jpg"
-                alt="Tabalt Logo"
-                className="h-16 w-auto object-contain"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-              <span className="text-xs text-gray-600 font-medium mt-1">UK Outsourcing Partners</span>
+          <div className="flex items-start justify-between mb-8 gap-8">
+            <div className="flex-1">
+              <div className="text-2xl font-semibold text-gray-800 mb-6">Presentation Agenda</div>
+              <ul className="space-y-4 text-lg text-gray-700">
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-3 mt-1">1.</span>
+                  <span>Company Profile - Tabalt Ltd</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-3 mt-1">2.</span>
+                  <span>Portfolio of Services</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-3 mt-1">3.</span>
+                  <span>Ask Sam Overview</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-3 mt-1">4.</span>
+                  <span>How Ask Sam Works</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-3 mt-1">5.</span>
+                  <span>Case Studies</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-3 mt-1">6.</span>
+                  <span>Service Options for Ask Sam</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-3 mt-1">7.</span>
+                  <span>Why Choose Us</span>
+                </li>
+              </ul>
+            </div>
+            <div className="flex-shrink-0 w-80">
+              <div className="rounded-xl overflow-hidden shadow-lg">
+                <img
+                  src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=600&fit=crop&q=80"
+                  alt="Professional Business Team"
+                  className="w-full h-auto object-cover"
+                  onError={(e) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=600&fit=crop&q=80';
+                  }}
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-3 text-center italic">
+                Empowering businesses through professional services
+              </p>
             </div>
           </div>
-          <ul className="space-y-4 text-lg text-gray-700">
-            <li className="flex items-start">
-              <span className="text-blue-600 mr-3 mt-1">1.</span>
-              <span>Company Profile - Tabalt Ltd</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-blue-600 mr-3 mt-1">2.</span>
-              <span>Portfolio of Services</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-blue-600 mr-3 mt-1">3.</span>
-              <span>Ask Sam Overview</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-blue-600 mr-3 mt-1">4.</span>
-              <span>How Ask Sam Works</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-blue-600 mr-3 mt-1">5.</span>
-              <span>Case Studies</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-blue-600 mr-3 mt-1">6.</span>
-              <span>Service Options for Ask Sam</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-blue-600 mr-3 mt-1">7.</span>
-              <span>Why Choose Us</span>
-            </li>
-          </ul>
         </div>
       ),
     },
