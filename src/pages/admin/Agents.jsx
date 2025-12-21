@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Layout from '../../components/Layout';
 import api from '../../utils/axios';
-import { User, Upload, X, Search, Plus, Minus, Clock, Mail, Briefcase } from 'lucide-react';
+import { User, Upload, X, Search, Plus, Minus, Clock, Mail, Briefcase, Edit, Trash2 } from 'lucide-react';
 
 const AdminAgents = () => {
   const [agents, setAgents] = useState([]);
@@ -10,6 +10,7 @@ const AdminAgents = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showMinutesModal, setShowMinutesModal] = useState(false);
+  const [editingAgent, setEditingAgent] = useState(null);
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [minuteAmount, setMinuteAmount] = useState('');
   const [minuteReason, setMinuteReason] = useState('');
@@ -97,19 +98,64 @@ const AdminAgents = () => {
         submitData.append('avatar', avatar);
       }
 
-      await api.post('/admin/agents', submitData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      if (editingAgent) {
+        // Update existing agent
+        await api.put(`/admin/agents/${editingAgent._id}`, submitData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      } else {
+        // Create new agent
+        await api.post('/admin/agents', submitData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      }
+      
       setShowModal(false);
+      setEditingAgent(null);
       setFormData({ name: '', email: '', phone: '', country: '', serviceCategory: '' });
       setAvatar(null);
       setAvatarPreview(null);
       loadData();
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to create agent');
+      alert(error.response?.data?.message || `Failed to ${editingAgent ? 'update' : 'create'} agent`);
     }
+  };
+
+  const handleEdit = (agent) => {
+    setEditingAgent(agent);
+    setFormData({
+      name: agent.name || '',
+      email: agent.email || '',
+      phone: agent.phone || '',
+      country: agent.country || '',
+      serviceCategory: agent.serviceCategory?._id || agent.serviceCategory || ''
+    });
+    setAvatarPreview(agent.avatar || null);
+    setAvatar(null);
+    setShowModal(true);
+  };
+
+  const handleDelete = async (agentId) => {
+    if (window.confirm('Are you sure you want to delete this agent? This action cannot be undone.')) {
+      try {
+        await api.delete(`/admin/agents/${agentId}`);
+        loadData();
+        alert('Agent deleted successfully');
+      } catch (error) {
+        alert(error.response?.data?.message || 'Failed to delete agent');
+      }
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({ name: '', email: '', phone: '', country: '', serviceCategory: '' });
+    setAvatar(null);
+    setAvatarPreview(null);
+    setEditingAgent(null);
   };
 
   const handleAdjustMinutes = (agent) => {
@@ -181,12 +227,10 @@ const AdminAgents = () => {
               <p className="text-gray-200">Manage agents and adjust their service minutes</p>
             </div>
             <button
-              onClick={() => {
-                setFormData({ name: '', email: '', phone: '', country: '', serviceCategory: '' });
-                setAvatar(null);
-                setAvatarPreview(null);
-                setShowModal(true);
-              }}
+            onClick={() => {
+              resetForm();
+              setShowModal(true);
+            }}
               className="px-6 py-3 rounded-full bg-white text-gray-900 font-semibold hover:bg-gray-100 transition shadow-lg"
             >
               Add New Agent
@@ -335,13 +379,29 @@ const AdminAgents = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleAdjustMinutes(agent)}
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition"
-                        >
-                          <Plus className="w-4 h-4 mr-1" />
-                          Adjust Minutes
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleEdit(agent)}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleAdjustMinutes(agent)}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition"
+                          >
+                            <Plus className="w-4 h-4 mr-1" />
+                            Minutes
+                          </button>
+                          <button
+                            onClick={() => handleDelete(agent._id)}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -355,7 +415,9 @@ const AdminAgents = () => {
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-              <h2 className="text-xl font-bold mb-4">Add New Agent</h2>
+              <h2 className="text-xl font-bold mb-4">
+              {editingAgent ? 'Edit Agent' : 'Add New Agent'}
+            </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Avatar Upload */}
                 <div className="flex flex-col items-center mb-4">
@@ -473,7 +535,10 @@ const AdminAgents = () => {
                 <div className="flex justify-end space-x-2">
                   <button
                     type="button"
-                    onClick={() => setShowModal(false)}
+                    onClick={() => {
+                      setShowModal(false);
+                      resetForm();
+                    }}
                     className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
                     Cancel
@@ -482,7 +547,7 @@ const AdminAgents = () => {
                     type="submit"
                     className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
                   >
-                    Create Agent
+                    {editingAgent ? 'Update Agent' : 'Create Agent'}
                   </button>
                 </div>
               </form>
