@@ -50,6 +50,7 @@ import ContactUs from './pages/ContactUs';
 import Plans from './pages/Plans';
 import PlanCheckout from './pages/PlanCheckout';
 import Profile from './pages/profile/Profile';
+import FirstCallDeckPublic from './pages/FirstCallDeckPublic';
 
 function App() {
   return (
@@ -69,6 +70,7 @@ function App() {
             <Route path="/contact-us" element={<ContactUs />} />
             <Route path="/plans" element={<Plans />} />
             <Route path="/plans/:planSlug" element={<PlanCheckout />} />
+            <Route path="/first-call-deck" element={<FirstCallDeckPublic />} />
 
             {/* Customer Routes */}
             <Route path="/customer/login" element={<CustomerLogin />} />

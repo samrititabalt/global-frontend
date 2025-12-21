@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiMessageSquare, FiClock } from 'react-icons/fi';
-import { X } from 'lucide-react';
+import { X, Copy, Check } from 'lucide-react';
 import api from '../../utils/axios';
 
 const AdminDashboard = () => {
@@ -11,6 +11,7 @@ const AdminDashboard = () => {
   const [selectedStat, setSelectedStat] = useState(null);
   const [detailData, setDetailData] = useState([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -83,6 +84,14 @@ const AdminDashboard = () => {
       transactions: 'All Transactions'
     };
     return titles[statType] || statType;
+  };
+
+  const copyShareableLink = () => {
+    const link = `${window.location.origin}/first-call-deck`;
+    navigator.clipboard.writeText(link).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    });
   };
 
   const renderDetailContent = () => {
@@ -379,13 +388,44 @@ const AdminDashboard = () => {
             <h3 className="font-semibold text-gray-900">Monitor Chats</h3>
             <p className="text-sm text-gray-600 mt-1">View all conversations</p>
           </Link>
-          <Link
-            to="/admin/first-call-deck"
-            className="bg-white/80 rounded-3xl shadow-lg border border-white/60 p-4 hover:shadow-xl transition backdrop-blur"
-          >
-            <h3 className="font-semibold text-gray-900">First Call Deck</h3>
-            <p className="text-sm text-gray-600 mt-1">Download presentation deck</p>
-          </Link>
+          <div className="bg-white/80 rounded-3xl shadow-lg border border-white/60 p-4 hover:shadow-xl transition backdrop-blur">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-gray-900">First Call Deck</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">Download or share presentation deck</p>
+            <div className="flex flex-col gap-2">
+              <Link
+                to="/admin/first-call-deck"
+                className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-blue-700 transition text-center"
+              >
+                View & Edit
+              </Link>
+              <a
+                href="/first-call-deck"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs bg-gray-600 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-gray-700 transition text-center"
+              >
+                Open Public Link
+              </a>
+              <button
+                onClick={copyShareableLink}
+                className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-green-700 transition flex items-center justify-center gap-1"
+              >
+                {linkCopied ? (
+                  <>
+                    <Check className="w-3 h-3" />
+                    Link Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3 h-3" />
+                    Copy Shareable Link
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="bg-white/90 rounded-3xl shadow-xl border border-white/60 p-6 backdrop-blur">
