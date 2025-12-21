@@ -5,6 +5,7 @@ import Header from '../components/public/Header';
 import Footer from '../components/public/Footer';
 import ServicesContent from '../components/contact/Services';
 import WhyUsContent from '../components/ask-sam/WhyUs';
+import ReviewsTicker from '../components/ask-sam/ReviewsTicker';
 import PricingPlans from '../components/PricingPlans';
 import api from '../utils/axios';
 import { enhancePlanWithSlug } from '../utils/planHelpers';
@@ -143,6 +144,9 @@ const AskSam = () => {
           {renderContent()}
         </motion.div>
       </section>
+
+      {/* Reviews Ticker */}
+      <ReviewsTicker />
 
       <Footer />
     </div>
