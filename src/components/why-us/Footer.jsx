@@ -37,7 +37,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Brand Column */}
           <div>
-            <Link to="/" className="flex items-center gap-3 mb-4">
+            <Link to="/" className="flex flex-col gap-2 mb-4">
               <img
                 src="/assets/tabalt-logo.png.jpg"
                 alt="Tabalt Logo"
@@ -46,6 +46,7 @@ const Footer = () => {
                   e.target.style.display = 'none';
                 }}
               />
+              <span className="text-xs text-gray-400 font-medium">UK Outsourcing Partners</span>
             </Link>
             <p className="text-gray-400 mb-6">
               Premier outsourcing services that help businesses scale without losing their identity.

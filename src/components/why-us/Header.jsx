@@ -34,14 +34,17 @@ const Header = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <img
-              src="/assets/tabalt-logo.png.jpg"
-              alt="Tabalt Logo"
-              className="h-12 w-auto object-contain"
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
-            />
+            <div className="flex flex-col">
+              <img
+                src="/assets/tabalt-logo.png.jpg"
+                alt="Tabalt Logo"
+                className="h-12 w-auto object-contain"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+              <span className="text-xs text-gray-600 font-medium mt-1">UK Outsourcing Partners</span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}

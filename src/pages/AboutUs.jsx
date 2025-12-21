@@ -24,7 +24,7 @@ const AboutUs = () => {
             className="text-center"
           >
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
-              About <span className="text-blue-600">Ask Sam</span>
+              About <span className="text-blue-600">Tabalt</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Learn about our journey, values, and commitment to excellence in professional services.

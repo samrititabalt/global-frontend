@@ -7,7 +7,7 @@ const AboutUs = () => {
     {
       year: '2021',
       title: 'Our Journey Begins',
-      description: 'Ask Sam was founded with a vision to revolutionize professional services through innovative outsourcing solutions.',
+      description: 'Tabalt was founded with a vision to revolutionize professional services through innovative outsourcing solutions.',
     },
     {
       year: '2022',

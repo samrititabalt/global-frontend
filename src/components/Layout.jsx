@@ -41,16 +41,22 @@ const Layout = ({ children, title }) => {
               <div className="flex items-center space-x-8">
                 <Link to={getDashboardPath()} className="flex items-center gap-3 group">
                   {!logoError ? (
-                    <img
-                      src="/assets/tabalt-logo.png.jpg"
-                      alt="Tabalt Logo"
-                      className="h-10 w-auto object-contain"
-                      onError={() => setLogoError(true)}
-                    />
+                    <div className="flex flex-col">
+                      <img
+                        src="/assets/tabalt-logo.png.jpg"
+                        alt="Tabalt Logo"
+                        className="h-10 w-auto object-contain"
+                        onError={() => setLogoError(true)}
+                      />
+                      <span className="text-xs text-gray-600 font-medium mt-1">UK Outsourcing Partners</span>
+                    </div>
                   ) : (
-                    <span className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                      Tabalt
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        Tabalt
+                      </span>
+                      <span className="text-xs text-gray-600 font-medium">UK Outsourcing Partners</span>
+                    </div>
                   )}
                 </Link>
                 <div className="hidden md:flex items-center space-x-6">

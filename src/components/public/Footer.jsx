@@ -36,18 +36,24 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           <div>
-            <Link to="/" className="flex items-center gap-3 mb-4">
+            <Link to="/" className="flex flex-col gap-2 mb-4">
               {!logoError ? (
-                <img
-                  src="/assets/tabalt-logo.png.jpg"
-                  alt="Tabalt Logo"
-                  className="h-10 w-auto object-contain"
-                  onError={() => setLogoError(true)}
-                />
+                <>
+                  <img
+                    src="/assets/tabalt-logo.png.jpg"
+                    alt="Tabalt Logo"
+                    className="h-10 w-auto object-contain"
+                    onError={() => setLogoError(true)}
+                  />
+                  <span className="text-xs text-gray-400 font-medium">UK Outsourcing Partners</span>
+                </>
               ) : (
-                <span className="text-2xl font-bold text-white">
-                  Tabalt
-                </span>
+                <>
+                  <span className="text-2xl font-bold text-white">
+                    Tabalt
+                  </span>
+                  <span className="text-xs text-gray-400 font-medium">UK Outsourcing Partners</span>
+                </>
               )}
             </Link>
             <p className="text-gray-400 mb-6">

@@ -46,12 +46,15 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             {!logoError ? (
-              <img
-                src="/assets/tabalt-logo.png.jpg"
-                alt="Tabalt Logo"
-                className="h-12 w-auto object-contain"
-                onError={() => setLogoError(true)}
-              />
+              <div className="flex flex-col">
+                <img
+                  src="/assets/tabalt-logo.png.jpg"
+                  alt="Tabalt Logo"
+                  className="h-12 w-auto object-contain"
+                  onError={() => setLogoError(true)}
+                />
+                <span className="text-xs text-gray-600 font-medium mt-1">UK Outsourcing Partners</span>
+              </div>
             ) : (
               <div className="flex flex-col">
                 <span className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
