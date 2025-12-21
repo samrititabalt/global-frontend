@@ -61,22 +61,6 @@ const CaseStudies = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-        className="text-center mb-16"
-      >
-        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-          Success Stories
-        </h2>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Discover how we've helped businesses across industries achieve remarkable results 
-          through our professional services solutions.
-        </p>
-      </motion.div>
-
       <div className="space-y-12">
         {caseStudies.map((study, index) => {
           const Icon = study.icon;
