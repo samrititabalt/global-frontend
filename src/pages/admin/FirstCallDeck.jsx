@@ -109,49 +109,49 @@ const FirstCallDeck = () => {
       title: 'Portfolio of Services',
       tagline: 'Comprehensive Solutions Across Multiple Domains',
       content: (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-2xl">💻</span>
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
+                <span className="text-xl">💻</span>
               </div>
-              <h4 className="text-xl font-bold text-gray-900 mb-2">Software & Tech Support</h4>
-              <p className="text-gray-600">Technical assistance and software support services</p>
+              <h4 className="text-base font-bold text-gray-900 mb-1">Software & Tech Support</h4>
+              <p className="text-xs text-gray-600">Technical assistance and software support</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-2xl">📊</span>
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mb-3">
+                <span className="text-xl">📊</span>
               </div>
-              <h4 className="text-xl font-bold text-gray-900 mb-2">Accounting & Reporting</h4>
-              <p className="text-gray-600">Financial management and reporting solutions</p>
+              <h4 className="text-base font-bold text-gray-900 mb-1">Accounting & Reporting</h4>
+              <p className="text-xs text-gray-600">Financial management and reporting</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-2xl">📞</span>
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-3">
+                <span className="text-xl">📞</span>
               </div>
-              <h4 className="text-xl font-bold text-gray-900 mb-2">Back Office & Contact Centre</h4>
-              <p className="text-gray-600">Customer support and back-office operations</p>
+              <h4 className="text-base font-bold text-gray-900 mb-1">Back Office & Contact Centre</h4>
+              <p className="text-xs text-gray-600">Customer support and back-office operations</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-2xl">💰</span>
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mb-3">
+                <span className="text-xl">💰</span>
               </div>
-              <h4 className="text-xl font-bold text-gray-900 mb-2">Financial Services</h4>
-              <p className="text-gray-600">Comprehensive financial service solutions</p>
+              <h4 className="text-base font-bold text-gray-900 mb-1">Financial Services</h4>
+              <p className="text-xs text-gray-600">Comprehensive financial service solutions</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-2xl">🏥</span>
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mb-3">
+                <span className="text-xl">🏥</span>
               </div>
-              <h4 className="text-xl font-bold text-gray-900 mb-2">Healthcare</h4>
-              <p className="text-gray-600">Healthcare support and administrative services</p>
+              <h4 className="text-base font-bold text-gray-900 mb-1">Healthcare</h4>
+              <p className="text-xs text-gray-600">Healthcare support and administrative services</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-2xl">📋</span>
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mb-3">
+                <span className="text-xl">📋</span>
               </div>
-              <h4 className="text-xl font-bold text-gray-900 mb-2">General Admin Support</h4>
-              <p className="text-gray-600">Administrative and operational support services</p>
+              <h4 className="text-base font-bold text-gray-900 mb-1">General Admin Support</h4>
+              <p className="text-xs text-gray-600">Administrative and operational support</p>
             </div>
           </div>
         </div>

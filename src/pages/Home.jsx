@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Check, Users, Shield, Zap, Headphones, BarChart3, Globe } from 'lucide-react';
 import Header from '../components/public/Header';
 import Footer from '../components/public/Footer';
+import LiveChatBot from '../components/public/LiveChatBot';
 
 const Home = () => {
   const features = [
@@ -225,6 +226,7 @@ const Home = () => {
       </section>
 
       <Footer />
+      <LiveChatBot />
     </div>
   );
 };
