@@ -153,11 +153,7 @@ const WhyUsPage = () => {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight"
               >
-                Scale Your Business
-                <br />
-                <span className="text-blue-600">Without Losing</span>
-                <br />
-                Your Identity
+                One Assistant. Every Task. Any Industry
               </motion.h1>
 
               <motion.p
@@ -166,8 +162,7 @@ const WhyUsPage = () => {
                 transition={{ duration: 0.6, delay: 0.3 }}
                 className="text-xl text-gray-600 mb-8 leading-relaxed"
               >
-                We're not just another outsourcing company. We're your dedicated partner in growth, 
-                providing complete operations teams that understand your brand and deliver exceptional results.
+                From spreadsheets to suitcases, invoices to itineraries — Ask Sam handles it all. We provide executive assistant services across business functions like sales, finance, customer support, and administration, while also managing personal tasks such as shopping, travel, and holiday planning. Just ask.
               </motion.p>
 
               <motion.div

@@ -4,12 +4,13 @@ import { motion } from 'framer-motion';
 import Header from '../components/public/Header';
 import Footer from '../components/public/Footer';
 import ServicesContent from '../components/contact/Services';
+import WhyUsContent from '../components/ask-sam/WhyUs';
 import PricingPlans from '../components/PricingPlans';
 import api from '../utils/axios';
 import { enhancePlanWithSlug } from '../utils/planHelpers';
 
 const AskSam = () => {
-  const [activeTab, setActiveTab] = useState('services');
+  const [activeTab, setActiveTab] = useState('why-us');
   const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,12 +42,15 @@ const AskSam = () => {
   };
 
   const tabs = [
+    { id: 'why-us', label: 'Why Us' },
     { id: 'services', label: 'Services' },
     { id: 'plans', label: 'Plans' },
   ];
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'why-us':
+        return <WhyUsContent />;
       case 'services':
         return <ServicesContent />;
       case 'plans':
@@ -63,7 +67,7 @@ const AskSam = () => {
           </div>
         );
       default:
-        return <ServicesContent />;
+        return <WhyUsContent />;
     }
   };
 
