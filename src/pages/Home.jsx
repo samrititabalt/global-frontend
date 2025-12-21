@@ -213,15 +213,13 @@ const Home = () => {
             <p className="text-lg text-gray-400 mb-10">
               Quality results at a better value — 80% ROI increase and save 50% compared to in-house teams.
             </p>
-            <motion.a
-              href="#contact"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <Link
+              to="/contact"
               className="inline-flex items-center justify-center bg-white text-gray-900 px-10 py-5 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all shadow-2xl hover:shadow-3xl focus:outline-none focus:ring-4 focus:ring-white/50"
             >
               Let's Talk!
               <ArrowRight className="ml-2 h-6 w-6" />
-            </motion.a>
+            </Link>
           </motion.div>
         </div>
       </section>

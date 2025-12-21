@@ -42,6 +42,7 @@ import Home from './pages/Home';
 import WhyUsPage from './pages/WhyUsPage';
 import Plans from './pages/Plans';
 import PlanCheckout from './pages/PlanCheckout';
+import Contact from './pages/Contact';
 import Profile from './pages/profile/Profile';
 
 function App() {
@@ -56,6 +57,7 @@ function App() {
             <Route path="/why-us" element={<WhyUsPage />} />
             <Route path="/plans" element={<Plans />} />
             <Route path="/plans/:planSlug" element={<PlanCheckout />} />
+            <Route path="/contact" element={<Contact />} />
 
             {/* Customer Routes */}
             <Route path="/customer/login" element={<CustomerLogin />} />
