@@ -22,6 +22,8 @@ const MessageItem = ({
   handleSaveEdit,
   handleCancelEdit,
   onReplyClick, // New prop for handling reply click
+  sender, // Sender object from message
+  otherUser, // Other user in chat
 }) => {
   const swipeRef = useSwipe(
     null, // left swipe
@@ -73,7 +75,7 @@ const MessageItem = ({
             {typeof message.replyTo === 'object' && message.replyTo.sender
               ? (message.replyTo.sender._id?.toString() === currentUser?._id?.toString()
                   ? 'You'
-                  : message.replyTo.sender.name || 'User')
+                  : message.replyTo.sender.name || (otherUser?.name || 'User'))
               : 'Replying to'}
           </div>
           <div className={`text-xs truncate ${

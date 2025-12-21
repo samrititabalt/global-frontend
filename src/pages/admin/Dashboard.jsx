@@ -388,6 +388,13 @@ const AdminDashboard = () => {
             <h3 className="font-semibold text-gray-900">Monitor Chats</h3>
             <p className="text-sm text-gray-600 mt-1">View all conversations</p>
           </Link>
+          <Link
+            to="/admin/timesheet-calculator"
+            className="bg-white/80 rounded-3xl shadow-lg border border-white/60 p-4 hover:shadow-xl transition backdrop-blur"
+          >
+            <h3 className="font-semibold text-gray-900">Timesheet Calculator</h3>
+            <p className="text-sm text-gray-600 mt-1">Manage agent timesheets</p>
+          </Link>
           <div className="bg-white/80 rounded-3xl shadow-lg border border-white/60 p-4 hover:shadow-xl transition backdrop-blur">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-gray-900">First Call Deck</h3>

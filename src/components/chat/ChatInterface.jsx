@@ -761,7 +761,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
               )}
             </div>
             <p className="text-sm text-gray-500">
-              {otherUser?.name || 'User'} • {otherUserOnline ? 'Online' : 'Offline'}
+              {otherUser?.name || (otherUserRole === 'agent' ? 'Agent' : otherUserRole === 'customer' ? 'Customer' : 'User')} • {otherUserOnline ? 'Online' : 'Offline'}
             </p>
           </div>
         </button>
@@ -830,9 +830,18 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           const senderId =
             typeof message.sender === 'object' ? message.sender._id : message.sender;
           const isOwn = senderId?.toString() === currentUser?._id?.toString();
-          const showAvatar = index === 0 || messages[index - 1].sender !== message.sender;
+          const prevMessage = index > 0 ? messages[index - 1] : null;
+          const prevSenderId = prevMessage && typeof prevMessage.sender === 'object' 
+            ? prevMessage.sender._id 
+            : prevMessage?.sender;
+          const showAvatar = index === 0 || prevSenderId?.toString() !== senderId?.toString();
           const showTime = index === messages.length - 1 || 
             new Date(messages[index + 1].createdAt) - new Date(message.createdAt) > 300000;
+          
+          // Get sender info from message
+          const sender = typeof message.sender === 'object' ? message.sender : null;
+          const senderName = sender?.name || (isOwn ? currentUser?.name : otherUser?.name) || 'User';
+          const senderAvatar = sender?.avatar || (isOwn ? currentUser?.avatar : otherUser?.avatar);
 
           return (
             <motion.div
@@ -850,12 +859,23 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
               <div className={`flex items-end space-x-2 max-w-[70%] ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 {!isOwn && showAvatar && (
                   <div className="flex-shrink-0">
-                    {renderAvatar(otherUser, 'w-8 h-8', 'text-sm')}
+                    {renderAvatar(sender || otherUser, 'w-8 h-8', 'text-sm')}
+                  </div>
+                )}
+                {isOwn && showAvatar && (
+                  <div className="flex-shrink-0">
+                    {renderAvatar(currentUser, 'w-8 h-8', 'text-sm')}
                   </div>
                 )}
                 <div 
                   className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} relative group`}
                 >
+                  {/* Sender Name - Show for non-own messages */}
+                  {!isOwn && showAvatar && senderName && (
+                    <span className="text-xs font-medium text-gray-600 mb-1 px-1">
+                      {senderName}
+                    </span>
+                  )}
                   {/* 3 Dots Menu Button - Always visible for own messages */}
                   {isOwn && !message.isDeleted && editingMessageId !== message._id && (
                     <button
@@ -936,6 +956,8 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                     handleSaveEdit={handleSaveEdit}
                     handleCancelEdit={handleCancelEdit}
                     onReplyClick={scrollToMessage}
+                    sender={sender}
+                    otherUser={otherUser}
                   />
                   {showTime && (
                     <div className={`flex items-center space-x-1 mt-1 text-xs ${message.isDeleted ? 'text-gray-400' : 'text-gray-500'} ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
@@ -1287,7 +1309,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                     Replying to {typeof replyingTo.sender === 'object' 
                       ? (replyingTo.sender._id?.toString() === currentUser?._id?.toString() 
                           ? 'You' 
-                          : replyingTo.sender.name || 'User')
+                          : replyingTo.sender.name || (otherUser?.name || 'User'))
                       : 'User'}
                   </span>
                 </div>
