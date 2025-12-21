@@ -507,7 +507,7 @@ const FirstCallDeck = () => {
                   <div className="bg-gradient-to-r from-gray-900 to-blue-900 text-white p-6 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <img
-                        src="/assets/tabalt-logo.png"
+                        src="/assets/tabalt-logo.png.jpg"
                         alt="Tabalt Logo"
                         className="h-10 w-auto object-contain"
                         onError={(e) => {
@@ -537,7 +537,7 @@ const FirstCallDeck = () => {
               <div className="bg-gradient-to-r from-gray-900 to-blue-900 text-white p-6 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <img
-                    src="/assets/tabalt-logo.png"
+                    src="/assets/tabalt-logo.png.jpg"
                     alt="Tabalt Logo"
                     className="h-10 w-auto object-contain"
                     onError={(e) => {

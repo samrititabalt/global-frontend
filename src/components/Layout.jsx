@@ -42,7 +42,7 @@ const Layout = ({ children, title }) => {
                 <Link to={getDashboardPath()} className="flex items-center gap-3 group">
                   {!logoError ? (
                     <img
-                      src="/assets/tabalt-logo.png"
+                      src="/assets/tabalt-logo.png.jpg"
                       alt="Tabalt Logo"
                       className="h-10 w-auto object-contain"
                       onError={() => setLogoError(true)}

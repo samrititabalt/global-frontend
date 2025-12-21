@@ -39,7 +39,7 @@ const Footer = () => {
             <Link to="/" className="flex items-center gap-3 mb-4">
               {!logoError ? (
                 <img
-                  src="/assets/tabalt-logo.png"
+                  src="/assets/tabalt-logo.png.jpg"
                   alt="Tabalt Logo"
                   className="h-10 w-auto object-contain"
                   onError={() => setLogoError(true)}
