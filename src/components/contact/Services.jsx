@@ -135,7 +135,7 @@ const Services = () => {
           Let's discuss how our services can help transform your business operations.
         </p>
         <Link
-          to="/contact"
+          to="/contact-us"
           className="inline-flex items-center justify-center bg-white text-gray-900 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl"
         >
           Contact Us

@@ -214,7 +214,7 @@ const Home = () => {
               Quality results at a better value — 80% ROI increase and save 50% compared to in-house teams.
             </p>
             <Link
-              to="/contact"
+              to="/contact-us"
               className="inline-flex items-center justify-center bg-white text-gray-900 px-10 py-5 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all shadow-2xl hover:shadow-3xl focus:outline-none focus:ring-4 focus:ring-white/50"
             >
               Let's Talk!

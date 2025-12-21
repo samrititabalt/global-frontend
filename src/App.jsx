@@ -40,9 +40,13 @@ import ProtectedRoute from './components/ProtectedRoute';
 // Public Pages
 import Home from './pages/Home';
 import WhyUsPage from './pages/WhyUsPage';
+import AboutUs from './pages/AboutUs';
+import Services from './pages/Services';
+import Industry from './pages/Industry';
+import CaseStudies from './pages/CaseStudies';
+import ContactUs from './pages/ContactUs';
 import Plans from './pages/Plans';
 import PlanCheckout from './pages/PlanCheckout';
-import Contact from './pages/Contact';
 import Profile from './pages/profile/Profile';
 
 function App() {
@@ -55,9 +59,13 @@ function App() {
             {/* public routes  */}
             <Route path="/" element={<Home />} />
             <Route path="/why-us" element={<WhyUsPage />} />
+            <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/industry" element={<Industry />} />
+            <Route path="/case-studies" element={<CaseStudies />} />
+            <Route path="/contact-us" element={<ContactUs />} />
             <Route path="/plans" element={<Plans />} />
             <Route path="/plans/:planSlug" element={<PlanCheckout />} />
-            <Route path="/contact" element={<Contact />} />
 
             {/* Customer Routes */}
             <Route path="/customer/login" element={<CustomerLogin />} />

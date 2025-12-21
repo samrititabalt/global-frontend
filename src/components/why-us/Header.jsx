@@ -19,7 +19,7 @@ const Header = () => {
     { name: 'Home', path: '/' },
     { name: 'Why Us', path: '/why-us' },
     { name: 'Services', path: '/services' },
-    { name: 'Contact', path: '/contact' },
+    { name: 'Contact Us', path: '/contact-us' },
   ];
 
   return (
@@ -70,7 +70,7 @@ const Header = () => {
               </Link>
             ))}
             <Link
-              to="/contact"
+              to="/contact-us"
               className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl"
             >
               Let's Talk
@@ -114,7 +114,7 @@ const Header = () => {
                 </Link>
               ))}
               <Link
-                to="/contact"
+                to="/contact-us"
                 className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
