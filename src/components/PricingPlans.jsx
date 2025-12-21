@@ -32,9 +32,9 @@ const PricingPlans = ({ plans = [], loading = false, onSelectPlan }) => {
     return plans.map((plan) => {
       const isPopular = plan.isPopular;
       const displayLabel = plan.marketingLabel || plan.name;
-      const hoursLabel =
-        plan.hoursPerMonth && Number(plan.hoursPerMonth) > 0
-          ? `${plan.hoursPerMonth} hours / month`
+      const minutesLabel =
+        (plan.minutesPerMonth || (plan.hoursPerMonth ? plan.hoursPerMonth * 60 : null)) && Number(plan.minutesPerMonth || (plan.hoursPerMonth ? plan.hoursPerMonth * 60 : null)) > 0
+          ? `${(plan.minutesPerMonth || (plan.hoursPerMonth * 60)).toLocaleString()} minutes / month`
           : plan.description || plan.marketingSummary;
       const featureList =
         (Array.isArray(plan.marketingFeatures) && plan.marketingFeatures.length > 0
@@ -98,7 +98,7 @@ const PricingPlans = ({ plans = [], loading = false, onSelectPlan }) => {
               />
 
               <div className="mb-10 space-y-5">
-                {hoursLabel && (
+                {minutesLabel && (
                   <div className="flex items-start">
                     <div className="mt-0.5 mr-3 flex-shrink-0">
                       <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +110,7 @@ const PricingPlans = ({ plans = [], loading = false, onSelectPlan }) => {
                         isPopular ? 'text-gray-700 font-semibold' : 'text-gray-600 font-medium'
                       }`}
                     >
-                      {hoursLabel}
+                      {minutesLabel}
                     </span>
                   </div>
                 )}

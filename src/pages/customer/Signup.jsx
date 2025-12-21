@@ -106,7 +106,7 @@ const CustomerSignup = () => {
               Join Ask Sam
             </p>
             <h1 className="text-4xl font-bold text-gray-900 mt-2 mb-3">Create an Account</h1>
-            <p className="text-gray-600">Get started in minutes and track your service hours effortlessly.</p>
+            <p className="text-gray-600">Get started in minutes and track your service minutes effortlessly.</p>
           </div>
 
         {error && (

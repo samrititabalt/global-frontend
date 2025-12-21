@@ -12,8 +12,8 @@ const AdminPlans = () => {
     name: '',
     description: '',
     price: '',
-    includedHours: '',
-    hoursPerMonth: '',
+    includedMinutes: '',
+    minutesPerMonth: '',
     bonusFeatures: [],
     isActive: true
   });
@@ -38,13 +38,13 @@ const AdminPlans = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { includedHours, ...restForm } = formData;
-      const parsedHours = includedHours ? parseInt(includedHours, 10) : 0;
+      const { includedMinutes, ...restForm } = formData;
+      const parsedMinutes = includedMinutes ? parseInt(includedMinutes, 10) : 0;
       const submitData = {
         ...restForm,
         price: parseFloat(formData.price),
-        tokens: parsedHours,
-        hoursPerMonth: formData.hoursPerMonth ? parseInt(formData.hoursPerMonth) : null,
+        tokens: parsedMinutes,
+        minutesPerMonth: formData.minutesPerMonth ? parseInt(formData.minutesPerMonth) : null,
       };
 
       if (editingPlan) {
@@ -69,8 +69,8 @@ const AdminPlans = () => {
       name: plan.name || '',
       description: plan.description || '',
       price: plan.price?.toString() || '',
-      includedHours: plan.tokens?.toString() || '',
-      hoursPerMonth: plan.hoursPerMonth?.toString() || '',
+      includedMinutes: plan.tokens?.toString() || '',
+      minutesPerMonth: (plan.minutesPerMonth || plan.hoursPerMonth ? (plan.hoursPerMonth * 60) : null)?.toString() || '',
       bonusFeatures: plan.bonusFeatures || [],
       isActive: plan.isActive !== undefined ? plan.isActive : true
     });
@@ -93,8 +93,8 @@ const AdminPlans = () => {
       name: '',
       description: '',
       price: '',
-      includedHours: '',
-      hoursPerMonth: '',
+      includedMinutes: '',
+      minutesPerMonth: '',
       bonusFeatures: [],
       isActive: true
     });
@@ -159,8 +159,8 @@ const AdminPlans = () => {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Included Hours</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hours/Month</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Included Minutes</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Minutes/Month</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
@@ -185,10 +185,10 @@ const AdminPlans = () => {
                     {formatPrice(plan.price)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {plan.tokens ? `${plan.tokens.toLocaleString()} hrs` : '-'}
+                    {plan.tokens ? `${plan.tokens.toLocaleString()} min` : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {plan.hoursPerMonth ? `${plan.hoursPerMonth}hrs` : '-'}
+                    {(plan.minutesPerMonth || (plan.hoursPerMonth ? plan.hoursPerMonth * 60 : null)) ? `${(plan.minutesPerMonth || (plan.hoursPerMonth * 60)).toLocaleString()} min` : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs rounded-full ${
@@ -271,27 +271,27 @@ const AdminPlans = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Included Hours *
+                    Included Minutes *
                   </label>
                   <input
                     type="number"
-                    value={formData.includedHours}
-                    onChange={(e) => setFormData({ ...formData, includedHours: e.target.value })}
+                    value={formData.includedMinutes}
+                    onChange={(e) => setFormData({ ...formData, includedMinutes: e.target.value })}
                     required
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="160"
+                    placeholder="9600"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Hours Per Month
+                    Minutes Per Month
                   </label>
                   <input
                     type="number"
-                    value={formData.hoursPerMonth}
-                    onChange={(e) => setFormData({ ...formData, hoursPerMonth: e.target.value })}
+                    value={formData.minutesPerMonth}
+                    onChange={(e) => setFormData({ ...formData, minutesPerMonth: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="160"
+                    placeholder="9600"
                   />
                 </div>
               </div>

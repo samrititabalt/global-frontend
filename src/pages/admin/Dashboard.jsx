@@ -93,7 +93,7 @@ const AdminDashboard = () => {
             className="bg-white/80 rounded-3xl shadow-lg border border-white/60 p-4 hover:shadow-xl transition backdrop-blur"
           >
             <h3 className="font-semibold text-gray-900">Manage Plans</h3>
-            <p className="text-sm text-gray-600 mt-1">Control pricing and hours</p>
+            <p className="text-sm text-gray-600 mt-1">Control pricing and minutes</p>
           </Link>
           <Link
             to="/admin/agents"
@@ -108,6 +108,13 @@ const AdminDashboard = () => {
           >
             <h3 className="font-semibold text-gray-900">Transactions</h3>
             <p className="text-sm text-gray-600 mt-1">Approve payments</p>
+          </Link>
+          <Link
+            to="/admin/customers"
+            className="bg-white/80 rounded-3xl shadow-lg border border-white/60 p-4 hover:shadow-xl transition backdrop-blur"
+          >
+            <h3 className="font-semibold text-gray-900">Manage Customers</h3>
+            <p className="text-sm text-gray-600 mt-1">View and adjust customer minutes</p>
           </Link>
           <Link
             to="/admin/chats"

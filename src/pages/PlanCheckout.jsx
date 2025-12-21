@@ -239,8 +239,8 @@ const PlanCheckout = () => {
                 ${Number(selectedPlan?.price || 0).toLocaleString()}
               </span>
               <span className="ml-2 text-gray-400 text-lg">/ month</span>
-              {selectedPlan?.hoursPerMonth && (
-                <p className="text-gray-400 mt-2">{selectedPlan.hoursPerMonth} hours / month</p>
+              {(selectedPlan?.minutesPerMonth || (selectedPlan?.hoursPerMonth ? selectedPlan.hoursPerMonth * 60 : null)) && (
+                <p className="text-gray-400 mt-2">{(selectedPlan.minutesPerMonth || (selectedPlan.hoursPerMonth * 60)).toLocaleString()} minutes / month</p>
               )}
             </div>
 

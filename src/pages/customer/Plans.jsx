@@ -155,9 +155,9 @@ const CustomerPlans = () => {
                       <h3 className={`text-2xl font-bold text-gray-900 mb-2 ${isLoadCash ? 'font-extrabold' : ''}`}>
                         {displayName}
                       </h3>
-                      {plan.hoursPerMonth ? (
+                      {(plan.minutesPerMonth || (plan.hoursPerMonth ? plan.hoursPerMonth * 60 : null)) ? (
                         <p className="text-gray-600 text-sm mb-4">
-                          {Math.floor(plan.tokens / 60)}hrs/month ({plan.tokens} min)
+                          {(plan.minutesPerMonth || (plan.hoursPerMonth ? plan.hoursPerMonth * 60 : null)).toLocaleString()} minutes / month
                         </p>
                       ) : plan.description ? (
                         <p className="text-gray-500 text-sm mb-4">
