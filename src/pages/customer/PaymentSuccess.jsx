@@ -21,7 +21,7 @@ const CustomerPaymentSuccess = () => {
           });
 
           if (response.data.success) {
-            setMessage(response.data.message || 'Thank you! Our team will reach you shortly.');
+            setMessage(response.data.message || 'Payment successful! Your plan has been activated and tokens have been added to your account.');
             setTimeout(() => {
               navigate('/customer/dashboard');
             }, 3000);
