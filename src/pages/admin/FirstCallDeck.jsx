@@ -13,7 +13,20 @@ const FirstCallDeck = () => {
       tagline: 'What We\'ll Cover Today',
       content: (
         <div className="space-y-4">
-          <div className="text-2xl font-semibold text-gray-800 mb-8">Presentation Agenda</div>
+          <div className="flex items-center justify-between mb-8">
+            <div className="text-2xl font-semibold text-gray-800">Presentation Agenda</div>
+            <div className="flex flex-col items-end">
+              <img
+                src="/assets/tabalt-logo.png.jpg"
+                alt="Tabalt Logo"
+                className="h-16 w-auto object-contain"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+              <span className="text-xs text-gray-600 font-medium mt-1">UK Outsourcing Partners</span>
+            </div>
+          </div>
           <ul className="space-y-4 text-lg text-gray-700">
             <li className="flex items-start">
               <span className="text-blue-600 mr-3 mt-1">1.</span>
@@ -519,13 +532,24 @@ const FirstCallDeck = () => {
                     </div>
                     <div className="text-sm text-gray-300">Slide {slide.id}</div>
                   </div>
-                  <div className="p-12 min-h-[600px]">
+                  <div className="p-12 min-h-[600px] relative">
                     <div className="mb-6">
                       <h1 className="text-4xl font-bold text-gray-900 mb-2">{slide.title}</h1>
                       <p className="text-xl text-gray-600">{slide.tagline}</p>
                     </div>
                     <div className="mt-8">
                       {slide.content}
+                    </div>
+                    {/* Small logo icon in bottom right */}
+                    <div className="absolute bottom-8 right-8 flex flex-col items-end">
+                      <img
+                        src="/assets/tabalt-logo.png.jpg"
+                        alt="Tabalt Logo"
+                        className="h-8 w-auto object-contain opacity-60"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -549,13 +573,24 @@ const FirstCallDeck = () => {
                 </div>
                 <div className="text-sm text-gray-300">Slide {slides[currentSlide].id}</div>
               </div>
-              <div className="p-12 min-h-[600px]">
+              <div className="p-12 min-h-[600px] relative">
                 <div className="mb-6">
                   <h1 className="text-4xl font-bold text-gray-900 mb-2">{slides[currentSlide].title}</h1>
                   <p className="text-xl text-gray-600">{slides[currentSlide].tagline}</p>
                 </div>
                 <div className="mt-8">
                   {slides[currentSlide].content}
+                </div>
+                {/* Small logo icon in bottom right */}
+                <div className="absolute bottom-8 right-8 flex flex-col items-end">
+                  <img
+                    src="/assets/tabalt-logo.png.jpg"
+                    alt="Tabalt Logo"
+                    className="h-8 w-auto object-contain opacity-60"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
                 </div>
               </div>
             </>
