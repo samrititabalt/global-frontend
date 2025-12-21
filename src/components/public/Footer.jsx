@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
+  const [logoError, setLogoError] = useState(false);
   const services = [
     'Customer Service',
     'Back Office Support',
@@ -35,8 +36,19 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           <div>
-            <Link to="/" className="text-2xl font-bold text-white mb-4 block">
-              Tabalt
+            <Link to="/" className="flex items-center gap-3 mb-4">
+              {!logoError ? (
+                <img
+                  src="/assets/tabalt-logo.png"
+                  alt="Tabalt Logo"
+                  className="h-10 w-auto object-contain"
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <span className="text-2xl font-bold text-white">
+                  Tabalt
+                </span>
+              )}
             </Link>
             <p className="text-gray-400 mb-6">
               Premium outsourcing services that help businesses scale without losing their identity.

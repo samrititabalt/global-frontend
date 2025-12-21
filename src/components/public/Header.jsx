@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [logoError, setLogoError] = useState(false);
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   
@@ -43,11 +44,22 @@ const Header = () => {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="flex flex-col group">
-            <span className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-              Tabalt
-            </span>
-            <span className="text-xs text-gray-600 font-medium">UK Outsourcing Partners</span>
+          <Link to="/" className="flex items-center gap-3 group">
+            {!logoError ? (
+              <img
+                src="/assets/tabalt-logo.png"
+                alt="Tabalt Logo"
+                className="h-12 w-auto object-contain"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  Tabalt
+                </span>
+                <span className="text-xs text-gray-600 font-medium">UK Outsourcing Partners</span>
+              </div>
+            )}
           </Link>
 
           {/* Desktop Navigation */}

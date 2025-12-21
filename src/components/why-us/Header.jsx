@@ -33,25 +33,15 @@ const Header = () => {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
+          <Link to="/" className="flex items-center gap-3 group">
             <img
-              src="/assets/logo.svg"
-              alt="Ask Sam Logo"
-              className="h-8 w-auto"
+              src="/assets/tabalt-logo.png"
+              alt="Tabalt Logo"
+              className="h-12 w-auto object-contain"
               onError={(e) => {
                 e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'block';
               }}
             />
-            <span
-              className="text-2xl font-bold text-gray-900 hidden"
-              style={{ display: 'none' }}
-            >
-              Ask Sam
-            </span>
-            <span className="text-2xl font-bold text-gray-900 group-hover:text-primary-800 transition-colors">
-              Ask Sam
-            </span>
           </Link>
 
           {/* Desktop Navigation */}

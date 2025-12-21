@@ -39,10 +39,19 @@ const Layout = ({ children, title }) => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-20">
               <div className="flex items-center space-x-8">
-                <Link to={getDashboardPath()} className="flex items-center space-x-2 group">
-                  <span className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    Tabalt
-                  </span>
+                <Link to={getDashboardPath()} className="flex items-center gap-3 group">
+                  {!logoError ? (
+                    <img
+                      src="/assets/tabalt-logo.png"
+                      alt="Tabalt Logo"
+                      className="h-10 w-auto object-contain"
+                      onError={() => setLogoError(true)}
+                    />
+                  ) : (
+                    <span className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      Tabalt
+                    </span>
+                  )}
                 </Link>
                 <div className="hidden md:flex items-center space-x-6">
                   {role === 'customer' && (

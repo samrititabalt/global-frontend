@@ -506,7 +506,14 @@ const FirstCallDeck = () => {
                 <div key={slide.id} className={index > 0 ? 'border-t-4 border-gray-300' : ''} style={{ pageBreakAfter: 'always' }}>
                   <div className="bg-gradient-to-r from-gray-900 to-blue-900 text-white p-6 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="text-2xl font-bold">Tabalt</div>
+                      <img
+                        src="/assets/tabalt-logo.png"
+                        alt="Tabalt Logo"
+                        className="h-10 w-auto object-contain"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
                       <div className="h-8 w-px bg-white/30"></div>
                       <div className="text-sm text-gray-300">UK Outsourcing Partners</div>
                     </div>
@@ -529,7 +536,14 @@ const FirstCallDeck = () => {
             <>
               <div className="bg-gradient-to-r from-gray-900 to-blue-900 text-white p-6 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="text-2xl font-bold">Tabalt</div>
+                  <img
+                    src="/assets/tabalt-logo.png"
+                    alt="Tabalt Logo"
+                    className="h-10 w-auto object-contain"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
                   <div className="h-8 w-px bg-white/30"></div>
                   <div className="text-sm text-gray-300">UK Outsourcing Partners</div>
                 </div>
