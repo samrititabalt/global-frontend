@@ -33,6 +33,7 @@ import AdminAgents from './pages/admin/Agents';
 import AdminTransactions from './pages/admin/Transactions';
 import AdminCustomers from './pages/admin/Customers';
 import AdminChats from './pages/admin/Chats';
+import FirstCallDeck from './pages/admin/FirstCallDeck';
 
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute';
@@ -225,6 +226,14 @@ function App() {
               element={
                 <ProtectedRoute role="admin">
                   <AdminChats />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/first-call-deck" 
+              element={
+                <ProtectedRoute role="admin">
+                  <FirstCallDeck />
                 </ProtectedRoute>
               } 
             />

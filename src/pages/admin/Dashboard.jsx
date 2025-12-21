@@ -379,6 +379,13 @@ const AdminDashboard = () => {
             <h3 className="font-semibold text-gray-900">Monitor Chats</h3>
             <p className="text-sm text-gray-600 mt-1">View all conversations</p>
           </Link>
+          <Link
+            to="/admin/first-call-deck"
+            className="bg-white/80 rounded-3xl shadow-lg border border-white/60 p-4 hover:shadow-xl transition backdrop-blur"
+          >
+            <h3 className="font-semibold text-gray-900">First Call Deck</h3>
+            <p className="text-sm text-gray-600 mt-1">Download presentation deck</p>
+          </Link>
         </div>
 
         <div className="bg-white/90 rounded-3xl shadow-xl border border-white/60 p-6 backdrop-blur">
