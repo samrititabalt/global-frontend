@@ -88,17 +88,46 @@ const AskSam = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center"
+            className="flex flex-col md:flex-row items-center justify-center gap-8"
           >
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-2">
-              <span className="text-blue-600">Ask Sam</span>
-            </h1>
-            <p className="text-lg text-gray-500 mb-4 font-medium">
-              Delegate task. Save time
-            </p>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Discover our comprehensive services and flexible plans designed to help your business scale efficiently.
-            </p>
+            {/* Ask Sam Logo */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex-shrink-0"
+            >
+              <div className="relative">
+                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 p-2 shadow-xl">
+                  <img
+                    src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop&q=80"
+                    alt="Ask Sam Logo - Professional Assistant"
+                    className="w-full h-full rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.src = 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=400&h=400&fit=crop&q=80';
+                    }}
+                  />
+                </div>
+                <div className="absolute -bottom-2 -right-2 bg-blue-600 rounded-full p-2 shadow-lg">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Header Text */}
+            <div className="text-center md:text-left">
+              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-2 flex items-center justify-center md:justify-start gap-4">
+                <span className="text-blue-600">Ask Sam</span>
+              </h1>
+              <p className="text-lg text-gray-500 mb-4 font-medium">
+                Delegate task. Save time
+              </p>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto md:mx-0">
+                Discover our comprehensive services and flexible plans designed to help your business scale efficiently.
+              </p>
+            </div>
           </motion.div>
         </div>
       </section>
