@@ -25,10 +25,9 @@ const Header = () => {
     { name: 'Home', path: '/' },
     { name: 'Why Us', path: '/why-us' },
     { name: 'About Us', path: '/about-us' },
-    { name: 'Services', path: '/services' },
+    { name: 'Ask Sam', path: '/ask-sam' },
     { name: 'Industry', path: '/industry' },
     { name: 'Case Studies', path: '/case-studies' },
-    { name: 'Plans', path: '/plans' },
     { name: 'Contact Us', path: '/contact-us' },
   ];
 
@@ -47,7 +46,7 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex flex-col group">
             <span className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-              Ask Sam
+              Tabalt
             </span>
             <span className="text-xs text-gray-600 font-medium">Delegate Task. Save Time</span>
           </Link>
@@ -73,7 +72,7 @@ const Header = () => {
               to={isCustomer ? "/customer/dashboard" : "/customer/signup"}
               className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl"
             >
-              {isCustomer ? "Dashboard" : "Let's Talk"}
+              {isCustomer ? "Dashboard" : "Sign up"}
             </Link>
           </div>
 
@@ -122,7 +121,7 @@ const Header = () => {
                 className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                {isCustomer ? "Dashboard" : "Let's Talk"}
+                {isCustomer ? "Dashboard" : "Sign up"}
               </Link>
             </div>
           </motion.div>

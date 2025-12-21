@@ -41,6 +41,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import WhyUsPage from './pages/WhyUsPage';
 import AboutUs from './pages/AboutUs';
+import AskSam from './pages/AskSam';
 import Services from './pages/Services';
 import Industry from './pages/Industry';
 import CaseStudies from './pages/CaseStudies';
@@ -60,6 +61,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/why-us" element={<WhyUsPage />} />
             <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/ask-sam" element={<AskSam />} />
             <Route path="/services" element={<Services />} />
             <Route path="/industry" element={<Industry />} />
             <Route path="/case-studies" element={<CaseStudies />} />

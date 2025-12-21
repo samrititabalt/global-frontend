@@ -36,7 +36,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           <div>
             <Link to="/" className="text-2xl font-bold text-white mb-4 block">
-              Ask Sam
+              Tabalt
             </Link>
             <p className="text-gray-400 mb-6">
               Premium outsourcing services that help businesses scale without losing their identity.
@@ -61,7 +61,7 @@ const Footer = () => {
               {services.map((service) => (
                 <li key={service}>
                   <Link
-                    to="/services"
+                    to="/ask-sam"
                     className="hover:text-white transition-colors"
                   >
                     {service}
@@ -112,7 +112,7 @@ const Footer = () => {
         <div className="border-t border-gray-800 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-gray-400">
-              © {new Date().getFullYear()} Ask Sam. All rights reserved.
+              © {new Date().getFullYear()} Tabalt Ltd. All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm">
               <Link to="/terms" className="hover:text-white transition-colors">
