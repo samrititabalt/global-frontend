@@ -15,6 +15,12 @@ const AgentChat = () => {
   const [chatSessions, setChatSessions] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // #region debug log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AgentChat.jsx:18',message:'AgentChat component mounted',data:{chatId,hasUser:!!user,hasSocket:!!socket,userId:user?._id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+  }, []);
+  // #endregion
+
   useEffect(() => {
     loadChatSessions();
     if (chatId) {
@@ -48,17 +54,33 @@ const AgentChat = () => {
   };
 
   const loadChatSession = async () => {
+    // #region debug log
+    fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AgentChat.jsx:50',message:'loadChatSession called',data:{chatId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     try {
       setLoading(true);
       const response = await api.get(`/agent/chat-session/${chatId}`);
       
+      // #region debug log
+      fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AgentChat.jsx:54',message:'API response received',data:{success:response.data.success,hasChatSession:!!response.data.chatSession,chatSessionId:response.data.chatSession?._id,hasCustomer:!!response.data.chatSession?.customer,hasAgent:!!response.data.chatSession?.agent},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+      
       if (response.data.success && response.data.chatSession) {
+        // #region debug log
+        fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AgentChat.jsx:56',message:'Setting chatSession state',data:{chatSessionId:response.data.chatSession._id,customerId:response.data.chatSession.customer?._id,agentId:response.data.chatSession.agent?._id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
         setChatSession(response.data.chatSession);
       } else {
+        // #region debug log
+        fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AgentChat.jsx:58',message:'Chat session invalid, navigating',data:{success:response.data.success,hasChatSession:!!response.data.chatSession},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         console.error('Chat session not found or invalid');
         navigate('/agent/dashboard');
       }
     } catch (error) {
+      // #region debug log
+      fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AgentChat.jsx:62',message:'Error loading chat session',data:{error:error.message,status:error.response?.status,statusText:error.response?.statusText},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       console.error('Error loading chat session:', error);
       // Only navigate if it's a 404 or 403, not for other errors
       if (error.response?.status === 404 || error.response?.status === 403) {
@@ -69,6 +91,9 @@ const AgentChat = () => {
       }
     } finally {
       setLoading(false);
+      // #region debug log
+      fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AgentChat.jsx:71',message:'loadChatSession finished',data:{loading:false,hasChatSession:!!chatSession},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
     }
   };
 
@@ -128,6 +153,12 @@ const AgentChat = () => {
       </div>
     );
   }
+
+  // #region debug log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AgentChat.jsx:132',message:'Rendering AgentChat return',data:{loading,chatId,hasChatSession:!!chatSession,chatSessionId:chatSession?._id,hasUser:!!user,hasSocket:!!socket},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  }, [loading, chatId, chatSession, user, socket]);
+  // #endregion
 
   return (
     <div className="h-screen flex bg-gray-50">

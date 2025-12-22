@@ -44,8 +44,15 @@ import MinimizedCallWindow from './MinimizedCallWindow';
  */
 
 const ChatInterface = ({ chatSession, currentUser, socket }) => {
+  // #region debug log
+  fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:46',message:'ChatInterface render start',data:{hasChatSession:!!chatSession,chatSessionId:chatSession?._id,hasCurrentUser:!!currentUser,hasSocket:!!socket},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+  // #endregion
+  
   // Guard against null/undefined chatSession
   if (!chatSession || !chatSession._id) {
+    // #region debug log
+    fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:48',message:'ChatInterface guard clause triggered',data:{hasChatSession:!!chatSession,chatSessionId:chatSession?._id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     return (
       <div className="h-full flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -90,6 +97,12 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const messageRefs = useRef({}); // Store refs for each message to enable scrolling
   const headerMenuRef = useRef(null);
 
+  // #region debug log
+  const chatSessionId = chatSession?._id;
+  const currentUserId = currentUser?._id || currentUser?.id;
+  fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:93',message:'Before useWebRTC call',data:{chatSessionId,currentUserId,hasSocket:!!socket},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+  // #endregion
+  
   // WebRTC for voice calls
   const {
     isCallActive,
@@ -105,7 +118,11 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     rejectCall,
     endCall,
     toggleCallMinimize,
-  } = useWebRTC(socket, chatSession?._id, currentUser?._id || currentUser?.id);
+  } = useWebRTC(socket, chatSessionId, currentUserId);
+  
+  // #region debug log
+  fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:108',message:'After useWebRTC call',data:{isCallActive,isCallIncoming,isCallOutgoing},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+  // #endregion
 
   useEffect(() => {
     // Load existing messages via REST
@@ -114,15 +131,26 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
 
   // Calculate otherUser outside useEffect with null checks
   const otherUser = useMemo(() => {
+    // #region debug log
+    fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:116',message:'Calculating otherUser',data:{hasChatSession:!!chatSession,hasCustomer:!!chatSession?.customer,hasAgent:!!chatSession?.agent,hasCurrentUser:!!currentUser,customerId:chatSession?.customer?._id?.toString(),currentUserId:currentUser?._id?.toString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     if (!chatSession || !currentUser) return null;
     
     const customerId = chatSession?.customer?._id?.toString() || chatSession?.customer?.toString();
     const currentUserId = currentUser?._id?.toString() || currentUser?.id?.toString();
     
     if (customerId === currentUserId) {
-      return chatSession?.agent || null;
+      const result = chatSession?.agent || null;
+      // #region debug log
+      fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:123',message:'otherUser calculated (customer match)',data:{otherUserRole:result?.role,otherUserId:result?._id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
+      return result;
     } else {
-      return chatSession?.customer || null;
+      const result = chatSession?.customer || null;
+      // #region debug log
+      fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:125',message:'otherUser calculated (agent match)',data:{otherUserRole:result?.role,otherUserId:result?._id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
+      return result;
     }
   }, [chatSession, currentUser]);
 
