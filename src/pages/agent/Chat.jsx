@@ -49,11 +49,24 @@ const AgentChat = () => {
 
   const loadChatSession = async () => {
     try {
+      setLoading(true);
       const response = await api.get(`/agent/chat-session/${chatId}`);
-      setChatSession(response.data.chatSession);
+      
+      if (response.data.success && response.data.chatSession) {
+        setChatSession(response.data.chatSession);
+      } else {
+        console.error('Chat session not found or invalid');
+        navigate('/agent/dashboard');
+      }
     } catch (error) {
       console.error('Error loading chat session:', error);
-      navigate('/agent/dashboard');
+      // Only navigate if it's a 404 or 403, not for other errors
+      if (error.response?.status === 404 || error.response?.status === 403) {
+        navigate('/agent/dashboard');
+      } else {
+        // For other errors, show error but don't navigate
+        setChatSession(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -99,6 +112,23 @@ const AgentChat = () => {
     );
   }
 
+  // Show error state if chat session failed to load and we're not loading
+  if (!loading && !chatSession) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Unable to load chat session</p>
+          <button
+            onClick={() => navigate('/agent/dashboard')}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex bg-gray-50">
       <ChatSidebar
@@ -108,7 +138,7 @@ const AgentChat = () => {
         currentUser={user}
       />
       <div className="flex-1 flex flex-col">
-        {chatSession ? (
+        {chatSession && chatSession._id ? (
           <ChatInterface
             chatSession={chatSession}
             currentUser={user}

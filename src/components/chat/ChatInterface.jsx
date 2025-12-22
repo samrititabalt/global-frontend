@@ -44,6 +44,17 @@ import MinimizedCallWindow from './MinimizedCallWindow';
  */
 
 const ChatInterface = ({ chatSession, currentUser, socket }) => {
+  // Guard against null/undefined chatSession
+  if (!chatSession || !chatSession._id) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Chat session not available</p>
+        </div>
+      </div>
+    );
+  }
+
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -101,10 +112,19 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     loadMessages();
   }, [chatSession?._id]);
 
-  // Calculate otherUser outside useEffect
-  const otherUser = chatSession?.customer?._id?.toString() === currentUser?._id?.toString()
-    ? chatSession?.agent
-    : chatSession?.customer;
+  // Calculate otherUser outside useEffect with null checks
+  const otherUser = useMemo(() => {
+    if (!chatSession || !currentUser) return null;
+    
+    const customerId = chatSession?.customer?._id?.toString() || chatSession?.customer?.toString();
+    const currentUserId = currentUser?._id?.toString() || currentUser?.id?.toString();
+    
+    if (customerId === currentUserId) {
+      return chatSession?.agent || null;
+    } else {
+      return chatSession?.customer || null;
+    }
+  }, [chatSession, currentUser]);
 
   const otherUserRole = useMemo(() => {
     if (otherUser?.role) return otherUser.role;
