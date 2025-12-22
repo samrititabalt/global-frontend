@@ -16,15 +16,21 @@ const AgentLogin = () => {
     setError('');
     setLoading(true);
 
-    const result = await login(email, password, 'agent');
-    
-    if (result.success) {
-      navigate('/agent/dashboard');
-    } else {
-      setError(result.message);
+    try {
+      const result = await login(email, password, 'agent');
+      
+      if (result.success) {
+        // Ensure we stay on agent routes - prevent any redirects
+        navigate('/agent/dashboard', { replace: true });
+      } else {
+        setError(result.message || 'Login failed. Please check your credentials.');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   return (

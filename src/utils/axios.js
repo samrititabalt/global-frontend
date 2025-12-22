@@ -44,8 +44,24 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/customer/login';
+      // Only redirect if not already on a login page
+      const currentPath = window.location.pathname;
+      const isOnLoginPage = currentPath.includes('/login') || 
+                           currentPath.includes('/forgot-password') || 
+                           currentPath.includes('/reset-password');
+      
+      // Don't redirect if already on a login page or if it's a login request
+      if (!isOnLoginPage && !error.config?.url?.includes('/auth/login')) {
+        localStorage.removeItem('token');
+        // Determine correct login page based on current route
+        if (currentPath.startsWith('/agent')) {
+          window.location.href = '/agent/login';
+        } else if (currentPath.startsWith('/admin')) {
+          window.location.href = '/admin/login';
+        } else {
+          window.location.href = '/customer/login';
+        }
+      }
     }
     return Promise.reject(error);
   }

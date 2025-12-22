@@ -132,7 +132,13 @@ const Footer = () => {
             <div className="text-sm text-gray-400">
               © {new Date().getFullYear()} Tabalt Ltd. All rights reserved.
             </div>
-            <div className="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-6">
+            <div className="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-4">
+              <Link
+                to="/agent/login"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              >
+                Agent Login
+              </Link>
               <Link
                 to="/admin/login"
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"

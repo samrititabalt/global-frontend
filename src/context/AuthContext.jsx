@@ -57,15 +57,34 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.login({ email, password, expectedRole });
       const { token: newToken, user: userData } = response.data;
       
+      // Validate that the user role matches expected role before setting token
+      if (expectedRole && userData.role !== expectedRole) {
+        return {
+          success: false,
+          message: `Access denied. ${userData.role === 'customer' ? 'Customer' : userData.role === 'agent' ? 'Agent' : 'Admin'} accounts can only login through the ${userData.role} portal.`
+        };
+      }
+      
       localStorage.setItem('token', newToken);
       setToken(newToken);
       setUser(userData);
       
-      return { success: true };
+      return { success: true, user: userData };
     } catch (error) {
+      // Don't let axios interceptor redirect during login - handle it in the component
+      const errorMessage = error.response?.data?.message || 'Login failed';
+      
+      // If it's a 401/403, don't trigger the interceptor redirect
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        // Clear token to prevent stale auth state
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
+      }
+      
       return { 
         success: false, 
-        message: error.response?.data?.message || 'Login failed' 
+        message: errorMessage
       };
     }
   };
