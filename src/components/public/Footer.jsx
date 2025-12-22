@@ -132,13 +132,21 @@ const Footer = () => {
             <div className="text-sm text-gray-400">
               © {new Date().getFullYear()} Tabalt Ltd. All rights reserved.
             </div>
-            <div className="flex space-x-6 text-sm">
-              <Link to="/terms" className="hover:text-white transition-colors">
-                Terms & Conditions
+            <div className="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-6">
+              <Link
+                to="/admin/login"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              >
+                Admin Login
               </Link>
-              <Link to="/privacy" className="hover:text-white transition-colors">
-                Privacy Policy
-              </Link>
+              <div className="flex space-x-6 text-sm">
+                <Link to="/terms" className="hover:text-white transition-colors">
+                  Terms & Conditions
+                </Link>
+                <Link to="/privacy" className="hover:text-white transition-colors">
+                  Privacy Policy
+                </Link>
+              </div>
             </div>
           </div>
         </div>

@@ -24,8 +24,12 @@ const AdminAgents = () => {
     email: '',
     phone: '',
     country: '',
-    serviceCategory: ''
+    serviceCategory: '',
+    password: ''
   });
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({ agentId: '', password: '' });
+  const [updatingPassword, setUpdatingPassword] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -94,6 +98,9 @@ const AdminAgents = () => {
       submitData.append('phone', formData.phone);
       submitData.append('country', formData.country);
       submitData.append('serviceCategory', formData.serviceCategory);
+      if (formData.password) {
+        submitData.append('password', formData.password);
+      }
       if (avatar) {
         submitData.append('avatar', avatar);
       }
@@ -116,7 +123,7 @@ const AdminAgents = () => {
       
       setShowModal(false);
       setEditingAgent(null);
-      setFormData({ name: '', email: '', phone: '', country: '', serviceCategory: '' });
+      setFormData({ name: '', email: '', phone: '', country: '', serviceCategory: '', password: '' });
       setAvatar(null);
       setAvatarPreview(null);
       loadData();
@@ -132,7 +139,8 @@ const AdminAgents = () => {
       email: agent.email || '',
       phone: agent.phone || '',
       country: agent.country || '',
-      serviceCategory: agent.serviceCategory?._id || agent.serviceCategory || ''
+      serviceCategory: agent.serviceCategory?._id || agent.serviceCategory || '',
+      password: agent.plainPassword || ''
     });
     setAvatarPreview(agent.avatar || null);
     setAvatar(null);
@@ -152,10 +160,38 @@ const AdminAgents = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', phone: '', country: '', serviceCategory: '' });
+    setFormData({ name: '', email: '', phone: '', country: '', serviceCategory: '', password: '' });
     setAvatar(null);
     setAvatarPreview(null);
     setEditingAgent(null);
+  };
+
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    if (!passwordData.password || passwordData.password.length < 6) {
+      alert('Password must be at least 6 characters');
+      return;
+    }
+
+    setUpdatingPassword(true);
+    try {
+      await api.put(`/admin/agents/${passwordData.agentId}/password`, {
+        password: passwordData.password
+      });
+      setShowPasswordModal(false);
+      setPasswordData({ agentId: '', password: '' });
+      loadData();
+      alert('Password updated successfully');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update password');
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
+
+  const openPasswordModal = (agent) => {
+    setPasswordData({ agentId: agent._id, password: agent.plainPassword || '' });
+    setShowPasswordModal(true);
   };
 
   const handleAdjustMinutes = (agent) => {
@@ -350,6 +386,9 @@ const AdminAgents = () => {
                           <Mail className="w-4 h-4 mr-2 text-gray-400" />
                           {agent.email}
                         </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Password: <span className="font-mono font-semibold text-gray-700">{agent.plainPassword || 'N/A'}</span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {agent.serviceCategory?.name || '-'}
@@ -386,6 +425,13 @@ const AdminAgents = () => {
                           >
                             <Edit className="w-4 h-4 mr-1" />
                             Edit
+                          </button>
+                          <button
+                            onClick={() => openPasswordModal(agent)}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition"
+                            title="Change Password"
+                          >
+                            🔑
                           </button>
                           <button
                             onClick={() => handleAdjustMinutes(agent)}
@@ -532,6 +578,23 @@ const AdminAgents = () => {
                     ))}
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Password {editingAgent ? '(leave empty to keep current)' : '(leave empty to auto-generate)'}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder={editingAgent ? 'Enter new password or leave empty' : 'Enter password or leave empty to auto-generate'}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                  {editingAgent && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Current password: <span className="font-mono font-semibold">{editingAgent.plainPassword || 'N/A'}</span>
+                    </p>
+                  )}
+                </div>
                 <div className="flex justify-end space-x-2">
                   <button
                     type="button"
@@ -667,6 +730,76 @@ const AdminAgents = () => {
                     className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
                   >
                     {adjusting ? 'Adjusting...' : 'Adjust Minutes'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Password Update Modal */}
+        {showPasswordModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Update Agent Password
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setShowPasswordModal(false);
+                      setPasswordData({ agentId: '', password: '' });
+                    }}
+                    className="text-gray-400 hover:text-gray-600 transition"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  Agent: <span className="font-semibold">
+                    {agents.find(a => a._id === passwordData.agentId)?.name || 'Unknown'}
+                  </span>
+                </p>
+              </div>
+
+              <form onSubmit={handleUpdatePassword} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    New Password *
+                  </label>
+                  <input
+                    type="text"
+                    value={passwordData.password}
+                    onChange={(e) => setPasswordData({ ...passwordData, password: e.target.value })}
+                    required
+                    minLength={6}
+                    placeholder="Enter new password (min 6 characters)"
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Password must be at least 6 characters long
+                  </p>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPasswordModal(false);
+                      setPasswordData({ agentId: '', password: '' });
+                    }}
+                    className="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition"
+                    disabled={updatingPassword}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updatingPassword || !passwordData.password || passwordData.password.length < 6}
+                    className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    {updatingPassword ? 'Updating...' : 'Update Password'}
                   </button>
                 </div>
               </form>
