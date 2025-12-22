@@ -56,7 +56,13 @@ const CustomerDashboard = () => {
         navigate(`/customer/chat/${response.data.chatSession._id}`);
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to request service');
+      // Handle case when all agents are offline
+      if (error.response?.status === 503 && error.response?.data?.allAgentsOffline) {
+        // Show friendly message - don't show technical error
+        alert('All agents are currently offline. We\'ve notified the team and someone will be with you shortly.');
+      } else {
+        alert(error.response?.data?.message || 'Failed to request service. Please try again later.');
+      }
     }
   };
 
