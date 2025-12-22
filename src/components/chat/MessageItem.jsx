@@ -50,9 +50,13 @@ const MessageItem = ({
           ? 'ring-2 ring-blue-500 bg-blue-50'
           : message.isDeleted
           ? 'bg-gray-200 text-gray-500 italic'
-          : isOwn
-          ? 'bg-blue-500 text-white rounded-br-sm'
-          : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
+          : isCustomerView
+          ? (isOwn
+              ? 'bg-gray-100 text-gray-900 rounded-br-sm border border-gray-200' // Customer messages: light grey
+              : 'bg-blue-500 text-white rounded-bl-sm') // Agent messages: blue
+          : (isOwn
+              ? 'bg-blue-500 text-white rounded-br-sm' // Agent's own messages: blue
+              : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200') // Customer messages: white
       } ${isSelectionMode ? 'cursor-pointer' : ''}`}
     >
       {/* Reply Preview - Clickable to scroll to original message */}
@@ -65,12 +69,16 @@ const MessageItem = ({
             }
           }}
           className={`mb-2 pb-2 border-l-2 ${
-            isOwn ? 'border-white/50' : 'border-blue-500'
+            isCustomerView
+              ? (isOwn ? 'border-gray-400' : 'border-blue-500')
+              : (isOwn ? 'border-white/50' : 'border-blue-500')
           } pl-2 cursor-pointer hover:opacity-80 transition-opacity`}
           title="Click to view original message"
         >
           <div className={`text-xs font-semibold mb-1 ${
-            isOwn ? 'text-white/80' : 'text-blue-600'
+            isCustomerView
+              ? (isOwn ? 'text-gray-700' : 'text-blue-600')
+              : (isOwn ? 'text-white/80' : 'text-blue-600')
           }`}>
             {typeof message.replyTo === 'object' && message.replyTo.sender
               ? (message.replyTo.sender._id?.toString() === currentUser?._id?.toString()
@@ -79,7 +87,9 @@ const MessageItem = ({
               : 'Replying to'}
           </div>
           <div className={`text-xs truncate ${
-            isOwn ? 'text-white/70' : 'text-gray-600'
+            isCustomerView
+              ? (isOwn ? 'text-gray-600' : 'text-white/70')
+              : (isOwn ? 'text-white/70' : 'text-gray-600')
           }`}>
             {message.replyTo.content || 
              (message.replyTo.attachments?.[0]?.type === 'image' ? '📷 Image' :
@@ -228,7 +238,11 @@ const MessageItem = ({
       ) : null}
 
       {/* Message Footer: Time, Status Ticks, and Labels */}
-      <div className={`flex items-center justify-end mt-1 space-x-1 text-xs ${isOwn ? 'text-white/70' : 'text-gray-500'}`}>
+      <div className={`flex items-center justify-end mt-1 space-x-1 text-xs ${
+        isCustomerView
+          ? (isOwn ? 'text-gray-500' : 'text-white/70')
+          : (isOwn ? 'text-white/70' : 'text-gray-500')
+      }`}>
         {/* Edited Label */}
         {message.isEdited && !message.isDeleted && (
           <span className="italic">
@@ -240,11 +254,11 @@ const MessageItem = ({
         {isOwn && !message.isDeleted && (
           <div className="flex items-center ml-1">
             {message.isRead ? (
-              // Double blue tick - Message read (light blue on blue background)
-              <CheckCheck className="w-4 h-4 text-blue-200" fill="currentColor" />
+              // Double blue tick - Message read
+              <CheckCheck className={`w-4 h-4 ${isCustomerView ? 'text-blue-300' : 'text-blue-200'}`} fill="currentColor" />
             ) : (
-              // Double gray tick - Message delivered but not read (white/60 on blue background)
-              <CheckCheck className="w-4 h-4 text-white/60" />
+              // Double gray tick - Message delivered but not read
+              <CheckCheck className={`w-4 h-4 ${isCustomerView ? 'text-gray-400' : 'text-white/60'}`} />
             )}
           </div>
         )}

@@ -958,6 +958,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                     onReplyClick={scrollToMessage}
                     sender={sender}
                     otherUser={otherUser}
+                    isCustomerView={currentUser?.role === 'customer'}
                   />
                   {showTime && (
                     <div className={`flex items-center space-x-1 mt-1 text-xs ${message.isDeleted ? 'text-gray-400' : 'text-gray-500'} ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
