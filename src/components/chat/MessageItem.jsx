@@ -24,6 +24,7 @@ const MessageItem = ({
   onReplyClick, // New prop for handling reply click
   sender, // Sender object from message
   otherUser, // Other user in chat
+  isCustomerView, // Whether the current user is a customer
 }) => {
   const swipeRef = useSwipe(
     null, // left swipe
