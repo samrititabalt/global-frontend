@@ -44,10 +44,6 @@ import MinimizedCallWindow from './MinimizedCallWindow';
  */
 
 const ChatInterface = ({ chatSession, currentUser, socket }) => {
-  // #region debug log
-  console.log('[DEBUG] ChatInterface render start', { hasChatSession: !!chatSession, chatSessionId: chatSession?._id, hasCurrentUser: !!currentUser, hasSocket: !!socket });
-  fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:46',message:'ChatInterface render start',data:{hasChatSession:!!chatSession,chatSessionId:chatSession?._id,hasCurrentUser:!!currentUser,hasSocket:!!socket},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-  // #endregion
 
   // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS (React Rules of Hooks)
   const [messages, setMessages] = useState([]);
@@ -85,11 +81,8 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   const messageRefs = useRef({}); // Store refs for each message to enable scrolling
   const headerMenuRef = useRef(null);
 
-  // #region debug log
   const chatSessionId = chatSession?._id;
   const currentUserId = currentUser?._id || currentUser?.id;
-  fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:93',message:'Before useWebRTC call',data:{chatSessionId,currentUserId,hasSocket:!!socket},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-  // #endregion
   
   // WebRTC for voice calls
   const {
@@ -108,19 +101,9 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     toggleCallMinimize,
   } = useWebRTC(socket, chatSessionId, currentUserId);
   
-  // #region debug log
-  fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:108',message:'After useWebRTC call',data:{isCallActive,isCallIncoming,isCallOutgoing},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-  // #endregion
 
   const loadMessages = useCallback(async () => {
-    // #region debug log
-    console.log('[DEBUG] loadMessages called', { chatSessionId: chatSession?._id, hasCurrentUser: !!currentUser });
-    fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:127',message:'loadMessages called',data:{chatSessionId:chatSession?._id,hasCurrentUser:!!currentUser,userRole:currentUser?.role},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     if (!chatSession?._id || !currentUser) {
-      // #region debug log
-      console.log('[DEBUG] loadMessages early return', { hasChatSessionId: !!chatSession?._id, hasCurrentUser: !!currentUser });
-      // #endregion
       return;
     }
     try {
@@ -128,15 +111,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
       const endpoint = currentUser.role === 'customer' 
         ? `/customer/chat-session/${chatSession._id}`
         : `/agent/chat-session/${chatSession._id}`;
-      // #region debug log
-      console.log('[DEBUG] Loading messages from endpoint', endpoint);
-      fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:140',message:'Calling messages API',data:{endpoint},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       const response = await api.get(endpoint);
-      // #region debug log
-      console.log('[DEBUG] Messages API response', { success: response.data.success, messageCount: response.data.messages?.length });
-      fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:147',message:'Messages API response received',data:{success:response.data.success,messageCount:response.data.messages?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       // Ensure replyTo is populated
       const messagesWithReplies = (response.data.messages || []).map(msg => {
         if (msg.replyTo && typeof msg.replyTo === 'string') {
@@ -149,14 +124,7 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
         return msg;
       });
       setMessages(messagesWithReplies);
-      // #region debug log
-      console.log('[DEBUG] Messages set', { count: messagesWithReplies.length });
-      // #endregion
     } catch (error) {
-      // #region debug log
-      console.error('[DEBUG] Error loading messages', error);
-      fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:163',message:'Error loading messages',data:{error:error.message,status:error.response?.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       console.error('Error loading messages:', error);
       // Try alternative endpoint if first fails
       try {
@@ -170,35 +138,20 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
 
   useEffect(() => {
     // Load existing messages via REST
-    // #region debug log
-    console.log('[DEBUG] useEffect for loadMessages triggered', { chatSessionId: chatSession?._id });
-    fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:183',message:'useEffect loadMessages triggered',data:{chatSessionId:chatSession?._id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     loadMessages();
   }, [loadMessages]);
 
   // Calculate otherUser outside useEffect with null checks
   const otherUser = useMemo(() => {
-    // #region debug log
-    fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:116',message:'Calculating otherUser',data:{hasChatSession:!!chatSession,hasCustomer:!!chatSession?.customer,hasAgent:!!chatSession?.agent,hasCurrentUser:!!currentUser,customerId:chatSession?.customer?._id?.toString(),currentUserId:currentUser?._id?.toString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
     if (!chatSession || !currentUser) return null;
     
     const customerId = chatSession?.customer?._id?.toString() || chatSession?.customer?.toString();
     const currentUserId = currentUser?._id?.toString() || currentUser?.id?.toString();
     
     if (customerId === currentUserId) {
-      const result = chatSession?.agent || null;
-      // #region debug log
-      fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:123',message:'otherUser calculated (customer match)',data:{otherUserRole:result?.role,otherUserId:result?._id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
-      return result;
+      return chatSession?.agent || null;
     } else {
-      const result = chatSession?.customer || null;
-      // #region debug log
-      fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:125',message:'otherUser calculated (agent match)',data:{otherUserRole:result?.role,otherUserId:result?._id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
-      return result;
+      return chatSession?.customer || null;
     }
   }, [chatSession, currentUser]);
 
@@ -787,10 +740,6 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
 
   // Guard against null/undefined chatSession - MUST be after all hooks
   if (!chatSession || !chatSession._id) {
-    // #region debug log
-    console.log('[DEBUG] ChatInterface guard clause triggered');
-    fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.jsx:820',message:'ChatInterface guard clause triggered',data:{hasChatSession:!!chatSession,chatSessionId:chatSession?._id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
     return (
       <div className="h-full flex items-center justify-center bg-gray-50">
         <div className="text-center">

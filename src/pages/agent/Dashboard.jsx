@@ -149,9 +149,6 @@ const AgentDashboard = () => {
                   key={chat._id}
                   className="p-3 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition"
                   onClick={() => {
-                    // #region debug log
-                    fetch('http://127.0.0.1:7242/ingest/2f137257-445b-4027-94f4-f63f4a70e66e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:151',message:'Active chat clicked',data:{chatId:chat._id,chatData:chat},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-                    // #endregion
                     navigate(`/agent/chat/${chat._id}`);
                   }}
                 >
