@@ -395,38 +395,6 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     }
   };
 
-  const loadMessages = async () => {
-    if (!chatSession?._id || !currentUser) return;
-    try {
-      // Use appropriate API based on user role
-      const endpoint = currentUser.role === 'customer' 
-        ? `/customer/chat-session/${chatSession._id}`
-        : `/agent/chat-session/${chatSession._id}`;
-      const response = await api.get(endpoint);
-      // Ensure replyTo is populated
-      const messagesWithReplies = (response.data.messages || []).map(msg => {
-        if (msg.replyTo && typeof msg.replyTo === 'string') {
-          // If replyTo is just an ID, find the message in the list
-          const repliedMessage = response.data.messages.find(m => m._id === msg.replyTo);
-          if (repliedMessage) {
-            msg.replyTo = repliedMessage;
-          }
-        }
-        return msg;
-      });
-      setMessages(messagesWithReplies);
-    } catch (error) {
-      console.error('Error loading messages:', error);
-      // Try alternative endpoint if first fails
-      try {
-        const response = await api.get(`/chat/sessions/${chatSession._id}/messages`);
-        setMessages(response.data.messages || []);
-      } catch (err) {
-        console.error('Error loading messages from alternative endpoint:', err);
-      }
-    }
-  };
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
