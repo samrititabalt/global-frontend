@@ -868,32 +868,9 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           
           // Get sender info from message
           const sender = typeof message.sender === 'object' ? message.sender : null;
-          
-          // Determine sender name based on sender type
-          let senderName = 'User';
-          let senderAvatar = null;
-          
-          if (message.senderType === 'ai' || message.senderRole === 'ai' || message.isAIMessage) {
-            // AI message
-            senderName = 'ASKSAM AI';
-            senderAvatar = null; // AI doesn't have avatar
-          } else if (message.senderType === 'system' || message.senderRole === 'system' || message.messageType === 'system') {
-            // System message
-            senderName = 'System';
-            senderAvatar = null;
-          } else if (isOwn) {
-            // Own message
-            senderName = currentUser?.name || 'You';
-            senderAvatar = currentUser?.avatar;
-          } else {
-            // Other user's message
-            senderName = sender?.name || otherUser?.name || 'User';
-            senderAvatar = sender?.avatar || otherUser?.avatar;
-          }
+          const senderName = sender?.name || (isOwn ? currentUser?.name : otherUser?.name) || 'User';
+          const senderAvatar = sender?.avatar || (isOwn ? currentUser?.avatar : otherUser?.avatar);
 
-          // Check if this is a system message
-          const isSystemMessage = message.senderType === 'system' || message.senderRole === 'system' || message.messageType === 'system';
-          
           return (
             <motion.div
               key={message._id}
@@ -904,19 +881,11 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
               }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex ${isSystemMessage ? 'justify-center' : (isOwn ? 'justify-end' : 'justify-start')} ${showAvatar ? 'mt-4' : 'mt-1'} transition-all duration-300`}
+              className={`flex ${isOwn ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mt-4' : 'mt-1'} transition-all duration-300`}
               id={`message-${message._id}`}
             >
-              {isSystemMessage ? (
-                // System message - centered and styled differently
-                <div className="w-full flex justify-center">
-                  <div className="bg-gray-100 text-gray-600 text-xs px-3 py-1.5 rounded-full italic max-w-[80%] text-center">
-                    {message.content}
-                  </div>
-                </div>
-              ) : (
               <div className={`flex items-end space-x-2 max-w-[70%] ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                {!isOwn && showAvatar && (message.senderType !== 'ai' && message.senderRole !== 'ai' && message.senderType !== 'system' && message.senderRole !== 'system') && (
+                {!isOwn && showAvatar && (
                   <div className="flex-shrink-0">
                     {renderAvatar(sender || otherUser, 'w-8 h-8', 'text-sm')}
                   </div>
@@ -926,25 +895,12 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                     {renderAvatar(currentUser, 'w-8 h-8', 'text-sm')}
                   </div>
                 )}
-                {/* AI Avatar - Special styling */}
-                {(message.senderType === 'ai' || message.senderRole === 'ai') && showAvatar && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">
-                    AI
-                  </div>
-                )}
                 <div 
                   className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} relative group`}
                 >
-                  {/* Sender Name - Show for non-own messages and AI messages */}
-                  {(!isOwn || message.senderType === 'ai' || message.senderRole === 'ai') && showAvatar && senderName && (
-                    <span className={`text-xs font-medium mb-1 px-1 ${
-                      message.senderType === 'ai' || message.senderRole === 'ai' 
-                        ? 'text-purple-600 font-semibold' 
-                        : message.senderType === 'system' || message.senderRole === 'system'
-                        ? 'text-gray-500 italic'
-                        : 'text-gray-600'
-                    }`}>
-                      {message.senderType === 'ai' || message.senderRole === 'ai' ? '🤖 ' : ''}
+                  {/* Sender Name - Show for non-own messages */}
+                  {!isOwn && showAvatar && senderName && (
+                    <span className="text-xs font-medium text-gray-600 mb-1 px-1">
                       {senderName}
                     </span>
                   )}
@@ -1044,7 +1000,6 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                   )}
                 </div>
               </div>
-              )}
             </motion.div>
           );
         })}
