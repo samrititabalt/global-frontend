@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 
 const AgentDashboard = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { socket, isConnected } = useSocket();
   const [dashboard, setDashboard] = useState({
     pendingRequests: [],
@@ -21,6 +21,33 @@ const AgentDashboard = () => {
   useEffect(() => {
     loadDashboard();
   }, []);
+
+  // Sync online status from user object and socket connection
+  useEffect(() => {
+    if (user) {
+      setIsOnline(user.isOnline || false);
+    }
+  }, [user?.isOnline]);
+
+  // Update online status when socket connects/disconnects
+  useEffect(() => {
+    if (socket && isConnected && user) {
+      // When socket is connected, agent should be online
+      setIsOnline(true);
+      
+      // Ensure socket join event is emitted to update backend status
+      if (socket.userId !== user._id && socket.userId !== user.id) {
+        const userId = user._id || user.id;
+        const token = localStorage.getItem('token');
+        socket.emit('join', {
+          userId: userId,
+          token: token
+        });
+      }
+    } else if (socket && !isConnected) {
+      setIsOnline(false);
+    }
+  }, [socket, isConnected, user]);
 
   // Listen for real-time pending request updates
   useEffect(() => {
@@ -69,12 +96,30 @@ const AgentDashboard = () => {
       });
     };
 
+    // Listen for agent status updates
+    const handleAgentStatusUpdate = (data) => {
+      if (data.agentId === (user._id?.toString() || user.id?.toString())) {
+        setIsOnline(data.isOnline || false);
+      }
+    };
+
+    // Listen for agent online events
+    const handleAgentOnline = (data) => {
+      if (data.agentId === (user._id?.toString() || user.id?.toString())) {
+        setIsOnline(true);
+      }
+    };
+
     socket.on('newPendingRequest', handleNewPendingRequest);
     socket.on('requestAccepted', handleRequestAccepted);
+    socket.on('agentStatusUpdate', handleAgentStatusUpdate);
+    socket.on('agentOnline', handleAgentOnline);
 
     return () => {
       socket.off('newPendingRequest', handleNewPendingRequest);
       socket.off('requestAccepted', handleRequestAccepted);
+      socket.off('agentStatusUpdate', handleAgentStatusUpdate);
+      socket.off('agentOnline', handleAgentOnline);
     };
   }, [socket, isConnected, user]);
 
@@ -92,6 +137,12 @@ const AgentDashboard = () => {
   const handleAcceptRequest = async (chatId) => {
     try {
       const response = await api.post(`/agent/accept-request/${chatId}`);
+      
+      // Update online status immediately when accepting request
+      setIsOnline(true);
+      
+      // Refresh user data to get latest status from backend
+      await refreshUser();
       
       // Update dashboard immediately (optimistic update)
       setDashboard(prev => {
@@ -127,6 +178,16 @@ const AgentDashboard = () => {
       const newStatus = !isOnline;
       await api.put('/agent/status', { isOnline: newStatus, isAvailable: newStatus });
       setIsOnline(newStatus);
+      
+      // If going online, ensure socket connection is established
+      if (newStatus && socket && !isConnected) {
+        const userId = user._id || user.id;
+        const token = localStorage.getItem('token');
+        socket.emit('join', {
+          userId: userId,
+          token: token
+        });
+      }
     } catch (error) {
       console.error('Error updating status:', error);
     }
