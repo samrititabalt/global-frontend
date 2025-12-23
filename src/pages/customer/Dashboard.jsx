@@ -14,6 +14,10 @@ const CustomerDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const availableMinutes = Number(user?.tokenBalance ?? 0);
+  
+  // Get current plan info
+  const currentPlan = user?.currentPlan;
+  const planStatus = user?.planStatus;
 
   useEffect(() => {
     loadData();
@@ -90,9 +94,31 @@ const CustomerDashboard = () => {
       <div className="space-y-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-gradient-to-r from-gray-900 via-gray-800 to-blue-900 text-white rounded-3xl p-8 shadow-2xl">
-            <p className="text-sm uppercase tracking-[0.3em] text-blue-200 font-semibold">Overview</p>
-            <h2 className="text-4xl font-bold mt-3 mb-4">Service minutes available</h2>
-            <div className="text-5xl font-extrabold tracking-tight">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <p className="text-sm uppercase tracking-[0.3em] text-blue-200 font-semibold">Overview</p>
+                <h2 className="text-4xl font-bold mt-3 mb-4">Service minutes available</h2>
+              </div>
+              {currentPlan && (
+                <div className="text-right">
+                  <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${
+                    planStatus === 'approved' 
+                      ? 'bg-green-500/20 text-green-200 border border-green-400/50' 
+                      : planStatus === 'pending'
+                      ? 'bg-yellow-500/20 text-yellow-200 border border-yellow-400/50'
+                      : planStatus === 'expired'
+                      ? 'bg-red-500/20 text-red-200 border border-red-400/50'
+                      : 'bg-gray-500/20 text-gray-200 border border-gray-400/50'
+                  }`}>
+                    {currentPlan.name || 'Plan Active'}
+                  </span>
+                  {planStatus && (
+                    <p className="text-xs text-gray-300 mt-1 capitalize">{planStatus}</p>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="text-5xl font-extrabold tracking-tight mb-4">
               {availableMinutes.toLocaleString()} min
             </div>
             <p className="mt-4 text-gray-200 max-w-2xl">
@@ -102,7 +128,7 @@ const CustomerDashboard = () => {
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 onClick={() => document.getElementById('service-selection')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-6 py-3 rounded-full bg-white text-gray-900 font-semibold hover:bg-gray-100 transition"
+                className="px-6 py-3 rounded-full bg-white text-gray-900 font-semibold hover:bg-gray-100 transition shadow-lg"
               >
                 Request a service
               </button>
@@ -110,21 +136,35 @@ const CustomerDashboard = () => {
                 to="/customer/plans"
                 className="px-6 py-3 rounded-full border border-white/40 text-white font-semibold hover:bg-white/10 transition"
               >
-                Add more minutes
+                {currentPlan ? 'Upgrade Plan' : 'Add more minutes'}
               </Link>
             </div>
           </div>
-          <div className="bg-white/80 border border-white/60 rounded-3xl p-6 shadow-xl backdrop-blur">
-            <p className="text-sm font-semibold text-gray-500 uppercase tracking-[0.3em]">Quick stats</p>
-            <div className="mt-6 space-y-4">
-              <div>
-                <p className="text-3xl font-bold text-gray-900">{services.length}</p>
-                <p className="text-sm text-gray-500">Services available</p>
+          <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-xl hover:shadow-2xl transition-shadow">
+            <p className="text-sm font-semibold text-gray-500 uppercase tracking-[0.3em] mb-6">Quick stats</p>
+            <div className="space-y-6">
+              <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                <p className="text-3xl font-bold text-gray-900 mb-1">{services.length}</p>
+                <p className="text-sm text-gray-600 font-medium">Services available</p>
               </div>
-              <div>
-                <p className="text-3xl font-bold text-gray-900">{chatSessions.length}</p>
-                <p className="text-sm text-gray-500">Chat sessions</p>
+              <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100">
+                <p className="text-3xl font-bold text-gray-900 mb-1">{chatSessions.length}</p>
+                <p className="text-sm text-gray-600 font-medium">Chat sessions</p>
               </div>
+              {currentPlan && (
+                <div className="pt-4 border-t-2 border-gray-200">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Current Plan</p>
+                  <div className="p-3 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-100">
+                    <p className="text-lg font-bold text-gray-900 mb-1">{currentPlan.name}</p>
+                    {currentPlan.tokens && (
+                      <p className="text-xs text-gray-600 font-medium">{currentPlan.tokens.toLocaleString()} minutes included</p>
+                    )}
+                    {currentPlan.price && (
+                      <p className="text-xs text-gray-500 mt-1">${currentPlan.price}</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -132,8 +172,13 @@ const CustomerDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Service Selection */}
           <div id="service-selection" className="lg:col-span-2">
-            <div className="bg-white/80 rounded-3xl shadow-xl border border-white/60 p-8 backdrop-blur">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Request a Service</h2>
+            <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 hover:shadow-2xl transition-shadow">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Request a Service</h2>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500">Select a service to start</p>
+                </div>
+              </div>
               
               {!selectedService ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -141,10 +186,10 @@ const CustomerDashboard = () => {
                     <button
                       key={service._id}
                       onClick={() => handleServiceSelect(service)}
-                      className="p-6 border-2 border-gray-200 rounded-xl hover:border-blue-500/60 hover:bg-blue-50/30 transition-all text-left group"
+                      className="p-6 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all text-left group shadow-sm hover:shadow-md"
                     >
-                      <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-primary-800 transition-colors">{service.name}</h3>
-                      <p className="text-sm text-gray-600">{service.description}</p>
+                      <h3 className="font-bold text-lg text-gray-900 mb-2 group-hover:text-blue-700 transition-colors">{service.name}</h3>
+                      <p className="text-sm text-gray-600 leading-relaxed">{service.description || 'Click to select this service'}</p>
                     </button>
                   ))}
                 </div>
@@ -199,26 +244,42 @@ const CustomerDashboard = () => {
           </div>
 
           {/* Chat History */}
-            <div className="bg-white/80 rounded-3xl shadow-xl border border-white/60 p-8 backdrop-blur">
+            <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 hover:shadow-2xl transition-shadow">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Chat History</h2>
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar">
               {chatSessions.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No chat history</p>
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <FiMessageSquare className="text-gray-400 w-8 h-8" />
+                  </div>
+                  <p className="text-gray-500 font-medium">No chat history</p>
+                  <p className="text-xs text-gray-400 mt-1">Your conversations will appear here</p>
+                </div>
               ) : (
                 chatSessions.map((chat) => (
                   <div
                     key={chat._id}
                     onClick={() => navigate(`/customer/chat/${chat._id}`)}
-                    className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-primary-300 cursor-pointer transition-all"
+                    className="p-4 border-2 border-gray-100 rounded-xl hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition-all group"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-sm text-gray-900">{chat.service?.name}</span>
+                      <span className="font-bold text-sm text-gray-900 group-hover:text-blue-700 transition-colors">{chat.service?.name || 'Service'}</span>
                       <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(chat.status)}`}>
                         {chat.status}
                       </span>
                     </div>
                     {chat.agent && (
-                      <p className="text-xs text-gray-600 mt-1">Agent: {chat.agent.name}</p>
+                      <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                        Agent: {chat.agent.name}
+                      </p>
+                    )}
+                    {chat.unreadCount > 0 && (
+                      <div className="mt-2">
+                        <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                          {chat.unreadCount} new
+                        </span>
+                      </div>
                     )}
                   </div>
                 ))
