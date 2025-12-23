@@ -4,9 +4,11 @@ import Layout from '../../components/Layout';
 import { FiMessageSquare, FiClock, FiCheckCircle, FiToggleLeft, FiToggleRight } from 'react-icons/fi';
 import api from '../../utils/axios';
 import { useAuth } from '../../context/AuthContext';
+import { useSocket } from '../../context/SocketContext';
 
 const AgentDashboard = () => {
   const { user } = useAuth();
+  const { socket, isConnected } = useSocket();
   const [dashboard, setDashboard] = useState({
     pendingRequests: [],
     activeChats: [],
@@ -19,6 +21,62 @@ const AgentDashboard = () => {
   useEffect(() => {
     loadDashboard();
   }, []);
+
+  // Listen for real-time pending request updates
+  useEffect(() => {
+    if (!socket || !isConnected || !user) return;
+
+    // Listen for new pending requests
+    const handleNewPendingRequest = (data) => {
+      // Only add if this request is for the agent's service category
+      const agentServiceId = user.serviceCategory?._id?.toString() || user.serviceCategory?.toString();
+      if (agentServiceId && data.serviceId === agentServiceId) {
+        // Check if request already exists (avoid duplicates)
+        setDashboard(prev => {
+          const exists = prev.pendingRequests.some(req => req._id === data.chatSession._id);
+          if (exists) return prev;
+          
+          return {
+            ...prev,
+            pendingRequests: [data.chatSession, ...prev.pendingRequests]
+          };
+        });
+      }
+    };
+
+    // Listen for when a request is accepted (by any agent)
+    const handleRequestAccepted = (data) => {
+      setDashboard(prev => {
+        // Remove from pending requests
+        const updatedPending = prev.pendingRequests.filter(
+          req => req._id !== data.chatSessionId
+        );
+        
+        // If this agent accepted it, add to active chats
+        if (data.agentId === user._id || data.agentId === user.id) {
+          const updatedActive = [data.chatSession, ...prev.activeChats];
+          return {
+            ...prev,
+            pendingRequests: updatedPending,
+            activeChats: updatedActive
+          };
+        }
+        
+        return {
+          ...prev,
+          pendingRequests: updatedPending
+        };
+      });
+    };
+
+    socket.on('newPendingRequest', handleNewPendingRequest);
+    socket.on('requestAccepted', handleRequestAccepted);
+
+    return () => {
+      socket.off('newPendingRequest', handleNewPendingRequest);
+      socket.off('requestAccepted', handleRequestAccepted);
+    };
+  }, [socket, isConnected, user]);
 
   const loadDashboard = async () => {
     try {
@@ -33,11 +91,34 @@ const AgentDashboard = () => {
 
   const handleAcceptRequest = async (chatId) => {
     try {
-      await api.post(`/agent/accept-request/${chatId}`);
-      loadDashboard();
+      const response = await api.post(`/agent/accept-request/${chatId}`);
+      
+      // Update dashboard immediately (optimistic update)
+      setDashboard(prev => {
+        const acceptedRequest = prev.pendingRequests.find(req => req._id === chatId);
+        const updatedPending = prev.pendingRequests.filter(req => req._id !== chatId);
+        
+        if (acceptedRequest) {
+          const updatedActive = [{
+            ...acceptedRequest,
+            agent: { _id: user._id, name: user.name },
+            status: 'active'
+          }, ...prev.activeChats];
+          
+          return {
+            ...prev,
+            pendingRequests: updatedPending,
+            activeChats: updatedActive
+          };
+        }
+        return prev;
+      });
+      
       navigate(`/agent/chat/${chatId}`);
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to accept request');
+      // Reload dashboard on error to sync state
+      loadDashboard();
     }
   };
 
