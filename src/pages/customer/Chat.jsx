@@ -25,8 +25,21 @@ const CustomerChat = () => {
   useEffect(() => {
     if (socket) {
       socket.on('chatUpdated', handleChatUpdate);
+      
+      // Listen for when an agent accepts the request
+      const handleRequestAccepted = (data) => {
+        if (data.chatSessionId === chatId) {
+          // Reload chat session to get updated agent info
+          loadChatSession();
+          loadChatSessions();
+        }
+      };
+      
+      socket.on('requestAccepted', handleRequestAccepted);
+      
       return () => {
         socket.off('chatUpdated');
+        socket.off('requestAccepted', handleRequestAccepted);
       };
     }
   }, [socket, chatId]);
