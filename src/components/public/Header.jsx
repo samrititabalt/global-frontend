@@ -1,18 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
+  const [isMobileServicesOpen, setIsMobileServicesOpen] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const dropdownRef = useRef(null);
   
   // Check if user is a customer
   const isCustomer = isAuthenticated && user?.role === 'customer';
+
+  const services = [
+    { name: 'UK Accounting, Taxation & Reporting', path: '/services/uk-accounting-taxation-reporting' },
+    { name: 'ESG', path: '/services/esg' },
+    { name: 'Market Research', path: '/services/market-research' },
+    { name: 'Contact Centre Support', path: '/services/contact-centre-support' },
+    { name: 'Recruitment & Staffing', path: '/services/recruitment-staffing' },
+    { name: 'Equity Research & Management', path: '/services/equity-research-management' },
+    { name: 'Industry Reports', path: '/services/industry-reports' },
+    { name: 'Software & Tech Support', path: '/services/software-tech-support' },
+  ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +35,23 @@ const Header = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsServicesDropdownOpen(false);
+      }
+    };
+
+    if (isServicesDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isServicesDropdownOpen]);
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -82,6 +113,54 @@ const Header = () => {
                 {link.name}
               </Link>
             ))}
+            
+            {/* Services Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setIsServicesDropdownOpen(!isServicesDropdownOpen)}
+                className={`flex items-center gap-1 text-sm font-medium transition-colors ${
+                  services.some(s => isActive(s.path))
+                    ? 'text-blue-600'
+                    : isScrolled
+                    ? 'text-gray-700 hover:text-gray-900'
+                    : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
+                Services
+                <ChevronDown 
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    isServicesDropdownOpen ? 'rotate-180' : ''
+                  }`} 
+                />
+              </button>
+              
+              <AnimatePresence>
+                {isServicesDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute top-full left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                  >
+                    {services.map((service) => (
+                      <Link
+                        key={service.path}
+                        to={service.path}
+                        className={`block px-4 py-2.5 text-sm transition-colors ${
+                          isActive(service.path)
+                            ? 'text-blue-600 bg-blue-50'
+                            : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                        }`}
+                        onClick={() => setIsServicesDropdownOpen(false)}
+                      >
+                        {service.name}
+                      </Link>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <Link
               to={isCustomer ? "/customer/dashboard" : "/customer/signup"}
               className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl"
@@ -130,6 +209,57 @@ const Header = () => {
                   {link.name}
                 </Link>
               ))}
+              
+              {/* Mobile Services Dropdown */}
+              <div>
+                <button
+                  onClick={() => setIsMobileServicesOpen(!isMobileServicesOpen)}
+                  className={`flex items-center justify-between w-full text-base font-medium py-2 ${
+                    services.some(s => isActive(s.path))
+                      ? 'text-blue-600'
+                      : 'text-gray-700 hover:text-gray-900'
+                  }`}
+                >
+                  Services
+                  <ChevronDown 
+                    className={`h-5 w-5 transition-transform duration-200 ${
+                      isMobileServicesOpen ? 'rotate-180' : ''
+                    }`} 
+                  />
+                </button>
+                
+                <AnimatePresence>
+                  {isMobileServicesOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pl-4 pt-2 space-y-2">
+                        {services.map((service) => (
+                          <Link
+                            key={service.path}
+                            to={service.path}
+                            className={`block text-sm py-2 ${
+                              isActive(service.path)
+                                ? 'text-blue-600'
+                                : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              setIsMobileServicesOpen(false);
+                            }}
+                          >
+                            {service.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
               <Link
                 to={isCustomer ? "/customer/dashboard" : "/customer/signup"}
                 className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all"

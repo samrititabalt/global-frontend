@@ -53,6 +53,16 @@ import PlanCheckout from './pages/PlanCheckout';
 import Profile from './pages/profile/Profile';
 import FirstCallDeckPublic from './pages/FirstCallDeckPublic';
 
+// Service Pages
+import UKAccountingTaxationReporting from './pages/services/UKAccountingTaxationReporting';
+import ESG from './pages/services/ESG';
+import MarketResearch from './pages/services/MarketResearch';
+import ContactCentreSupport from './pages/services/ContactCentreSupport';
+import RecruitmentStaffing from './pages/services/RecruitmentStaffing';
+import EquityResearchManagement from './pages/services/EquityResearchManagement';
+import IndustryReports from './pages/services/IndustryReports';
+import SoftwareTechSupport from './pages/services/SoftwareTechSupport';
+
 function App() {
   return (
     <AuthProvider>
@@ -66,6 +76,14 @@ function App() {
             <Route path="/about-us" element={<AboutUs />} />
             <Route path="/ask-sam" element={<AskSam />} />
             <Route path="/services" element={<Services />} />
+            <Route path="/services/uk-accounting-taxation-reporting" element={<UKAccountingTaxationReporting />} />
+            <Route path="/services/esg" element={<ESG />} />
+            <Route path="/services/market-research" element={<MarketResearch />} />
+            <Route path="/services/contact-centre-support" element={<ContactCentreSupport />} />
+            <Route path="/services/recruitment-staffing" element={<RecruitmentStaffing />} />
+            <Route path="/services/equity-research-management" element={<EquityResearchManagement />} />
+            <Route path="/services/industry-reports" element={<IndustryReports />} />
+            <Route path="/services/software-tech-support" element={<SoftwareTechSupport />} />
             <Route path="/industry" element={<Industry />} />
             <Route path="/case-studies" element={<CaseStudies />} />
             <Route path="/contact-us" element={<ContactUs />} />
