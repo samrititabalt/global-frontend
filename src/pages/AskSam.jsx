@@ -53,7 +53,7 @@ const AskSam = () => {
               ...plan,
               minutesPerMonth: 300,
               marketingFeatures: [
-                'Perfect for users to test the service',
+                'Ideal for testing',
                 'No obligation',
                 'Free Consultation on user problem',
                 'Include Standard Support'
