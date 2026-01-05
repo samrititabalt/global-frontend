@@ -7,16 +7,6 @@ const Footer = () => {
     'Trust & Safety',
   ];
 
-  const industries = [
-    'Retail & E-commerce',
-    'Financial',
-    'Edtech',
-    'Healthcare & Healthtech',
-    'SaaS',
-    'Technology',
-    'Travel & Hospitality',
-    'Video Games',
-  ];
 
   const socialLinks = [
     { name: 'Twitter', href: '#' },
@@ -29,7 +19,7 @@ const Footer = () => {
   return (
     <footer className="bg-gray-900 text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-12">
           <div>
             <Link to="/" className="flex flex-col gap-2 mb-4">
               {!logoError ? (
@@ -69,34 +59,15 @@ const Footer = () => {
           </div>
 
           <div>
-            <ul className="space-y-2">
-              {services.map((service) => (
-                <li key={service}>
-                  <Link
-                    to="/ask-sam"
-                    className="hover:text-white transition-colors"
-                  >
-                    {service}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-white font-semibold mb-4">Industries</h3>
-            <ul className="space-y-2">
-              {industries.map((industry) => (
-                <li key={industry}>
-                  <Link
-                    to="/industries"
-                    className="hover:text-white transition-colors"
-                  >
-                    {industry}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {services.map((service) => (
+              <Link
+                key={service}
+                to="/ask-sam"
+                className="text-white font-semibold mb-4 block hover:text-white transition-colors"
+              >
+                {service}
+              </Link>
+            ))}
           </div>
 
           <div>
