@@ -85,7 +85,7 @@ const Home = () => {
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="text-xl text-gray-600 mb-8 max-w-2xl leading-relaxed"
               >
-                Premium outsourcing services that help businesses scale without losing their identity. Transform customer interactions into revenue opportunities.
+                Premium outsourcing services that help UK businesses & individuals scale without losing their identity.
               </motion.p>
 
               <motion.div
