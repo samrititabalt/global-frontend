@@ -4,12 +4,7 @@ import { Link } from 'react-router-dom';
 const Footer = () => {
   const [logoError, setLogoError] = useState(false);
   const services = [
-    'Customer Service',
-    'Back Office Support',
     'Trust & Safety',
-    'Compliance & Fraud',
-    'Quality Assurance',
-    'Tech Support',
   ];
 
   const industries = [
@@ -74,7 +69,6 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-white font-semibold mb-4">Services</h3>
             <ul className="space-y-2">
               {services.map((service) => (
                 <li key={service}>
