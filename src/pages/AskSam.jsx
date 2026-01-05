@@ -124,8 +124,11 @@ const AskSam = () => {
               <p className="text-lg text-gray-500 mb-4 font-medium">
                 Delegate task. Save time
               </p>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto md:mx-0">
-                Discover our comprehensive services and flexible plans designed to help your business scale efficiently.
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto md:mx-0 mb-4">
+                Everyone deserves a helping hand—at work or at home.
+              </p>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto md:mx-0">
+                Ask Sam is a first-of-its-kind personal assistant service offering flexible, hourly support for every task and every individual. From business to personal to-dos, we step in exactly when you need us.
               </p>
             </div>
           </motion.div>
