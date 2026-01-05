@@ -21,26 +21,7 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-12">
           <div>
-            <Link to="/" className="flex flex-col gap-2 mb-4">
-              {!logoError ? (
-                <>
-                  <img
-                    src="/assets/tabalt-logo.png.jpg"
-                    alt="Tabalt Logo"
-                    className="h-10 w-auto object-contain"
-                    onError={() => setLogoError(true)}
-                  />
-                  <span className="text-xs text-gray-400 font-medium">UK Outsourcing Partners</span>
-                </>
-              ) : (
-                <>
-                  <span className="text-2xl font-bold text-white">
-                    Tabalt
-                  </span>
-                  <span className="text-xs text-gray-400 font-medium">UK Outsourcing Partners</span>
-                </>
-              )}
-            </Link>
+            <span className="text-xs text-gray-400 font-medium mb-4 block">UK Outsourcing Partners</span>
             <p className="text-gray-400 mb-6">
               Premium outsourcing services that help businesses scale without losing their identity.
             </p>
@@ -60,13 +41,29 @@ const Footer = () => {
 
           <div>
             {services.map((service) => (
-              <Link
-                key={service}
-                to="/ask-sam"
-                className="text-white font-semibold mb-4 block hover:text-white transition-colors"
-              >
-                {service}
-              </Link>
+              <React.Fragment key={service}>
+                <Link
+                  to="/ask-sam"
+                  className="text-white font-semibold mb-4 block hover:text-white transition-colors"
+                >
+                  {service}
+                </Link>
+                <Link to="/" className="block mb-4">
+                  {!logoError ? (
+                    <img
+                      src="/assets/tabalt-logo.png.jpg"
+                      alt="Tabalt Logo"
+                      className="w-auto max-w-full object-contain"
+                      style={{ height: '2in', width: 'auto' }}
+                      onError={() => setLogoError(true)}
+                    />
+                  ) : (
+                    <span className="text-2xl font-bold text-white block">
+                      Tabalt
+                    </span>
+                  )}
+                </Link>
+              </React.Fragment>
             ))}
           </div>
 
