@@ -61,7 +61,7 @@ const AskSam = () => {
             };
           }
           
-          if (isStarter || isLoadCash) {
+          if (isStarter) {
             // Get existing features and add "No Obligation" if not already present
             const existingFeatures = Array.isArray(plan.marketingFeatures) && plan.marketingFeatures.length > 0
               ? plan.marketingFeatures
@@ -75,6 +75,33 @@ const AskSam = () => {
             return {
               ...plan,
               marketingFeatures: updatedFeatures
+            };
+          }
+          
+          if (isLoadCash) {
+            // Get existing features and add "No Obligation" if not already present
+            const existingFeatures = Array.isArray(plan.marketingFeatures) && plan.marketingFeatures.length > 0
+              ? plan.marketingFeatures
+              : (Array.isArray(plan.bonusFeatures) ? plan.bonusFeatures : []);
+            
+            // Replace "No expiration for unused minutes" with "Carry forward minutes"
+            const updatedFeatures = existingFeatures.map(feature => 
+              feature === 'No expiration for unused minutes' 
+                ? 'Carry forward minutes' 
+                : feature
+            );
+            
+            // Add "No Obligation" if not already in the list
+            const finalFeatures = updatedFeatures.includes('No Obligation')
+              ? updatedFeatures
+              : [...updatedFeatures, 'No Obligation'];
+            
+            return {
+              ...plan,
+              name: plan.name?.replace('LOAD CASH MINIMUM', 'LOAD CASH').replace('Load Cash Minimum', 'Load Cash') || plan.name,
+              marketingLabel: plan.marketingLabel?.replace('LOAD CASH MINIMUM', 'LOAD CASH') || plan.marketingLabel,
+              price: 49.99,
+              marketingFeatures: finalFeatures
             };
           }
           
