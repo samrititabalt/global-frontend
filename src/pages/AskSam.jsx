@@ -25,20 +25,33 @@ const AskSam = () => {
         const apiPlans = response.data?.plans || [];
         const enhancedPlans = apiPlans.map(enhancePlanWithSlug);
         
-        // Update Free Trial Plan
+        // Update plans
         const updatedPlans = enhancedPlans.map(plan => {
-          // Check if this is the Free Trial Plan (by slug, name, or marketingLabel)
-          const isFreeTrial = 
+          // Check if this is the Basic Trial Pack (by slug, name, or marketingLabel)
+          const isBasicTrial = 
             plan.slug === 'trial' || 
             plan.slug === 'free-trial' ||
             plan.name?.toLowerCase().includes('trial') ||
             plan.marketingLabel?.toLowerCase().includes('trial') ||
             plan.marketingLabel?.toLowerCase().includes('free trial');
           
-          if (isFreeTrial) {
+          // Check if this is Starter Pack
+          const isStarter = 
+            plan.slug === 'starter' ||
+            plan.name?.toLowerCase().includes('starter') ||
+            plan.marketingLabel?.toLowerCase().includes('starter');
+          
+          // Check if this is Load Cash Minimum
+          const isLoadCash = 
+            plan.slug === 'loadcash' ||
+            plan.slug === 'load-cash' ||
+            plan.name?.toLowerCase().includes('load cash') ||
+            plan.marketingLabel?.toLowerCase().includes('load cash');
+          
+          if (isBasicTrial) {
             return {
               ...plan,
-              minutesPerMonth: 30,
+              minutesPerMonth: 300,
               marketingFeatures: [
                 'Perfect for users to test the service',
                 'No obligation',
@@ -47,6 +60,24 @@ const AskSam = () => {
               ]
             };
           }
+          
+          if (isStarter || isLoadCash) {
+            // Get existing features and add "No Obligation" if not already present
+            const existingFeatures = Array.isArray(plan.marketingFeatures) && plan.marketingFeatures.length > 0
+              ? plan.marketingFeatures
+              : (Array.isArray(plan.bonusFeatures) ? plan.bonusFeatures : []);
+            
+            // Add "No Obligation" if not already in the list
+            const updatedFeatures = existingFeatures.includes('No Obligation')
+              ? existingFeatures
+              : [...existingFeatures, 'No Obligation'];
+            
+            return {
+              ...plan,
+              marketingFeatures: updatedFeatures
+            };
+          }
+          
           return plan;
         });
         
