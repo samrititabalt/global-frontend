@@ -68,7 +68,7 @@ const PricingPlans = ({ plans = [], loading = false, onSelectPlan }) => {
               </>
             )}
 
-            <div className="p-8">
+            <div className="p-8 flex flex-col h-full">
               <div className="mb-6">
                 <h3
                   className={`text-lg font-extrabold tracking-tight ${
@@ -97,7 +97,7 @@ const PricingPlans = ({ plans = [], loading = false, onSelectPlan }) => {
                 }`}
               />
 
-              <div className="mb-10 space-y-5">
+              <div className="mb-10 space-y-5 flex-grow">
                 {minutesLabel && (
                   <div className="flex items-start">
                     <div className="mt-0.5 mr-3 flex-shrink-0">
@@ -135,7 +135,7 @@ const PricingPlans = ({ plans = [], loading = false, onSelectPlan }) => {
 
               <button
                 onClick={() => onSelectPlan && onSelectPlan(plan)}
-                className={`w-full py-4 px-6 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center space-x-2 ${
+                className={`w-full py-4 px-6 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center space-x-2 mt-auto ${
                   isPopular
                     ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 shadow-lg hover:shadow-2xl transform hover:scale-[1.02] active:scale-[0.98]'
                     : 'bg-gray-900 text-white hover:bg-gray-800 shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98]'
