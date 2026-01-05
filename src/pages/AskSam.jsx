@@ -23,7 +23,34 @@ const AskSam = () => {
         setLoading(true);
         const response = await api.get('/public/plans');
         const apiPlans = response.data?.plans || [];
-        setPlans(apiPlans.map(enhancePlanWithSlug));
+        const enhancedPlans = apiPlans.map(enhancePlanWithSlug);
+        
+        // Update Free Trial Plan
+        const updatedPlans = enhancedPlans.map(plan => {
+          // Check if this is the Free Trial Plan (by slug, name, or marketingLabel)
+          const isFreeTrial = 
+            plan.slug === 'trial' || 
+            plan.slug === 'free-trial' ||
+            plan.name?.toLowerCase().includes('trial') ||
+            plan.marketingLabel?.toLowerCase().includes('trial') ||
+            plan.marketingLabel?.toLowerCase().includes('free trial');
+          
+          if (isFreeTrial) {
+            return {
+              ...plan,
+              minutesPerMonth: 30,
+              marketingFeatures: [
+                'Perfect for users to test the service',
+                'No obligation',
+                'Free Consultation on user problem',
+                'Include Standard Support'
+              ]
+            };
+          }
+          return plan;
+        });
+        
+        setPlans(updatedPlans);
         setError('');
       } catch (err) {
         console.error('Failed to load public plans:', err);
