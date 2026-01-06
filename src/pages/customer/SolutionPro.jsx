@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, Plus, LineChart, AreaChart, Calendar, Palette, Type, Eye, EyeOff } from 'lucide-react';
+import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, LineChart, AreaChart, Palette, Eye, EyeOff } from 'lucide-react';
 import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart as RechartsLineChart, Line, AreaChart as RechartsAreaChart, Area, LabelList } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { parse, isValid } from 'date-fns';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
+
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
 
 const SolutionPro = () => {
   const [gridData, setGridData] = useState(() => {
@@ -52,8 +54,6 @@ const SolutionPro = () => {
   const [showCustomization, setShowCustomization] = useState({});
   const gridRef = useRef(null);
   const dashboardRef = useRef(null);
-
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
   const CHART_TYPES = [
     { value: 'bar', label: 'Bar Chart', icon: BarChart3 },
     { value: 'pie', label: 'Pie Chart', icon: PieChart },
