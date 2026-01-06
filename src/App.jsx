@@ -63,6 +63,15 @@ import EquityResearchManagement from './pages/services/EquityResearchManagement'
 import IndustryReports from './pages/services/IndustryReports';
 import SoftwareTechSupport from './pages/services/SoftwareTechSupport';
 
+// Solution Pages
+import SamsSmartReports from './pages/solutions/SamsSmartReports';
+import ExpenseMonitor from './pages/solutions/ExpenseMonitor';
+import MergeSpreadsheets from './pages/solutions/MergeSpreadsheets';
+import Forecasts from './pages/solutions/Forecasts';
+import RiskFraud from './pages/solutions/RiskFraud';
+import Hiring from './pages/solutions/Hiring';
+import SolutionPro from './pages/customer/SolutionPro';
+
 function App() {
   return (
     <AuthProvider>
@@ -90,6 +99,14 @@ function App() {
             <Route path="/plans" element={<Plans />} />
             <Route path="/plans/:planSlug" element={<PlanCheckout />} />
             <Route path="/first-call-deck" element={<FirstCallDeckPublic />} />
+            
+            {/* Solution Pages */}
+            <Route path="/solutions/sams-smart-reports" element={<SamsSmartReports />} />
+            <Route path="/solutions/expense-monitor" element={<ExpenseMonitor />} />
+            <Route path="/solutions/merge-spreadsheets" element={<MergeSpreadsheets />} />
+            <Route path="/solutions/forecasts" element={<Forecasts />} />
+            <Route path="/solutions/risk-fraud" element={<RiskFraud />} />
+            <Route path="/solutions/hiring" element={<Hiring />} />
 
             {/* Customer Routes */}
             <Route path="/customer/login" element={<CustomerLogin />} />
@@ -141,6 +158,14 @@ function App() {
               element={
                 <ProtectedRoute role="customer">
                   <CustomerChat />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/solution-pro" 
+              element={
+                <ProtectedRoute role="customer">
+                  <SolutionPro />
                 </ProtectedRoute>
               } 
             />

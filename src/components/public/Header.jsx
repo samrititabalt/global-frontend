@@ -9,10 +9,13 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
   const [isMobileServicesOpen, setIsMobileServicesOpen] = useState(false);
+  const [isSolutionsDropdownOpen, setIsSolutionsDropdownOpen] = useState(false);
+  const [isMobileSolutionsOpen, setIsMobileSolutionsOpen] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   const dropdownRef = useRef(null);
+  const solutionsDropdownRef = useRef(null);
   
   // Check if user is a customer
   const isCustomer = isAuthenticated && user?.role === 'customer';
@@ -26,6 +29,15 @@ const Header = () => {
     { name: 'Equity Research & Management', path: '/services/equity-research-management' },
     { name: 'Industry Reports', path: '/services/industry-reports' },
     { name: 'Software & Tech Support', path: '/services/software-tech-support' },
+  ];
+
+  const solutions = [
+    { name: "Sam's Smart Reports", path: '/solutions/sams-smart-reports' },
+    { name: 'Expense Monitor', path: '/solutions/expense-monitor' },
+    { name: 'Merge Spreadsheets', path: '/solutions/merge-spreadsheets' },
+    { name: 'Forecasts', path: '/solutions/forecasts' },
+    { name: 'Risk & Fraud', path: '/solutions/risk-fraud' },
+    { name: 'Hiring', path: '/solutions/hiring' },
   ];
 
   useEffect(() => {
@@ -42,16 +54,19 @@ const Header = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsServicesDropdownOpen(false);
       }
+      if (solutionsDropdownRef.current && !solutionsDropdownRef.current.contains(event.target)) {
+        setIsSolutionsDropdownOpen(false);
+      }
     };
 
-    if (isServicesDropdownOpen) {
+    if (isServicesDropdownOpen || isSolutionsDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isServicesDropdownOpen]);
+  }, [isServicesDropdownOpen, isSolutionsDropdownOpen]);
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -161,6 +176,53 @@ const Header = () => {
               </AnimatePresence>
             </div>
 
+            {/* Solutions Dropdown */}
+            <div className="relative" ref={solutionsDropdownRef}>
+              <button
+                onClick={() => setIsSolutionsDropdownOpen(!isSolutionsDropdownOpen)}
+                className={`flex items-center gap-1 text-sm font-medium transition-colors ${
+                  solutions.some(s => isActive(s.path))
+                    ? 'text-blue-600'
+                    : isScrolled
+                    ? 'text-gray-700 hover:text-gray-900'
+                    : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
+                Solutions
+                <ChevronDown 
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    isSolutionsDropdownOpen ? 'rotate-180' : ''
+                  }`} 
+                />
+              </button>
+              
+              <AnimatePresence>
+                {isSolutionsDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                  >
+                    {solutions.map((solution) => (
+                      <Link
+                        key={solution.path}
+                        to={solution.path}
+                        className={`block px-4 py-2.5 text-sm transition-colors ${
+                          isActive(solution.path)
+                            ? 'text-blue-600 bg-blue-50'
+                            : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                        }`}
+                        onClick={() => setIsSolutionsDropdownOpen(false)}
+                      >
+                        {solution.name}
+                      </Link>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <Link
               to={isCustomer ? "/customer/dashboard" : "/customer/signup"}
               className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl"
@@ -252,6 +314,56 @@ const Header = () => {
                             }}
                           >
                             {service.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Mobile Solutions Dropdown */}
+              <div>
+                <button
+                  onClick={() => setIsMobileSolutionsOpen(!isMobileSolutionsOpen)}
+                  className={`flex items-center justify-between w-full text-base font-medium py-2 ${
+                    solutions.some(s => isActive(s.path))
+                      ? 'text-blue-600'
+                      : 'text-gray-700 hover:text-gray-900'
+                  }`}
+                >
+                  Solutions
+                  <ChevronDown 
+                    className={`h-5 w-5 transition-transform duration-200 ${
+                      isMobileSolutionsOpen ? 'rotate-180' : ''
+                    }`} 
+                  />
+                </button>
+                
+                <AnimatePresence>
+                  {isMobileSolutionsOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pl-4 pt-2 space-y-2">
+                        {solutions.map((solution) => (
+                          <Link
+                            key={solution.path}
+                            to={solution.path}
+                            className={`block text-sm py-2 ${
+                              isActive(solution.path)
+                                ? 'text-blue-600'
+                                : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              setIsMobileSolutionsOpen(false);
+                            }}
+                          >
+                            {solution.name}
                           </Link>
                         ))}
                       </div>
