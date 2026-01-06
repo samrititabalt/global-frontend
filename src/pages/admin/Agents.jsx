@@ -409,10 +409,25 @@ const AdminAgents = () => {
                           Password: <span className="font-mono font-semibold text-gray-700">{agent.plainPassword || 'N/A'}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {agent.serviceCategories && agent.serviceCategories.length > 0
-                          ? agent.serviceCategories.map(cat => cat.name || cat).join(', ')
-                          : agent.serviceCategory?.name || '-'}
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          {agent.serviceCategories && agent.serviceCategories.length > 0 ? (
+                            agent.serviceCategories.map((cat, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                              >
+                                {cat.name || cat}
+                              </span>
+                            ))
+                          ) : agent.serviceCategory?.name ? (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                              {agent.serviceCategory.name}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -582,61 +597,142 @@ const AdminAgents = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Service Categories <span className="text-gray-500 text-xs">(Select multiple)</span>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Service Categories <span className="text-gray-500 text-xs font-normal">(Click to select multiple)</span>
                   </label>
-                  <select
-                    multiple
-                    value={formData.serviceCategories}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value);
-                      setFormData({ 
-                        ...formData, 
-                        serviceCategories: selected,
-                        serviceCategory: selected[0] || '' // Keep for backward compatibility
-                      });
-                    }}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[120px]"
-                    size="5"
-                  >
-                    {services.map((service) => (
-                      <option key={service._id} value={service._id}>
-                        {service.name}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Hold Ctrl (Windows) or Cmd (Mac) to select multiple services. Selected: {formData.serviceCategories.length}
-                  </p>
-                  {formData.serviceCategories.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {formData.serviceCategories.map(catId => {
-                        const service = services.find(s => s._id === catId);
-                        return service ? (
-                          <span
-                            key={catId}
-                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
-                          >
-                            {service.name}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const updated = formData.serviceCategories.filter(id => id !== catId);
-                                setFormData({ 
-                                  ...formData, 
-                                  serviceCategories: updated,
-                                  serviceCategory: updated[0] || ''
-                                });
-                              }}
-                              className="ml-1 text-primary-600 hover:text-primary-800"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ) : null;
-                      })}
+                  
+                  {services.length === 0 ? (
+                    <div className="p-4 border border-gray-300 rounded-lg bg-gray-50 text-center">
+                      <p className="text-sm text-gray-500">No services available. Please create services first.</p>
                     </div>
+                  ) : (
+                    <>
+                      {/* Clickable Service Pills */}
+                      <div className="border border-gray-300 rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto">
+                        <div className="grid grid-cols-1 gap-2">
+                          {services.map((service) => {
+                            const isSelected = formData.serviceCategories.includes(service._id);
+                            return (
+                              <button
+                                key={service._id}
+                                type="button"
+                                onClick={() => {
+                                  let updatedCategories;
+                                  
+                                  if (isSelected) {
+                                    // Remove from selection
+                                    updatedCategories = formData.serviceCategories.filter(id => id !== service._id);
+                                  } else {
+                                    // Add to selection
+                                    updatedCategories = [...formData.serviceCategories, service._id];
+                                  }
+                                  
+                                  setFormData({
+                                    ...formData,
+                                    serviceCategories: updatedCategories,
+                                    serviceCategory: updatedCategories[0] || ''
+                                  });
+                                }}
+                                className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all duration-200 ${
+                                  isSelected
+                                    ? 'bg-primary-50 border-primary-500 shadow-sm'
+                                    : 'bg-white border-gray-200 hover:border-primary-300 hover:bg-primary-50/50'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center">
+                                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mr-3 ${
+                                      isSelected
+                                        ? 'bg-primary-500 border-primary-500'
+                                        : 'bg-white border-gray-300'
+                                    }`}>
+                                      {isSelected && (
+                                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                      )}
+                                    </div>
+                                    <span className={`text-sm font-medium ${
+                                      isSelected ? 'text-primary-900' : 'text-gray-700'
+                                    }`}>
+                                      {service.name}
+                                    </span>
+                                  </div>
+                                  {isSelected && (
+                                    <span className="text-primary-600 text-sm font-semibold">Selected</span>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      
+                      {/* Selection Summary */}
+                      <div className="mt-3 flex items-center justify-between">
+                        <p className={`text-sm ${
+                          formData.serviceCategories.length === 0
+                            ? 'text-amber-600 font-medium'
+                            : 'text-green-600 font-medium'
+                        }`}>
+                          {formData.serviceCategories.length === 0 ? (
+                            <span>⚠️ Please select at least one service category</span>
+                          ) : (
+                            <span>✓ {formData.serviceCategories.length} service{formData.serviceCategories.length !== 1 ? 's' : ''} selected</span>
+                          )}
+                        </p>
+                        {formData.serviceCategories.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData({
+                                ...formData,
+                                serviceCategories: [],
+                                serviceCategory: ''
+                              });
+                            }}
+                            className="text-xs text-red-600 hover:text-red-800 font-medium underline"
+                          >
+                            Clear all
+                          </button>
+                        )}
+                      </div>
+                      
+                      {/* Selected Services as Compact Badges */}
+                      {formData.serviceCategories.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-xs font-medium text-gray-600 mb-2">Selected Services:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {formData.serviceCategories.map(catId => {
+                              const service = services.find(s => s._id === catId);
+                              return service ? (
+                                <span
+                                  key={catId}
+                                  className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 border border-primary-300"
+                                >
+                                  {service.name}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = formData.serviceCategories.filter(id => id !== catId);
+                                      setFormData({
+                                        ...formData,
+                                        serviceCategories: updated,
+                                        serviceCategory: updated[0] || ''
+                                      });
+                                    }}
+                                    className="ml-2 text-primary-600 hover:text-primary-900 font-bold text-base leading-none"
+                                    title="Remove"
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ) : null;
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
                 <div>
