@@ -24,7 +24,8 @@ const AdminAgents = () => {
     email: '',
     phone: '',
     country: '',
-    serviceCategory: '',
+    serviceCategory: '', // Keep for backward compatibility
+    serviceCategories: [], // New array for multiple categories
     password: ''
   });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -97,7 +98,17 @@ const AdminAgents = () => {
       submitData.append('email', formData.email);
       submitData.append('phone', formData.phone);
       submitData.append('country', formData.country);
-      submitData.append('serviceCategory', formData.serviceCategory);
+      
+      // Send service categories as array
+      if (formData.serviceCategories && formData.serviceCategories.length > 0) {
+        formData.serviceCategories.forEach(categoryId => {
+          submitData.append('serviceCategories', categoryId);
+        });
+      } else if (formData.serviceCategory) {
+        // Backward compatibility: if only single category selected
+        submitData.append('serviceCategories', formData.serviceCategory);
+      }
+      
       if (formData.password) {
         submitData.append('password', formData.password);
       }
@@ -123,7 +134,7 @@ const AdminAgents = () => {
       
       setShowModal(false);
       setEditingAgent(null);
-      setFormData({ name: '', email: '', phone: '', country: '', serviceCategory: '', password: '' });
+      setFormData({ name: '', email: '', phone: '', country: '', serviceCategory: '', serviceCategories: [], password: '' });
       setAvatar(null);
       setAvatarPreview(null);
       loadData();
@@ -134,12 +145,20 @@ const AdminAgents = () => {
 
   const handleEdit = (agent) => {
     setEditingAgent(agent);
+    // Handle both old single serviceCategory and new serviceCategories array
+    const serviceCategories = agent.serviceCategories && agent.serviceCategories.length > 0
+      ? agent.serviceCategories.map(cat => cat._id || cat)
+      : agent.serviceCategory
+        ? [agent.serviceCategory._id || agent.serviceCategory]
+        : [];
+    
     setFormData({
       name: agent.name || '',
       email: agent.email || '',
       phone: agent.phone || '',
       country: agent.country || '',
-      serviceCategory: agent.serviceCategory?._id || agent.serviceCategory || '',
+      serviceCategory: serviceCategories[0] || '', // Keep for backward compatibility
+      serviceCategories: serviceCategories, // New array
       password: agent.plainPassword || ''
     });
     setAvatarPreview(agent.avatar || null);
@@ -160,7 +179,7 @@ const AdminAgents = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', phone: '', country: '', serviceCategory: '', password: '' });
+    setFormData({ name: '', email: '', phone: '', country: '', serviceCategory: '', serviceCategories: [], password: '' });
     setAvatar(null);
     setAvatarPreview(null);
     setEditingAgent(null);
@@ -391,7 +410,9 @@ const AdminAgents = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {agent.serviceCategory?.name || '-'}
+                        {agent.serviceCategories && agent.serviceCategories.length > 0
+                          ? agent.serviceCategories.map(cat => cat.name || cat).join(', ')
+                          : agent.serviceCategory?.name || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -562,21 +583,61 @@ const AdminAgents = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Service Category
+                    Service Categories <span className="text-gray-500 text-xs">(Select multiple)</span>
                   </label>
                   <select
-                    value={formData.serviceCategory}
-                    onChange={(e) => setFormData({ ...formData, serviceCategory: e.target.value })}
+                    multiple
+                    value={formData.serviceCategories}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      setFormData({ 
+                        ...formData, 
+                        serviceCategories: selected,
+                        serviceCategory: selected[0] || '' // Keep for backward compatibility
+                      });
+                    }}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[120px]"
+                    size="5"
                   >
-                    <option value="">Select a service</option>
                     {services.map((service) => (
                       <option key={service._id} value={service._id}>
                         {service.name}
                       </option>
                     ))}
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Hold Ctrl (Windows) or Cmd (Mac) to select multiple services. Selected: {formData.serviceCategories.length}
+                  </p>
+                  {formData.serviceCategories.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {formData.serviceCategories.map(catId => {
+                        const service = services.find(s => s._id === catId);
+                        return service ? (
+                          <span
+                            key={catId}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
+                          >
+                            {service.name}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = formData.serviceCategories.filter(id => id !== catId);
+                                setFormData({ 
+                                  ...formData, 
+                                  serviceCategories: updated,
+                                  serviceCategory: updated[0] || ''
+                                });
+                              }}
+                              className="ml-1 text-primary-600 hover:text-primary-800"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
