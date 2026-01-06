@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, LineChart, AreaChart, Palette, Eye, EyeOff } from 'lucide-react';
-import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart as RechartsLineChart, Line, AreaChart as RechartsAreaChart, Area, LabelList } from 'recharts';
+import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart as RechartsLineChart, Line, AreaChart as RechartsAreaChart, Area, LabelList, Text } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { parse, isValid } from 'date-fns';
@@ -56,6 +56,8 @@ const SolutionPro = () => {
   const [draggedField, setDraggedField] = useState(null);
   const [fieldRoles, setFieldRoles] = useState({}); // { columnName: 'dimension' | 'measure' }
   const [fieldModes, setFieldModes] = useState({}); // { columnName: 'discrete' | 'continuous' }
+  const [editingLabel, setEditingLabel] = useState(null); // { chartId, type, key, value }
+  const [editedLabels, setEditedLabels] = useState({}); // { chartId: { xAxis: {...}, yAxis: {...}, categories: {...}, title: '', legend: {...} } }
   const gridRef = useRef(null);
   const dashboardRef = useRef(null);
   const CHART_TYPES = [
@@ -392,6 +394,66 @@ const SolutionPro = () => {
     });
   };
 
+  // Handle label click for editing
+  const handleLabelClick = (e, chartId, labelType, labelKey, currentValue) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditingLabel({
+      chartId,
+      type: labelType, // 'title', 'xAxis', 'yAxis', 'category', 'legend'
+      key: labelKey, // For categories/legend: the original value
+      value: currentValue || '',
+      position: { x: e.clientX, y: e.clientY },
+    });
+  };
+
+  // Save edited label
+  const saveEditedLabel = (chartId, labelType, labelKey, newValue) => {
+    setEditedLabels(prev => {
+      const chartLabels = prev[chartId] || {};
+      const updated = { ...chartLabels };
+      
+      if (labelType === 'title') {
+        updated.title = newValue;
+      } else if (labelType === 'xAxis') {
+        updated.xAxis = newValue;
+      } else if (labelType === 'yAxis') {
+        updated.yAxis = newValue;
+      } else if (labelType === 'category') {
+        updated.categories = { ...(updated.categories || {}), [labelKey]: newValue };
+      } else if (labelType === 'legend') {
+        updated.legend = { ...(updated.legend || {}), [labelKey]: newValue };
+      }
+      
+      return { ...prev, [chartId]: updated };
+    });
+    setEditingLabel(null);
+  };
+
+  // Get edited label value
+  const getEditedLabel = (chartId, labelType, labelKey, defaultValue) => {
+    const chartLabels = editedLabels[chartId];
+    if (!chartLabels) return defaultValue;
+    
+    if (labelType === 'title') {
+      return chartLabels.title !== undefined ? chartLabels.title : defaultValue;
+    } else if (labelType === 'xAxis') {
+      return chartLabels.xAxis !== undefined ? chartLabels.xAxis : defaultValue;
+    } else if (labelType === 'yAxis') {
+      return chartLabels.yAxis !== undefined ? chartLabels.yAxis : defaultValue;
+    } else if (labelType === 'category') {
+      return chartLabels.categories?.[labelKey] !== undefined 
+        ? chartLabels.categories[labelKey] 
+        : defaultValue;
+    } else if (labelType === 'legend') {
+      return chartLabels.legend?.[labelKey] !== undefined 
+        ? chartLabels.legend[labelKey] 
+        : defaultValue;
+    }
+    
+    return defaultValue;
+  };
+
   // Handle context menu selection
   const handleContextMenuAction = (action, chartId) => {
     if (action === 'sort-ascending') {
@@ -594,6 +656,8 @@ const SolutionPro = () => {
       setFieldRoles({});
       setFieldModes({});
       setContextMenu(null);
+      setEditedLabels({});
+      setEditingLabel(null);
     }
   };
 
@@ -711,24 +775,59 @@ const SolutionPro = () => {
     const chartTitle = getChartTitle();
     const appearance = config.appearance || {};
     const fontSize = appearance.fontSize === 'small' ? 12 : appearance.fontSize === 'large' ? 16 : appearance.customFontSize || 14;
-    const xAxisLabel = config.xAxis.label || config.xAxis.column || '';
-    const yAxisLabel = config.yAxis.label || config.yAxis.column || '';
+    
+    // Get edited labels or use defaults
+    const editedTitle = getEditedLabel(config.id, 'title', '', config.title || chartTitle);
+    const xAxisLabel = getEditedLabel(config.id, 'xAxis', '', config.xAxis.label || config.xAxis.column || '');
+    const yAxisLabel = getEditedLabel(config.id, 'yAxis', '', config.yAxis.label || config.yAxis.column || '');
     const colors = appearance.useMultiColor ? (appearance.colors || COLORS) : [appearance.colors?.[0] || COLORS[0]];
+
+    // Apply edited category labels to data
+    const dataWithEditedLabels = data.map(item => ({
+      ...item,
+      name: getEditedLabel(config.id, 'category', item.name, item.name),
+    }));
 
     // Calculate chart dimensions for scrollbars
     const needsHorizontalScroll = data.length > 20 && (config.chartType === 'bar' || config.chartType === 'line' || config.chartType === 'area');
     const chartWidth = needsHorizontalScroll ? Math.max(800, data.length * 40) : '100%';
     const chartHeight = 250;
 
+    // Check if we're editing this chart's title
+    const isEditingTitle = editingLabel?.chartId === config.id && editingLabel?.type === 'title';
+
     return (
       <div id={`chart-${config.id}`} className="chart-container">
         {config.showTitle && (
-          <h4 
-            className="text-sm font-semibold mb-2" 
-            style={{ color: appearance.fontColor || '#000000', fontSize: `${fontSize}px` }}
-          >
-            {chartTitle}
-          </h4>
+          <div className="mb-2">
+            {isEditingTitle ? (
+              <input
+                type="text"
+                value={editingLabel.value}
+                onChange={(e) => setEditingLabel({ ...editingLabel, value: e.target.value })}
+                onBlur={() => saveEditedLabel(config.id, 'title', '', editingLabel.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    saveEditedLabel(config.id, 'title', '', editingLabel.value);
+                  } else if (e.key === 'Escape') {
+                    setEditingLabel(null);
+                  }
+                }}
+                autoFocus
+                className="text-sm font-semibold px-2 py-1 border-2 border-blue-500 rounded"
+                style={{ color: appearance.fontColor || '#000000', fontSize: `${fontSize}px` }}
+              />
+            ) : (
+              <h4 
+                className="text-sm font-semibold mb-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition-colors" 
+                style={{ color: appearance.fontColor || '#000000', fontSize: `${fontSize}px` }}
+                onClick={(e) => handleLabelClick(e, config.id, 'title', '', editedTitle)}
+                title="Click to edit title"
+              >
+                {editedTitle}
+              </h4>
+            )}
+          </div>
         )}
         <div 
           className="relative"
@@ -747,21 +846,96 @@ const SolutionPro = () => {
           <div style={{ minWidth: needsHorizontalScroll ? chartWidth : '100%', height: '100%' }}>
             <ResponsiveContainer width="100%" height={chartHeight}>
           {config.chartType === 'bar' && (
-            <BarChart data={data}>
+            <BarChart data={dataWithEditedLabels}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="name" 
-                label={config.xAxis.showLabel ? { value: xAxisLabel, position: 'insideBottom', offset: -5, style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' } } : undefined}
-                tick={{ fontSize: fontSize, fill: appearance.fontColor || '#000000' }}
-                angle={data.length > 10 ? -45 : 0}
-                textAnchor={data.length > 10 ? 'end' : 'middle'}
+                label={config.xAxis.showLabel ? { 
+                  value: xAxisLabel, 
+                  position: 'insideBottom', 
+                  offset: -5, 
+                  style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000', cursor: 'pointer' },
+                  onClick: (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleLabelClick(e, config.id, 'xAxis', '', xAxisLabel);
+                  }
+                } : undefined}
+                tick={(props) => {
+                  const { x, y, payload } = props;
+                  const edited = getEditedLabel(config.id, 'category', payload.value, payload.value);
+                  const isEditing = editingLabel?.chartId === config.id && editingLabel?.type === 'category' && editingLabel?.key === payload.value;
+                  
+                  if (isEditing) {
+                    return (
+                      <foreignObject x={x - 50} y={y - 10} width="100" height="20">
+                        <input
+                          type="text"
+                          value={editingLabel.value}
+                          onChange={(e) => setEditingLabel({ ...editingLabel, value: e.target.value })}
+                          onBlur={() => saveEditedLabel(config.id, 'category', payload.value, editingLabel.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saveEditedLabel(config.id, 'category', payload.value, editingLabel.value);
+                            } else if (e.key === 'Escape') {
+                              setEditingLabel(null);
+                            }
+                          }}
+                          autoFocus
+                          className="w-full px-1 py-0.5 text-xs border-2 border-blue-500 rounded"
+                          style={{ fontSize: `${fontSize}px` }}
+                        />
+                      </foreignObject>
+                    );
+                  }
+                  
+                  return (
+                    <Text
+                      x={x}
+                      y={y}
+                      textAnchor={data.length > 10 ? 'end' : 'middle'}
+                      angle={data.length > 10 ? -45 : 0}
+                      fontSize={fontSize}
+                      fill={appearance.fontColor || '#000000'}
+                      cursor="pointer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleLabelClick(e, config.id, 'category', payload.value, edited);
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleChartLabelRightClick(e, config.id);
+                      }}
+                    >
+                      {edited}
+                    </Text>
+                  );
+                }}
                 height={data.length > 10 ? 80 : 30}
               />
               <YAxis 
-                label={config.yAxis.showLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' } } : undefined}
+                label={config.yAxis.showLabel ? { 
+                  value: yAxisLabel, 
+                  angle: -90, 
+                  position: 'insideLeft', 
+                  style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000', cursor: 'pointer' },
+                  onClick: (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleLabelClick(e, config.id, 'yAxis', '', yAxisLabel);
+                  }
+                } : undefined}
                 tick={{ fontSize: fontSize, fill: appearance.fontColor || '#000000' }}
               />
-              <Tooltip contentStyle={{ fontSize: `${fontSize}px` }} />
+              <Tooltip 
+                contentStyle={{ fontSize: `${fontSize}px` }}
+                labelFormatter={(value) => {
+                  const originalValue = data.find(d => getEditedLabel(config.id, 'category', d.name, d.name) === value)?.name || value;
+                  return getEditedLabel(config.id, 'category', originalValue, value);
+                }}
+              />
               {appearance.showLegend && (
                 <Legend 
                   wrapperStyle={{ fontSize: `${appearance.legendFontSize || 12}px`, color: appearance.legendFontColor || '#000000' }}
@@ -775,7 +949,11 @@ const SolutionPro = () => {
                 barSize={appearance.barThickness || 20}
               >
                 {appearance.showDataLabels && (
-                  <LabelList dataKey="value" position="top" style={{ fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' }} />
+                  <LabelList 
+                    dataKey="value" 
+                    position="top" 
+                    style={{ fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' }} 
+                  />
                 )}
               </Bar>
             </BarChart>
@@ -783,44 +961,196 @@ const SolutionPro = () => {
           {config.chartType === 'pie' && (
             <RechartsPieChart>
               <Pie
-                data={data}
+                data={dataWithEditedLabels}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={appearance.showDataLabels ? ({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%` : false}
+                label={appearance.showDataLabels ? ({ name, percent }) => {
+                  const originalValue = data.find(d => getEditedLabel(config.id, 'category', d.name, d.name) === name)?.name || name;
+                  const editedName = getEditedLabel(config.id, 'category', originalValue, name);
+                  return `${editedName}: ${(percent * 100).toFixed(0)}%`;
+                } : false}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
               >
-                {data.map((entry, idx) => (
+                {dataWithEditedLabels.map((entry, idx) => (
                   <Cell key={`cell-${idx}`} fill={colors[idx % colors.length]} opacity={appearance.opacity || 1} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={{ fontSize: `${fontSize}px` }} />
+              <Tooltip 
+                contentStyle={{ fontSize: `${fontSize}px` }}
+                labelFormatter={(value) => {
+                  const originalValue = data.find(d => getEditedLabel(config.id, 'category', d.name, d.name) === value)?.name || value;
+                  return getEditedLabel(config.id, 'category', originalValue, value);
+                }}
+              />
               {appearance.showLegend && (
                 <Legend 
-                  wrapperStyle={{ fontSize: `${appearance.legendFontSize || 12}px`, color: appearance.legendFontColor || '#000000' }}
+                  wrapperStyle={{ fontSize: `${appearance.legendFontSize || 12}px`, color: appearance.legendFontColor || '#000000', cursor: 'pointer' }}
                   verticalAlign={appearance.legendPosition === 'top' ? 'top' : appearance.legendPosition === 'bottom' ? 'bottom' : appearance.legendPosition === 'left' ? 'left' : 'right'}
+                  formatter={(value) => {
+                    const originalValue = data.find(d => getEditedLabel(config.id, 'category', d.name, d.name) === value)?.name || value;
+                    return getEditedLabel(config.id, 'category', originalValue, value);
+                  }}
                 />
               )}
             </RechartsPieChart>
           )}
           {config.chartType === 'line' && (
-            <RechartsLineChart data={data}>
+            <RechartsLineChart data={dataWithEditedLabels}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="name" 
-                label={config.xAxis.showLabel ? { value: xAxisLabel, position: 'insideBottom', offset: -5, style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' } } : undefined}
-                tick={{ fontSize: fontSize, fill: appearance.fontColor || '#000000' }}
-                angle={data.length > 10 ? -45 : 0}
-                textAnchor={data.length > 10 ? 'end' : 'middle'}
+                label={config.xAxis.showLabel ? ({ viewBox }) => {
+                  const isEditing = editingLabel?.chartId === config.id && editingLabel?.type === 'xAxis';
+                  if (isEditing) {
+                    return (
+                      <foreignObject x={viewBox.x + viewBox.width / 2 - 50} y={viewBox.y + viewBox.height - 15} width="100" height="20">
+                        <input
+                          type="text"
+                          value={editingLabel.value}
+                          onChange={(e) => setEditingLabel({ ...editingLabel, value: e.target.value })}
+                          onBlur={() => saveEditedLabel(config.id, 'xAxis', '', editingLabel.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saveEditedLabel(config.id, 'xAxis', '', editingLabel.value);
+                            } else if (e.key === 'Escape') {
+                              setEditingLabel(null);
+                            }
+                          }}
+                          autoFocus
+                          className="w-full px-1 py-0.5 text-xs border-2 border-blue-500 rounded text-center"
+                          style={{ fontSize: `${fontSize}px` }}
+                        />
+                      </foreignObject>
+                    );
+                  }
+                  return (
+                    <text
+                      x={viewBox.x + viewBox.width / 2}
+                      y={viewBox.y + viewBox.height - 5}
+                      textAnchor="middle"
+                      fontSize={fontSize}
+                      fill={appearance.fontColor || '#000000'}
+                      cursor="pointer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleLabelClick(e, config.id, 'xAxis', '', xAxisLabel);
+                      }}
+                    >
+                      {xAxisLabel}
+                    </text>
+                  );
+                } : undefined}
+                tick={(props) => {
+                  const { x, y, payload } = props;
+                  const edited = getEditedLabel(config.id, 'category', payload.value, payload.value);
+                  const isEditing = editingLabel?.chartId === config.id && editingLabel?.type === 'category' && editingLabel?.key === payload.value;
+                  
+                  if (isEditing) {
+                    return (
+                      <foreignObject x={x - 50} y={y - 10} width="100" height="20">
+                        <input
+                          type="text"
+                          value={editingLabel.value}
+                          onChange={(e) => setEditingLabel({ ...editingLabel, value: e.target.value })}
+                          onBlur={() => saveEditedLabel(config.id, 'category', payload.value, editingLabel.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saveEditedLabel(config.id, 'category', payload.value, editingLabel.value);
+                            } else if (e.key === 'Escape') {
+                              setEditingLabel(null);
+                            }
+                          }}
+                          autoFocus
+                          className="w-full px-1 py-0.5 text-xs border-2 border-blue-500 rounded"
+                          style={{ fontSize: `${fontSize}px` }}
+                        />
+                      </foreignObject>
+                    );
+                  }
+                  
+                  return (
+                    <Text
+                      x={x}
+                      y={y}
+                      textAnchor={data.length > 10 ? 'end' : 'middle'}
+                      angle={data.length > 10 ? -45 : 0}
+                      fontSize={fontSize}
+                      fill={appearance.fontColor || '#000000'}
+                      cursor="pointer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleLabelClick(e, config.id, 'category', payload.value, edited);
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleChartLabelRightClick(e, config.id);
+                      }}
+                    >
+                      {edited}
+                    </Text>
+                  );
+                }}
                 height={data.length > 10 ? 80 : 30}
               />
               <YAxis 
-                label={config.yAxis.showLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' } } : undefined}
+                label={config.yAxis.showLabel ? ({ viewBox }) => {
+                  const isEditing = editingLabel?.chartId === config.id && editingLabel?.type === 'yAxis';
+                  if (isEditing) {
+                    return (
+                      <foreignObject x={viewBox.x + 5} y={viewBox.y + viewBox.height / 2 - 10} width="100" height="20">
+                        <input
+                          type="text"
+                          value={editingLabel.value}
+                          onChange={(e) => setEditingLabel({ ...editingLabel, value: e.target.value })}
+                          onBlur={() => saveEditedLabel(config.id, 'yAxis', '', editingLabel.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saveEditedLabel(config.id, 'yAxis', '', editingLabel.value);
+                            } else if (e.key === 'Escape') {
+                              setEditingLabel(null);
+                            }
+                          }}
+                          autoFocus
+                          className="w-full px-1 py-0.5 text-xs border-2 border-blue-500 rounded"
+                          style={{ fontSize: `${fontSize}px` }}
+                        />
+                      </foreignObject>
+                    );
+                  }
+                  return (
+                    <text
+                      x={viewBox.x + 15}
+                      y={viewBox.y + viewBox.height / 2}
+                      textAnchor="middle"
+                      fontSize={fontSize}
+                      fill={appearance.fontColor || '#000000'}
+                      cursor="pointer"
+                      transform={`rotate(-90, ${viewBox.x + 15}, ${viewBox.y + viewBox.height / 2})`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleLabelClick(e, config.id, 'yAxis', '', yAxisLabel);
+                      }}
+                    >
+                      {yAxisLabel}
+                    </text>
+                  );
+                } : undefined}
                 tick={{ fontSize: fontSize, fill: appearance.fontColor || '#000000' }}
               />
-              <Tooltip contentStyle={{ fontSize: `${fontSize}px` }} />
+              <Tooltip 
+                contentStyle={{ fontSize: `${fontSize}px` }}
+                labelFormatter={(value) => {
+                  const originalValue = data.find(d => getEditedLabel(config.id, 'category', d.name, d.name) === value)?.name || value;
+                  return getEditedLabel(config.id, 'category', originalValue, value);
+                }}
+              />
               {appearance.showLegend && (
                 <Legend 
                   wrapperStyle={{ fontSize: `${appearance.legendFontSize || 12}px`, color: appearance.legendFontColor || '#000000' }}
@@ -841,21 +1171,159 @@ const SolutionPro = () => {
             </RechartsLineChart>
           )}
           {config.chartType === 'area' && (
-            <RechartsAreaChart data={data}>
+            <RechartsAreaChart data={dataWithEditedLabels}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="name" 
-                label={config.xAxis.showLabel ? { value: xAxisLabel, position: 'insideBottom', offset: -5, style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' } } : undefined}
-                tick={{ fontSize: fontSize, fill: appearance.fontColor || '#000000' }}
-                angle={data.length > 10 ? -45 : 0}
-                textAnchor={data.length > 10 ? 'end' : 'middle'}
+                label={config.xAxis.showLabel ? ({ viewBox }) => {
+                  const isEditing = editingLabel?.chartId === config.id && editingLabel?.type === 'xAxis';
+                  if (isEditing) {
+                    return (
+                      <foreignObject x={viewBox.x + viewBox.width / 2 - 50} y={viewBox.y + viewBox.height - 15} width="100" height="20">
+                        <input
+                          type="text"
+                          value={editingLabel.value}
+                          onChange={(e) => setEditingLabel({ ...editingLabel, value: e.target.value })}
+                          onBlur={() => saveEditedLabel(config.id, 'xAxis', '', editingLabel.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saveEditedLabel(config.id, 'xAxis', '', editingLabel.value);
+                            } else if (e.key === 'Escape') {
+                              setEditingLabel(null);
+                            }
+                          }}
+                          autoFocus
+                          className="w-full px-1 py-0.5 text-xs border-2 border-blue-500 rounded text-center"
+                          style={{ fontSize: `${fontSize}px` }}
+                        />
+                      </foreignObject>
+                    );
+                  }
+                  return (
+                    <text
+                      x={viewBox.x + viewBox.width / 2}
+                      y={viewBox.y + viewBox.height - 5}
+                      textAnchor="middle"
+                      fontSize={fontSize}
+                      fill={appearance.fontColor || '#000000'}
+                      cursor="pointer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleLabelClick(e, config.id, 'xAxis', '', xAxisLabel);
+                      }}
+                    >
+                      {xAxisLabel}
+                    </text>
+                  );
+                } : undefined}
+                tick={(props) => {
+                  const { x, y, payload } = props;
+                  const edited = getEditedLabel(config.id, 'category', payload.value, payload.value);
+                  const isEditing = editingLabel?.chartId === config.id && editingLabel?.type === 'category' && editingLabel?.key === payload.value;
+                  
+                  if (isEditing) {
+                    return (
+                      <foreignObject x={x - 50} y={y - 10} width="100" height="20">
+                        <input
+                          type="text"
+                          value={editingLabel.value}
+                          onChange={(e) => setEditingLabel({ ...editingLabel, value: e.target.value })}
+                          onBlur={() => saveEditedLabel(config.id, 'category', payload.value, editingLabel.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saveEditedLabel(config.id, 'category', payload.value, editingLabel.value);
+                            } else if (e.key === 'Escape') {
+                              setEditingLabel(null);
+                            }
+                          }}
+                          autoFocus
+                          className="w-full px-1 py-0.5 text-xs border-2 border-blue-500 rounded"
+                          style={{ fontSize: `${fontSize}px` }}
+                        />
+                      </foreignObject>
+                    );
+                  }
+                  
+                  return (
+                    <Text
+                      x={x}
+                      y={y}
+                      textAnchor={data.length > 10 ? 'end' : 'middle'}
+                      angle={data.length > 10 ? -45 : 0}
+                      fontSize={fontSize}
+                      fill={appearance.fontColor || '#000000'}
+                      cursor="pointer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleLabelClick(e, config.id, 'category', payload.value, edited);
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleChartLabelRightClick(e, config.id);
+                      }}
+                    >
+                      {edited}
+                    </Text>
+                  );
+                }}
                 height={data.length > 10 ? 80 : 30}
               />
               <YAxis 
-                label={config.yAxis.showLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' } } : undefined}
+                label={config.yAxis.showLabel ? ({ viewBox }) => {
+                  const isEditing = editingLabel?.chartId === config.id && editingLabel?.type === 'yAxis';
+                  if (isEditing) {
+                    return (
+                      <foreignObject x={viewBox.x + 5} y={viewBox.y + viewBox.height / 2 - 10} width="100" height="20">
+                        <input
+                          type="text"
+                          value={editingLabel.value}
+                          onChange={(e) => setEditingLabel({ ...editingLabel, value: e.target.value })}
+                          onBlur={() => saveEditedLabel(config.id, 'yAxis', '', editingLabel.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saveEditedLabel(config.id, 'yAxis', '', editingLabel.value);
+                            } else if (e.key === 'Escape') {
+                              setEditingLabel(null);
+                            }
+                          }}
+                          autoFocus
+                          className="w-full px-1 py-0.5 text-xs border-2 border-blue-500 rounded"
+                          style={{ fontSize: `${fontSize}px` }}
+                        />
+                      </foreignObject>
+                    );
+                  }
+                  return (
+                    <text
+                      x={viewBox.x + 15}
+                      y={viewBox.y + viewBox.height / 2}
+                      textAnchor="middle"
+                      fontSize={fontSize}
+                      fill={appearance.fontColor || '#000000'}
+                      cursor="pointer"
+                      transform={`rotate(-90, ${viewBox.x + 15}, ${viewBox.y + viewBox.height / 2})`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleLabelClick(e, config.id, 'yAxis', '', yAxisLabel);
+                      }}
+                    >
+                      {yAxisLabel}
+                    </text>
+                  );
+                } : undefined}
                 tick={{ fontSize: fontSize, fill: appearance.fontColor || '#000000' }}
               />
-              <Tooltip contentStyle={{ fontSize: `${fontSize}px` }} />
+              <Tooltip 
+                contentStyle={{ fontSize: `${fontSize}px` }}
+                labelFormatter={(value) => {
+                  const originalValue = data.find(d => getEditedLabel(config.id, 'category', d.name, d.name) === value)?.name || value;
+                  return getEditedLabel(config.id, 'category', originalValue, value);
+                }}
+              />
               {appearance.showLegend && (
                 <Legend 
                   wrapperStyle={{ fontSize: `${appearance.legendFontSize || 12}px`, color: appearance.legendFontColor || '#000000' }}
@@ -878,7 +1346,81 @@ const SolutionPro = () => {
           )}
             </ResponsiveContainer>
           </div>
+          
+          {/* Editable Label Overlay */}
+          {editingLabel && editingLabel.chartId === config.id && editingLabel.type !== 'title' && (
+            <EditableLabelOverlay
+              editingLabel={editingLabel}
+              onSave={(newValue) => saveEditedLabel(editingLabel.chartId, editingLabel.type, editingLabel.key, newValue)}
+              onCancel={() => setEditingLabel(null)}
+              position={editingLabel.position}
+            />
+          )}
         </div>
+      </div>
+    );
+  };
+
+  // Editable Label Overlay Component
+  const EditableLabelOverlay = ({ editingLabel, onSave, onCancel, position }) => {
+    const [value, setValue] = useState(editingLabel.value);
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.select();
+      }
+    }, []);
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        onSave(value);
+      } else if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+
+    if (!position) {
+      // If no position provided, center it
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-20">
+          <div className="bg-white p-4 rounded-lg shadow-lg border-2 border-blue-500">
+            <input
+              ref={inputRef}
+              type="text"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              onBlur={() => onSave(value)}
+              onKeyDown={handleKeyDown}
+              className="px-3 py-2 border-2 border-blue-500 rounded text-sm"
+              style={{ minWidth: '200px' }}
+            />
+            <div className="text-xs text-gray-500 mt-2">Press Enter to save, Escape to cancel</div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className="fixed z-50 bg-white p-2 rounded-lg shadow-lg border-2 border-blue-500"
+        style={{
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+        }}
+      >
+        <input
+          ref={inputRef}
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={() => onSave(value)}
+          onKeyDown={handleKeyDown}
+          className="px-2 py-1 border border-gray-300 rounded text-sm"
+          style={{ minWidth: '150px' }}
+        />
+        <div className="text-xs text-gray-500 mt-1">Enter to save, Esc to cancel</div>
       </div>
     );
   };
@@ -916,6 +1458,7 @@ const SolutionPro = () => {
                     <li>Drag fields from the field list onto X or Y axis drop zones.</li>
                     <li>Toggle between Dimension/Measure and Discrete/Continuous for each field.</li>
                     <li>Right-click on chart labels to sort data (Ascending, Descending, or Clear).</li>
+                    <li>Click on any label (title, axis labels, category names) to edit them directly.</li>
                     <li>Choose aggregation methods to analyze your data.</li>
                     <li>For time series data, select a date column and apply CAGR or trend analysis.</li>
                     <li>To reuse this tool for multiple datasets, remove the old data first.</li>
@@ -1642,6 +2185,7 @@ const SolutionPro = () => {
                 <p className="font-semibold mb-1">How to Copy Charts:</p>
                 <p>Click the "Copy" button on any chart, or right-click the chart and select "Copy Image" to paste it into Word, Excel, or email.</p>
                 <p className="mt-2"><strong>Tip:</strong> Right-click on chart labels to sort data (Ascending, Descending, or Clear Sorting).</p>
+                <p className="mt-1"><strong>Edit Labels:</strong> Click on any label (chart title, axis labels, category names) to edit them directly.</p>
               </div>
             </div>
           </div>
