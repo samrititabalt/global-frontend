@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X } from 'lucide-react';
-import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, Plus, LineChart, Scatter, AreaChart, Calendar } from 'lucide-react';
+import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart as RechartsLineChart, Line, AreaChart as RechartsAreaChart, Area, ScatterChart, Scatter as RechartsScatter } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { parse, isValid } from 'date-fns';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
 
@@ -18,10 +19,38 @@ const SolutionPro = () => {
   const [annotations, setAnnotations] = useState({});
   const [showInstructions, setShowInstructions] = useState(true);
   const [activeCell, setActiveCell] = useState({ row: 0, col: 0 });
+  const [chartConfigs, setChartConfigs] = useState(() => 
+    Array(6).fill(null).map((_, idx) => ({
+      id: `chart-${idx + 1}`,
+      enabled: false,
+      chartType: 'bar',
+      xAxis: { column: '', type: 'dimension', aggregation: 'none' },
+      yAxis: { column: '', type: 'measure', aggregation: 'sum' },
+      title: '',
+      error: null,
+    }))
+  );
+  const [expandedChart, setExpandedChart] = useState(null);
   const gridRef = useRef(null);
   const dashboardRef = useRef(null);
 
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
+  const CHART_TYPES = [
+    { value: 'bar', label: 'Bar Chart', icon: BarChart3 },
+    { value: 'pie', label: 'Pie Chart', icon: PieChart },
+    { value: 'line', label: 'Line Chart', icon: LineChart },
+    { value: 'area', label: 'Area Chart', icon: AreaChart },
+    { value: 'scatter', label: 'Scatter Plot', icon: Scatter },
+  ];
+  const AGGREGATIONS = [
+    { value: 'none', label: 'None' },
+    { value: 'sum', label: 'Sum' },
+    { value: 'average', label: 'Average' },
+    { value: 'count', label: 'Count' },
+    { value: 'mean', label: 'Mean' },
+    { value: 'median', label: 'Median' },
+    { value: 'cagr', label: 'CAGR (Time Series)' },
+  ];
 
   // Process grid data and generate chart data
   useEffect(() => {
@@ -72,108 +101,262 @@ const SolutionPro = () => {
     return dataRows;
   };
 
-  // Detect column types and categorize them
-  const analyzeColumns = (data) => {
-    if (data.length === 0) return { categorical: [], numeric: [], idColumns: [] };
+  // Detect column types
+  const getColumnInfo = (columnName) => {
+    if (!chartData.length || !columnName) return { type: 'text', isDate: false, isNumeric: false };
+    
+    const values = chartData.map(row => row[columnName]).filter(v => v !== null && v !== undefined && v !== '');
+    if (values.length === 0) return { type: 'text', isDate: false, isNumeric: false };
 
-    const headers = Object.keys(data[0] || {});
-    const categorical = [];
-    const numeric = [];
-    const idColumns = [];
-
-    headers.forEach(header => {
-      const headerLower = header.toLowerCase();
-      const isLikelyId = /^(id|_id|id_|.*id)$/i.test(headerLower) || 
-                        headerLower.includes('id') && headerLower.length < 10;
-
-      const values = data.map(row => row[header]).filter(v => v !== null && v !== undefined && v !== '');
-      if (values.length === 0) return;
-
-      // Check if mostly numeric
-      const numericCount = values.filter(v => typeof v === 'number' || !isNaN(parseFloat(v))).length;
-      const numericRatio = numericCount / values.length;
-
-      if (numericRatio > 0.8) {
-        // Mostly numeric
-        // If it looks like an ID and we have other numeric columns, treat it as ID
-        if (isLikelyId && headers.length > 1) {
-          // Check if there are other numeric columns (not IDs)
-          const otherNumeric = headers.filter(h => {
-            if (h === header) return false;
-            const otherValues = data.map(row => row[h]).filter(v => v !== null && v !== undefined && v !== '');
-            if (otherValues.length === 0) return false;
-            const otherNumericCount = otherValues.filter(v => typeof v === 'number' || !isNaN(parseFloat(v))).length;
-            return (otherNumericCount / otherValues.length) > 0.8;
-          });
-          
-          if (otherNumeric.length > 0) {
-            idColumns.push(header);
-          } else {
-            numeric.push(header);
-          }
-        } else {
-          numeric.push(header);
-        }
+    // Check if date
+    let dateCount = 0;
+    const dateFormats = [
+      'yyyy-MM-dd', 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy/MM/dd',
+      'MM-dd-yyyy', 'dd-MM-yyyy', 'yyyy-MM-dd HH:mm', 'MM/dd/yyyy HH:mm'
+    ];
+    
+    values.slice(0, 10).forEach(val => {
+      const str = String(val);
+      if (!isNaN(Date.parse(str))) {
+        dateCount++;
       } else {
-        // Categorical/text
-        categorical.push(header);
+        dateFormats.forEach(format => {
+          try {
+            const parsed = parse(str, format, new Date());
+            if (isValid(parsed)) dateCount++;
+          } catch (e) {}
+        });
       }
     });
 
-    return { categorical, numeric, idColumns };
+    const isDate = dateCount / Math.min(values.length, 10) > 0.7;
+    
+    // Check if numeric
+    const numericCount = values.filter(v => typeof v === 'number' || !isNaN(parseFloat(v))).length;
+    const isNumeric = numericCount / values.length > 0.8;
+
+    return {
+      type: isDate ? 'date' : (isNumeric ? 'numeric' : 'text'),
+      isDate,
+      isNumeric,
+    };
   };
 
-  // Count frequency of values in a categorical column
-  const getFrequencyDistribution = (data, column) => {
-    const counts = {};
-    data.forEach(row => {
-      const value = row[column];
-      if (value !== null && value !== undefined && value !== '') {
-        // Use the actual value as the key, preserving original format
-        const key = String(value).trim();
-        if (key !== '') {
-          counts[key] = (counts[key] || 0) + 1;
+  // Get available columns
+  const getAvailableColumns = () => {
+    if (!chartData.length) return [];
+    return Object.keys(chartData[0] || {});
+  };
+
+  // Validate chart configuration
+  const validateChartConfig = (config) => {
+    if (!config.enabled) return { valid: true, error: null };
+
+    const { chartType, xAxis, yAxis } = config;
+    const columns = getAvailableColumns();
+    const xInfo = xAxis.column ? getColumnInfo(xAxis.column) : null;
+    const yInfo = yAxis.column ? getColumnInfo(yAxis.column) : null;
+
+    // Basic validation
+    if (!xAxis.column && !yAxis.column) {
+      return { valid: false, error: 'Please select at least one variable.' };
+    }
+
+    // Pie charts need only one dimension
+    if (chartType === 'pie') {
+      if (!xAxis.column || xAxis.type !== 'dimension') {
+        return { valid: false, error: 'Pie charts require a dimension on X-axis.' };
+      }
+      if (yAxis.column && yAxis.type === 'dimension') {
+        return { valid: false, error: 'Pie charts cannot have two dimensions.' };
+      }
+    }
+
+    // Scatter plots need two measures
+    if (chartType === 'scatter') {
+      if (!xAxis.column || !yAxis.column) {
+        return { valid: false, error: 'Scatter plots require both X and Y axes.' };
+      }
+      if (xAxis.type !== 'measure' || yAxis.type !== 'measure') {
+        return { valid: false, error: 'Scatter plots require numeric measures on both axes.' };
+      }
+    }
+
+    // Line/Area charts work best with time on X-axis
+    if ((chartType === 'line' || chartType === 'area') && xInfo && !xInfo.isDate && xAxis.type === 'dimension') {
+      // Warning but not error - allow it
+    }
+
+    // Aggregation validation
+    if (xAxis.aggregation !== 'none' && xAxis.type === 'dimension' && !xInfo?.isNumeric) {
+      if (xAxis.aggregation === 'cagr' && !xInfo?.isDate) {
+        return { valid: false, error: 'CAGR requires a date/time column. Select the right variable.' };
+      }
+      if (['sum', 'average', 'mean', 'median'].includes(xAxis.aggregation) && !xInfo?.isNumeric) {
+        return { valid: false, error: 'This aggregation requires numeric values. Select the right variable.' };
+      }
+    }
+
+    if (yAxis.aggregation !== 'none' && yAxis.type === 'dimension' && !yInfo?.isNumeric) {
+      if (yAxis.aggregation === 'cagr' && !yInfo?.isDate) {
+        return { valid: false, error: 'CAGR requires a date/time column. Select the right variable.' };
+      }
+      if (['sum', 'average', 'mean', 'median'].includes(yAxis.aggregation) && !yInfo?.isNumeric) {
+        return { valid: false, error: 'This aggregation requires numeric values. Select the right variable.' };
+      }
+    }
+
+    return { valid: true, error: null };
+  };
+
+  // Calculate aggregation
+  const calculateAggregation = (data, column, aggregation) => {
+    if (aggregation === 'none') return data;
+    
+    const values = data.map(row => {
+      const val = row[column];
+      if (val === null || val === undefined || val === '') return null;
+      return typeof val === 'number' ? val : parseFloat(val);
+    }).filter(v => v !== null && !isNaN(v));
+
+    if (values.length === 0) return null;
+
+    switch (aggregation) {
+      case 'sum':
+        return values.reduce((a, b) => a + b, 0);
+      case 'average':
+      case 'mean':
+        return values.reduce((a, b) => a + b, 0) / values.length;
+      case 'count':
+        return values.length;
+      case 'median':
+        const sorted = [...values].sort((a, b) => a - b);
+        const mid = Math.floor(sorted.length / 2);
+        return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+      case 'cagr':
+        if (values.length < 2) return null;
+        const first = values[0];
+        const last = values[values.length - 1];
+        const periods = values.length - 1;
+        if (first === 0) return null;
+        return Math.pow(last / first, 1 / periods) - 1;
+      default:
+        return null;
+    }
+  };
+
+  // Generate chart data from configuration
+  const generateChartData = (config) => {
+    if (!config.enabled || chartData.length === 0) return [];
+
+    const { chartType, xAxis, yAxis } = config;
+    const validation = validateChartConfig(config);
+    if (!validation.valid) return [];
+
+    const xCol = xAxis.column;
+    const yCol = yAxis.column;
+
+    // For pie charts (single dimension)
+    if (chartType === 'pie' && xCol) {
+      const freq = {};
+      chartData.forEach(row => {
+        const key = String(row[xCol] || '').trim();
+        if (key) {
+          freq[key] = (freq[key] || 0) + 1;
         }
-      }
-    });
+      });
+      return Object.entries(freq)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 15);
+    }
 
-    return Object.entries(counts)
-      .map(([name, value]) => ({ 
-        name: name || 'Unknown', // Use actual value, fallback only if empty
-        value 
-      }))
-      .sort((a, b) => b.value - a.value);
-  };
+    // For scatter plots (two measures)
+    if (chartType === 'scatter' && xCol && yCol) {
+      return chartData
+        .map(row => ({
+          x: row[xCol] || 0,
+          y: row[yCol] || 0,
+          name: `${row[xCol] || 0}, ${row[yCol] || 0}`,
+        }))
+        .filter(item => !isNaN(item.x) && !isNaN(item.y))
+        .slice(0, 100);
+    }
 
-  // Aggregate numeric values by categorical column
-  const getAggregationByCategory = (data, categoryCol, measureCol, aggregation = 'sum') => {
-    const groups = {};
-    data.forEach(row => {
-      const category = row[categoryCol];
-      const measure = row[measureCol];
-      
-      if (category !== null && category !== undefined && category !== '' && 
-          measure !== null && measure !== undefined && measure !== '') {
-        // Use actual category value as key, preserving original format
-        const key = String(category).trim();
-        if (key === '') return; // Skip empty categories
+    // For other charts: aggregate by X-axis category
+    if (xCol && yCol) {
+      const groups = {};
+      chartData.forEach(row => {
+        const xVal = String(row[xCol] || '').trim();
+        const yVal = row[yCol];
         
-        const numValue = typeof measure === 'number' ? measure : parseFloat(measure);
-        
-        if (!isNaN(numValue)) {
-          if (!groups[key]) {
-            groups[key] = { name: key, value: 0, count: 0 };
+        if (xVal && yVal !== null && yVal !== undefined && yVal !== '') {
+          if (!groups[xVal]) {
+            groups[xVal] = [];
           }
-          groups[key].value += numValue;
-          groups[key].count += 1;
+          groups[xVal].push(yVal);
         }
-      }
-    });
+      });
 
-    return Object.values(groups).map(item => ({
-      name: item.name || 'Unknown', // Use actual category value, fallback only if empty
-      value: aggregation === 'average' ? (item.value / item.count) : item.value,
-    })).sort((a, b) => b.value - a.value);
+      return Object.entries(groups).map(([name, values]) => {
+        let value;
+        if (yAxis.aggregation !== 'none') {
+          value = calculateAggregation(values.map(v => ({ [yCol]: v })), yCol, yAxis.aggregation);
+        } else {
+          value = values[0];
+        }
+        return { name, value: value || 0 };
+      }).sort((a, b) => {
+        // Try to sort by numeric value, otherwise alphabetically
+        const aNum = parseFloat(a.name);
+        const bNum = parseFloat(b.name);
+        if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+        return a.name.localeCompare(b.name);
+      });
+    }
+
+    // Single column charts
+    if (xCol && !yCol) {
+      const freq = {};
+      chartData.forEach(row => {
+        const key = String(row[xCol] || '').trim();
+        if (key) {
+          freq[key] = (freq[key] || 0) + 1;
+        }
+      });
+      return Object.entries(freq)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 15);
+    }
+
+    return [];
+  };
+
+  // Update chart configuration
+  const updateChartConfig = (chartId, updates) => {
+    setChartConfigs(prev => prev.map(config => {
+      if (config.id === chartId) {
+        const updated = { ...config, ...updates };
+        const validation = validateChartConfig(updated);
+        return { ...updated, error: validation.error };
+      }
+      return config;
+    }));
+  };
+
+  // Toggle chart enabled
+  const toggleChart = (chartId) => {
+    setChartConfigs(prev => prev.map(config => {
+      if (config.id === chartId) {
+        const newEnabled = !config.enabled;
+        if (newEnabled && !expandedChart) {
+          setExpandedChart(chartId);
+        }
+        return { ...config, enabled: newEnabled };
+      }
+      return config;
+    }));
   };
 
   const handleCellChange = (rowIndex, colIndex, value) => {
@@ -212,233 +395,17 @@ const SolutionPro = () => {
     if (window.confirm('Are you sure you want to clear all data?')) {
       setGridData(Array(100).fill(null).map(() => Array(10).fill('')));
       setAnnotations({});
+      setChartConfigs(Array(6).fill(null).map((_, idx) => ({
+        id: `chart-${idx + 1}`,
+        enabled: false,
+        chartType: 'bar',
+        xAxis: { column: '', type: 'dimension', aggregation: 'none' },
+        yAxis: { column: '', type: 'measure', aggregation: 'sum' },
+        title: '',
+        error: null,
+      })));
     }
   };
-
-  const generateCharts = () => {
-    if (chartData.length === 0) {
-      // Return 6 empty charts
-      return Array(6).fill(null).map((_, idx) => ({
-        type: 'bar',
-        title: `Chart ${idx + 1}`,
-        data: [],
-        key: `chart${idx + 1}`,
-        empty: true,
-      }));
-    }
-
-    const charts = [];
-    const { categorical, numeric, idColumns } = analyzeColumns(chartData);
-    const headers = Object.keys(chartData[0] || {});
-    
-    // Filter out ID columns from numeric if we have other numeric columns
-    const usableNumeric = numeric.filter(n => !idColumns.includes(n));
-    const allNumeric = [...usableNumeric, ...idColumns];
-
-    let chartIndex = 1;
-
-    // PRIORITY 1: Frequency charts for categorical columns (most intuitive)
-    categorical.slice(0, 3).forEach(catCol => {
-      if (chartIndex > 6) return;
-      
-      const freqData = getFrequencyDistribution(chartData, catCol);
-      if (freqData.length > 0) {
-        // Use pie chart for smaller sets, bar for larger
-        const usePie = freqData.length <= 8;
-        charts.push({
-          type: usePie ? 'pie' : 'bar',
-          title: `Count by ${catCol}`,
-          data: freqData.slice(0, usePie ? 8 : 15),
-          key: `chart${chartIndex}`,
-        });
-        chartIndex++;
-      }
-    });
-
-    // PRIORITY 2: Aggregations (numeric measure by categorical dimension)
-    if (usableNumeric.length > 0 && categorical.length > 0) {
-      const measureCol = usableNumeric[0];
-      categorical.slice(0, 2).forEach(catCol => {
-        if (chartIndex > 6) return;
-        
-        const aggData = getAggregationByCategory(chartData, catCol, measureCol, 'sum');
-        if (aggData.length > 0) {
-          charts.push({
-            type: 'bar',
-            title: `Total ${measureCol} by ${catCol}`,
-            data: aggData.slice(0, 15),
-            key: `chart${chartIndex}`,
-          });
-          chartIndex++;
-        }
-      });
-    }
-
-    // PRIORITY 3: Average aggregations (if we have space)
-    if (usableNumeric.length > 0 && categorical.length > 0 && chartIndex <= 5) {
-      const measureCol = usableNumeric[0];
-      const catCol = categorical.find(c => !charts.some(ch => ch.title.includes(c)));
-      if (catCol) {
-        const avgData = getAggregationByCategory(chartData, catCol, measureCol, 'average');
-        if (avgData.length > 0) {
-          charts.push({
-            type: 'bar',
-            title: `Average ${measureCol} by ${catCol}`,
-            data: avgData.slice(0, 15),
-            key: `chart${chartIndex}`,
-          });
-          chartIndex++;
-        }
-      }
-    }
-
-    // PRIORITY 4: Multi-measure comparisons (if we have multiple numeric columns)
-    if (usableNumeric.length >= 2 && chartIndex <= 6 && categorical.length > 0) {
-      const catCol = categorical[0];
-      const measure1 = usableNumeric[0];
-      const measure2 = usableNumeric[1];
-      
-      // Aggregate both measures by category in one pass
-      const groups = {};
-      chartData.forEach(row => {
-        const category = row[catCol];
-        const val1 = row[measure1];
-        const val2 = row[measure2];
-        
-        if (category !== null && category !== undefined && category !== '') {
-          // Use actual category value, preserving original format
-          const key = String(category).trim();
-          if (key === '') return; // Skip empty categories
-          
-          if (!groups[key]) {
-            groups[key] = { name: key, [measure1]: 0, [measure2]: 0 };
-          }
-          
-          const num1 = typeof val1 === 'number' ? val1 : parseFloat(val1);
-          const num2 = typeof val2 === 'number' ? val2 : parseFloat(val2);
-          
-          if (!isNaN(num1)) groups[key][measure1] += num1;
-          if (!isNaN(num2)) groups[key][measure2] += num2;
-        }
-      });
-
-      const comparisonData = Object.values(groups)
-        .filter(item => item[measure1] !== 0 || item[measure2] !== 0)
-        .sort((a, b) => (b[measure1] + b[measure2]) - (a[measure1] + a[measure2]))
-        .slice(0, 10);
-
-      if (comparisonData.length > 0) {
-        charts.push({
-          type: 'bar',
-          title: `${measure1} vs ${measure2} by ${catCol}`,
-          data: comparisonData,
-          key: `chart${chartIndex}`,
-          multiBar: true,
-        });
-        chartIndex++;
-      }
-    }
-
-    // PRIORITY 5: Pie chart of aggregated totals by category
-    if (categorical.length > 0 && usableNumeric.length > 0 && chartIndex <= 6) {
-      const catCol = categorical.find(c => !charts.some(ch => ch.title.includes(`by ${c}`) && ch.type === 'pie'));
-      const measureCol = usableNumeric[0];
-      
-      if (catCol) {
-        const pieData = getAggregationByCategory(chartData, catCol, measureCol, 'sum')
-          .slice(0, 8);
-        
-        if (pieData.length > 0) {
-          charts.push({
-            type: 'pie',
-            title: `Distribution of ${measureCol} by ${catCol}`,
-            data: pieData,
-            key: `chart${chartIndex}`,
-          });
-          chartIndex++;
-        }
-      }
-    }
-
-    // PRIORITY 6: If we only have numeric columns (no categorical), show numeric distributions
-    if (categorical.length === 0 && allNumeric.length > 0 && chartIndex <= 6) {
-      const numCol = allNumeric[0];
-      
-      // Try to find a meaningful identifier column (like an ID or name column)
-      const identifierCol = headers.find(h => {
-        const hLower = h.toLowerCase();
-        return (hLower.includes('id') || hLower.includes('name') || hLower.includes('label')) && 
-               h !== numCol;
-      });
-      
-      const numericData = chartData
-        .map((row, idx) => {
-          // Use identifier column value if available, otherwise use row number
-          let label;
-          if (identifierCol && row[identifierCol] !== null && row[identifierCol] !== undefined && row[identifierCol] !== '') {
-            label = String(row[identifierCol]).trim() || `Row ${idx + 1}`;
-          } else {
-            label = `Row ${idx + 1}`;
-          }
-          
-          return {
-            name: label,
-            value: row[numCol] || 0,
-          };
-        })
-        .filter(item => item.value !== 0 && item.value !== null && !isNaN(item.value))
-        .slice(0, 15);
-
-      if (numericData.length > 0) {
-        charts.push({
-          type: 'bar',
-          title: `Distribution: ${numCol}`,
-          data: numericData,
-          key: `chart${chartIndex}`,
-        });
-        chartIndex++;
-      }
-    }
-
-    // FALLBACK: If we have categorical data but haven't filled all charts, add more frequency charts
-    if (categorical.length > 0 && chartIndex <= 6) {
-      const usedCategories = charts
-        .filter(ch => ch.title && ch.title.startsWith('Count by'))
-        .map(ch => ch.title.replace('Count by ', '').trim());
-      
-      categorical.forEach(catCol => {
-        if (chartIndex > 6) return;
-        if (usedCategories.includes(catCol)) return;
-        
-        const freqData = getFrequencyDistribution(chartData, catCol);
-        if (freqData.length > 0) {
-          const usePie = freqData.length <= 8;
-          charts.push({
-            type: usePie ? 'pie' : 'bar',
-            title: `Count by ${catCol}`,
-            data: freqData.slice(0, usePie ? 8 : 15),
-            key: `chart${chartIndex}`,
-          });
-          chartIndex++;
-        }
-      });
-    }
-
-    // Fill remaining slots with empty charts if needed
-    while (charts.length < 6) {
-      charts.push({
-        type: 'bar',
-        title: `Chart ${charts.length + 1}`,
-        data: [],
-        key: `chart${charts.length + 1}`,
-        empty: true,
-      });
-    }
-
-    return charts.slice(0, 6);
-  };
-
-  const charts = generateCharts();
 
   const downloadPDF = async () => {
     if (!dashboardRef.current) return;
@@ -496,6 +463,138 @@ const SolutionPro = () => {
     }));
   };
 
+  const renderChart = (config) => {
+    const data = generateChartData(config);
+    const validation = validateChartConfig(config);
+
+    if (!config.enabled) {
+      return (
+        <div className="h-64 flex items-center justify-center text-gray-400 border-2 border-dashed border-gray-300 rounded-lg">
+          <div className="text-center">
+            <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">Chart disabled. Click "Configure" to enable.</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!validation.valid) {
+      return (
+        <div className="h-64 flex items-center justify-center text-red-100 border-2 border-red-300 rounded-lg bg-red-50">
+          <div className="text-center px-4">
+            <p className="text-sm text-red-600 font-semibold">{validation.error}</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (data.length === 0) {
+      return (
+        <div className="h-64 flex items-center justify-center text-gray-400">
+          <div className="text-center">
+            <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No data available. Check your variable selections.</p>
+          </div>
+        </div>
+      );
+    }
+
+    const getChartTitle = () => {
+      if (config.title) return config.title;
+      
+      if (config.chartType === 'pie') {
+        return config.xAxis.column ? `Distribution: ${config.xAxis.column}` : 'Pie Chart';
+      }
+      
+      if (config.chartType === 'scatter') {
+        return `${config.xAxis.column || 'X'} vs ${config.yAxis.column || 'Y'}`;
+      }
+      
+      if (config.yAxis.column && config.xAxis.column) {
+        const agg = config.yAxis.aggregation !== 'none' ? `${config.yAxis.aggregation} of ` : '';
+        return `${agg}${config.yAxis.column} by ${config.xAxis.column}`;
+      }
+      
+      if (config.xAxis.column) {
+        return `Count by ${config.xAxis.column}`;
+      }
+      
+      return 'Chart';
+    };
+    
+    const chartTitle = getChartTitle();
+
+    return (
+      <div id={`chart-${config.id}`} className="chart-container">
+        <h4 className="text-sm font-semibold text-gray-700 mb-2">{chartTitle}</h4>
+        <ResponsiveContainer width="100%" height={250}>
+          {config.chartType === 'bar' && (
+            <BarChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="value" fill={COLORS[0]} />
+            </BarChart>
+          )}
+          {config.chartType === 'pie' && (
+            <RechartsPieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {data.map((entry, idx) => (
+                  <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </RechartsPieChart>
+          )}
+          {config.chartType === 'line' && (
+            <RechartsLineChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="value" stroke={COLORS[0]} />
+            </RechartsLineChart>
+          )}
+          {config.chartType === 'area' && (
+            <RechartsAreaChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Area type="monotone" dataKey="value" stroke={COLORS[0]} fill={COLORS[0]} fillOpacity={0.6} />
+            </RechartsAreaChart>
+          )}
+          {config.chartType === 'scatter' && (
+            <ScatterChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="x" name={config.xAxis.column} type="number" />
+              <YAxis dataKey="y" name={config.yAxis.column} type="number" />
+              <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+              <Legend />
+              <RechartsScatter name={`${config.xAxis.column} vs ${config.yAxis.column}`} data={data} fill={COLORS[0]} />
+            </ScatterChart>
+          )}
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  const availableColumns = getAvailableColumns();
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -520,12 +619,14 @@ const SolutionPro = () => {
               <div className="flex items-start gap-3">
                 <Info className="h-6 w-6 text-blue-600 mt-1 flex-shrink-0" />
                 <div className="flex-1">
-                  <h3 className="font-semibold text-blue-900 mb-2">Instructions</h3>
+                  <h3 className="font-semibold text-blue-900 mb-2">Chart Builder Instructions</h3>
                   <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                    <li>Select variables to build your own charts.</li>
+                    <li>Use dimensions for categories and measures for values.</li>
+                    <li>Choose aggregation methods to analyze your data.</li>
+                    <li>For time series data, select a date column and apply CAGR or trend analysis.</li>
                     <li>To reuse this tool for multiple datasets, remove the old data first.</li>
-                    <li>Paste your data, download or copy the charts, then clear the sheet to start again.</li>
                     <li>For large datasets beyond 100 rows or 10 columns, please contact the admin.</li>
-                    <li>Charts are automatically generated from your data. Right-click any chart to copy it.</li>
                   </ul>
                 </div>
               </div>
@@ -593,7 +694,7 @@ const SolutionPro = () => {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-6 w-6 text-blue-600" />
-                <h2 className="text-2xl font-semibold text-gray-900">Auto-Generated Dashboard</h2>
+                <h2 className="text-2xl font-semibold text-gray-900">Chart Dashboard</h2>
               </div>
               <div className="flex gap-3">
                 <button
@@ -606,90 +707,208 @@ const SolutionPro = () => {
               </div>
             </div>
 
-            {chartData.length === 0 ? (
+            {availableColumns.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <BarChart3 className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg">No data available. Paste your data in the grid above to generate charts.</p>
+                <p className="text-lg">No data available. Paste your data in the grid above to begin.</p>
+                <p className="text-sm mt-2">Select variables and chart settings to begin visualizing your data.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {charts.map((chart, index) => (
+                {chartConfigs.map((config, index) => (
                   <div
-                    key={chart.key}
+                    key={config.id}
                     className="bg-gray-50 rounded-lg p-4 border border-gray-200"
                   >
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">{chart.title}</h3>
-                      <button
-                        onClick={() => {
-                          const chartElement = document.getElementById(`chart-${chart.key}`);
-                          copyChart(chartElement);
-                        }}
-                        className="flex items-center gap-1 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                        title="Copy chart to clipboard"
-                      >
-                        <Copy className="h-4 w-4" />
-                        Copy
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-semibold text-gray-900">Chart {index + 1}</h3>
+                        <button
+                          onClick={() => toggleChart(config.id)}
+                          className={`px-3 py-1 text-xs rounded ${
+                            config.enabled
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-200 text-gray-600'
+                          }`}
+                        >
+                          {config.enabled ? 'Enabled' : 'Disabled'}
+                        </button>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setExpandedChart(expandedChart === config.id ? null : config.id)}
+                          className="p-1.5 text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                          title="Configure chart"
+                        >
+                          <Settings className="h-4 w-4" />
+                        </button>
+                        {config.enabled && (
+                          <button
+                            onClick={() => {
+                              const chartElement = document.getElementById(`chart-${config.id}`);
+                              copyChart(chartElement);
+                            }}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title="Copy chart"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    
-                    {chart.empty || chart.data.length === 0 ? (
-                      <div className="h-64 flex items-center justify-center text-gray-400">
-                        <div className="text-center">
-                          <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No data available for this chart</p>
+
+                    {/* Chart Configuration Panel */}
+                    {expandedChart === config.id && (
+                      <div className="mb-4 p-4 bg-white rounded-lg border border-gray-300 space-y-4">
+                        {/* Chart Type */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Chart Type</label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {CHART_TYPES.map(type => {
+                              const Icon = type.icon;
+                              return (
+                                <button
+                                  key={type.value}
+                                  onClick={() => updateChartConfig(config.id, { chartType: type.value })}
+                                  className={`p-3 rounded-lg border-2 transition-all ${
+                                    config.chartType === type.value
+                                      ? 'border-blue-600 bg-blue-50'
+                                      : 'border-gray-200 hover:border-gray-300'
+                                  }`}
+                                >
+                                  <Icon className="h-5 w-5 mx-auto mb-1" />
+                                  <span className="text-xs">{type.label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* X-Axis Configuration */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">X-Axis</label>
+                          <div className="space-y-2">
+                            <select
+                              value={config.xAxis.column}
+                              onChange={(e) => updateChartConfig(config.id, {
+                                xAxis: { ...config.xAxis, column: e.target.value }
+                              })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            >
+                              <option value="">Select column...</option>
+                              {availableColumns.map(col => {
+                                const info = getColumnInfo(col);
+                                return (
+                                  <option key={col} value={col}>
+                                    {col} {info.isDate && '📅'} {info.isNumeric && '🔢'}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                            {config.xAxis.column && (
+                              <>
+                                <select
+                                  value={config.xAxis.type}
+                                  onChange={(e) => updateChartConfig(config.id, {
+                                    xAxis: { ...config.xAxis, type: e.target.value }
+                                  })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                >
+                                  <option value="dimension">Dimension (Category)</option>
+                                  <option value="measure">Measure (Numeric)</option>
+                                </select>
+                                {config.xAxis.type === 'measure' && (
+                                  <select
+                                    value={config.xAxis.aggregation}
+                                    onChange={(e) => updateChartConfig(config.id, {
+                                      xAxis: { ...config.xAxis, aggregation: e.target.value }
+                                    })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                  >
+                                    {AGGREGATIONS.map(agg => (
+                                      <option key={agg.value} value={agg.value}>{agg.label}</option>
+                                    ))}
+                                  </select>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Y-Axis Configuration */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Y-Axis</label>
+                          <div className="space-y-2">
+                            <select
+                              value={config.yAxis.column}
+                              onChange={(e) => updateChartConfig(config.id, {
+                                yAxis: { ...config.yAxis, column: e.target.value }
+                              })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            >
+                              <option value="">Select column...</option>
+                              {availableColumns.map(col => {
+                                const info = getColumnInfo(col);
+                                return (
+                                  <option key={col} value={col}>
+                                    {col} {info.isDate && '📅'} {info.isNumeric && '🔢'}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                            {config.yAxis.column && (
+                              <>
+                                <select
+                                  value={config.yAxis.type}
+                                  onChange={(e) => updateChartConfig(config.id, {
+                                    yAxis: { ...config.yAxis, type: e.target.value }
+                                  })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                >
+                                  <option value="dimension">Dimension (Category)</option>
+                                  <option value="measure">Measure (Numeric)</option>
+                                </select>
+                                {config.yAxis.type === 'measure' && (
+                                  <select
+                                    value={config.yAxis.aggregation}
+                                    onChange={(e) => updateChartConfig(config.id, {
+                                      yAxis: { ...config.yAxis, aggregation: e.target.value }
+                                    })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                  >
+                                    {AGGREGATIONS.map(agg => (
+                                      <option key={agg.value} value={agg.value}>{agg.label}</option>
+                                    ))}
+                                  </select>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Custom Title */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Chart Title (Optional)</label>
+                          <input
+                            type="text"
+                            value={config.title}
+                            onChange={(e) => updateChartConfig(config.id, { title: e.target.value })}
+                            placeholder="Auto-generated if empty"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          />
                         </div>
                       </div>
-                    ) : (
-                      <div id={`chart-${chart.key}`} className="chart-container">
-                        <ResponsiveContainer width="100%" height={250}>
-                          {chart.type === 'bar' ? (
-                            <BarChart data={chart.data}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="name" />
-                              <YAxis />
-                              <Tooltip />
-                              <Legend />
-                              {chart.multiBar ? (
-                                <>
-                                  {Object.keys(chart.data[0] || {}).filter(k => k !== 'name').map((key, idx) => (
-                                    <Bar key={key} dataKey={key} fill={COLORS[idx % COLORS.length]} />
-                                  ))}
-                                </>
-                              ) : (
-                                <Bar dataKey="value" fill={COLORS[index % COLORS.length]} />
-                              )}
-                            </BarChart>
-                          ) : (
-                            <RechartsPieChart>
-                              <Pie
-                                data={chart.data}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                                outerRadius={80}
-                                fill="#8884d8"
-                                dataKey="value"
-                              >
-                                {chart.data.map((entry, idx) => (
-                                  <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
-                                ))}
-                              </Pie>
-                              <Tooltip />
-                              <Legend />
-                            </RechartsPieChart>
-                          )}
-                        </ResponsiveContainer>
-                      </div>
                     )}
+
+                    {/* Chart Display */}
+                    {renderChart(config)}
 
                     {/* Annotation Input */}
                     <div className="mt-4">
                       <textarea
                         placeholder="Add notes or annotations..."
-                        value={annotations[chart.key] || ''}
-                        onChange={(e) => updateAnnotation(chart.key, e.target.value)}
+                        value={annotations[config.id] || ''}
+                        onChange={(e) => updateAnnotation(config.id, e.target.value)}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         rows={2}
                       />
@@ -719,4 +938,3 @@ const SolutionPro = () => {
 };
 
 export default SolutionPro;
-
