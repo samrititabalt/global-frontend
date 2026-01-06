@@ -129,13 +129,19 @@ const SolutionPro = () => {
     data.forEach(row => {
       const value = row[column];
       if (value !== null && value !== undefined && value !== '') {
-        const key = String(value);
-        counts[key] = (counts[key] || 0) + 1;
+        // Use the actual value as the key, preserving original format
+        const key = String(value).trim();
+        if (key !== '') {
+          counts[key] = (counts[key] || 0) + 1;
+        }
       }
     });
 
     return Object.entries(counts)
-      .map(([name, value]) => ({ name, value }))
+      .map(([name, value]) => ({ 
+        name: name || 'Unknown', // Use actual value, fallback only if empty
+        value 
+      }))
       .sort((a, b) => b.value - a.value);
   };
 
@@ -148,7 +154,10 @@ const SolutionPro = () => {
       
       if (category !== null && category !== undefined && category !== '' && 
           measure !== null && measure !== undefined && measure !== '') {
-        const key = String(category);
+        // Use actual category value as key, preserving original format
+        const key = String(category).trim();
+        if (key === '') return; // Skip empty categories
+        
         const numValue = typeof measure === 'number' ? measure : parseFloat(measure);
         
         if (!isNaN(numValue)) {
@@ -162,7 +171,7 @@ const SolutionPro = () => {
     });
 
     return Object.values(groups).map(item => ({
-      name: item.name,
+      name: item.name || 'Unknown', // Use actual category value, fallback only if empty
       value: aggregation === 'average' ? (item.value / item.count) : item.value,
     })).sort((a, b) => b.value - a.value);
   };
@@ -220,6 +229,7 @@ const SolutionPro = () => {
 
     const charts = [];
     const { categorical, numeric, idColumns } = analyzeColumns(chartData);
+    const headers = Object.keys(chartData[0] || {});
     
     // Filter out ID columns from numeric if we have other numeric columns
     const usableNumeric = numeric.filter(n => !idColumns.includes(n));
@@ -296,7 +306,10 @@ const SolutionPro = () => {
         const val2 = row[measure2];
         
         if (category !== null && category !== undefined && category !== '') {
-          const key = String(category);
+          // Use actual category value, preserving original format
+          const key = String(category).trim();
+          if (key === '') return; // Skip empty categories
+          
           if (!groups[key]) {
             groups[key] = { name: key, [measure1]: 0, [measure2]: 0 };
           }
@@ -350,12 +363,30 @@ const SolutionPro = () => {
     // PRIORITY 6: If we only have numeric columns (no categorical), show numeric distributions
     if (categorical.length === 0 && allNumeric.length > 0 && chartIndex <= 6) {
       const numCol = allNumeric[0];
+      
+      // Try to find a meaningful identifier column (like an ID or name column)
+      const identifierCol = headers.find(h => {
+        const hLower = h.toLowerCase();
+        return (hLower.includes('id') || hLower.includes('name') || hLower.includes('label')) && 
+               h !== numCol;
+      });
+      
       const numericData = chartData
-        .map((row, idx) => ({
-          name: `Row ${idx + 1}`,
-          value: row[numCol] || 0,
-        }))
-        .filter(item => item.value !== 0)
+        .map((row, idx) => {
+          // Use identifier column value if available, otherwise use row number
+          let label;
+          if (identifierCol && row[identifierCol] !== null && row[identifierCol] !== undefined && row[identifierCol] !== '') {
+            label = String(row[identifierCol]).trim() || `Row ${idx + 1}`;
+          } else {
+            label = `Row ${idx + 1}`;
+          }
+          
+          return {
+            name: label,
+            value: row[numCol] || 0,
+          };
+        })
+        .filter(item => item.value !== 0 && item.value !== null && !isNaN(item.value))
         .slice(0, 15);
 
       if (numericData.length > 0) {
