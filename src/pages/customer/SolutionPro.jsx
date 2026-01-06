@@ -42,7 +42,15 @@ const SolutionPro = () => {
     if (firstDataRow === -1) return [];
 
     // Assume first row is headers
-    const headers = gridData[firstDataRow].filter(h => h.trim() !== '');
+    const headers = [];
+    const headerRow = gridData[firstDataRow];
+    for (let i = 0; i < headerRow.length; i++) {
+      const header = (headerRow[i] || '').trim();
+      if (header !== '') {
+        headers.push({ name: header, index: i });
+      }
+    }
+
     if (headers.length === 0) return [];
 
     // Get data rows
@@ -51,17 +59,112 @@ const SolutionPro = () => {
       const row = gridData[i];
       if (row.some(cell => cell.trim() !== '')) {
         const dataObj = {};
-        headers.forEach((header, idx) => {
-          const value = row[idx] || '';
+        headers.forEach(({ name, index }) => {
+          const value = (row[index] || '').trim();
           // Try to parse as number
           const numValue = parseFloat(value);
-          dataObj[header] = isNaN(numValue) ? value : numValue;
+          dataObj[name] = value === '' ? null : (isNaN(numValue) ? value : numValue);
         });
         dataRows.push(dataObj);
       }
     }
 
     return dataRows;
+  };
+
+  // Detect column types and categorize them
+  const analyzeColumns = (data) => {
+    if (data.length === 0) return { categorical: [], numeric: [], idColumns: [] };
+
+    const headers = Object.keys(data[0] || {});
+    const categorical = [];
+    const numeric = [];
+    const idColumns = [];
+
+    headers.forEach(header => {
+      const headerLower = header.toLowerCase();
+      const isLikelyId = /^(id|_id|id_|.*id)$/i.test(headerLower) || 
+                        headerLower.includes('id') && headerLower.length < 10;
+
+      const values = data.map(row => row[header]).filter(v => v !== null && v !== undefined && v !== '');
+      if (values.length === 0) return;
+
+      // Check if mostly numeric
+      const numericCount = values.filter(v => typeof v === 'number' || !isNaN(parseFloat(v))).length;
+      const numericRatio = numericCount / values.length;
+
+      if (numericRatio > 0.8) {
+        // Mostly numeric
+        // If it looks like an ID and we have other numeric columns, treat it as ID
+        if (isLikelyId && headers.length > 1) {
+          // Check if there are other numeric columns (not IDs)
+          const otherNumeric = headers.filter(h => {
+            if (h === header) return false;
+            const otherValues = data.map(row => row[h]).filter(v => v !== null && v !== undefined && v !== '');
+            if (otherValues.length === 0) return false;
+            const otherNumericCount = otherValues.filter(v => typeof v === 'number' || !isNaN(parseFloat(v))).length;
+            return (otherNumericCount / otherValues.length) > 0.8;
+          });
+          
+          if (otherNumeric.length > 0) {
+            idColumns.push(header);
+          } else {
+            numeric.push(header);
+          }
+        } else {
+          numeric.push(header);
+        }
+      } else {
+        // Categorical/text
+        categorical.push(header);
+      }
+    });
+
+    return { categorical, numeric, idColumns };
+  };
+
+  // Count frequency of values in a categorical column
+  const getFrequencyDistribution = (data, column) => {
+    const counts = {};
+    data.forEach(row => {
+      const value = row[column];
+      if (value !== null && value !== undefined && value !== '') {
+        const key = String(value);
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
+
+    return Object.entries(counts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  };
+
+  // Aggregate numeric values by categorical column
+  const getAggregationByCategory = (data, categoryCol, measureCol, aggregation = 'sum') => {
+    const groups = {};
+    data.forEach(row => {
+      const category = row[categoryCol];
+      const measure = row[measureCol];
+      
+      if (category !== null && category !== undefined && category !== '' && 
+          measure !== null && measure !== undefined && measure !== '') {
+        const key = String(category);
+        const numValue = typeof measure === 'number' ? measure : parseFloat(measure);
+        
+        if (!isNaN(numValue)) {
+          if (!groups[key]) {
+            groups[key] = { name: key, value: 0, count: 0 };
+          }
+          groups[key].value += numValue;
+          groups[key].count += 1;
+        }
+      }
+    });
+
+    return Object.values(groups).map(item => ({
+      name: item.name,
+      value: aggregation === 'average' ? (item.value / item.count) : item.value,
+    })).sort((a, b) => b.value - a.value);
   };
 
   const handleCellChange = (rowIndex, colIndex, value) => {
@@ -104,102 +207,193 @@ const SolutionPro = () => {
   };
 
   const generateCharts = () => {
-    if (chartData.length === 0) return [];
+    if (chartData.length === 0) {
+      // Return 6 empty charts
+      return Array(6).fill(null).map((_, idx) => ({
+        type: 'bar',
+        title: `Chart ${idx + 1}`,
+        data: [],
+        key: `chart${idx + 1}`,
+        empty: true,
+      }));
+    }
 
     const charts = [];
-    const headers = Object.keys(chartData[0] || {});
-    const numericHeaders = headers.filter(h => {
-      return chartData.some(row => typeof row[h] === 'number');
+    const { categorical, numeric, idColumns } = analyzeColumns(chartData);
+    
+    // Filter out ID columns from numeric if we have other numeric columns
+    const usableNumeric = numeric.filter(n => !idColumns.includes(n));
+    const allNumeric = [...usableNumeric, ...idColumns];
+
+    let chartIndex = 1;
+
+    // PRIORITY 1: Frequency charts for categorical columns (most intuitive)
+    categorical.slice(0, 3).forEach(catCol => {
+      if (chartIndex > 6) return;
+      
+      const freqData = getFrequencyDistribution(chartData, catCol);
+      if (freqData.length > 0) {
+        // Use pie chart for smaller sets, bar for larger
+        const usePie = freqData.length <= 8;
+        charts.push({
+          type: usePie ? 'pie' : 'bar',
+          title: `Count by ${catCol}`,
+          data: freqData.slice(0, usePie ? 8 : 15),
+          key: `chart${chartIndex}`,
+        });
+        chartIndex++;
+      }
     });
 
-    // Chart 1: Bar chart of first numeric column
-    if (numericHeaders.length > 0) {
-      const firstNumeric = numericHeaders[0];
-      charts.push({
-        type: 'bar',
-        title: `Bar Chart: ${firstNumeric}`,
-        data: chartData.map((row, idx) => ({
-          name: `Item ${idx + 1}`,
-          value: row[firstNumeric] || 0,
-        })),
-        key: 'chart1',
+    // PRIORITY 2: Aggregations (numeric measure by categorical dimension)
+    if (usableNumeric.length > 0 && categorical.length > 0) {
+      const measureCol = usableNumeric[0];
+      categorical.slice(0, 2).forEach(catCol => {
+        if (chartIndex > 6) return;
+        
+        const aggData = getAggregationByCategory(chartData, catCol, measureCol, 'sum');
+        if (aggData.length > 0) {
+          charts.push({
+            type: 'bar',
+            title: `Total ${measureCol} by ${catCol}`,
+            data: aggData.slice(0, 15),
+            key: `chart${chartIndex}`,
+          });
+          chartIndex++;
+        }
       });
     }
 
-    // Chart 2: Pie chart of first numeric column
-    if (numericHeaders.length > 0) {
-      const firstNumeric = numericHeaders[0];
-      const pieData = chartData.slice(0, 8).map((row, idx) => ({
-        name: `Item ${idx + 1}`,
-        value: Math.abs(row[firstNumeric] || 0),
-      }));
-      charts.push({
-        type: 'pie',
-        title: `Pie Chart: ${firstNumeric}`,
-        data: pieData,
-        key: 'chart2',
+    // PRIORITY 3: Average aggregations (if we have space)
+    if (usableNumeric.length > 0 && categorical.length > 0 && chartIndex <= 5) {
+      const measureCol = usableNumeric[0];
+      const catCol = categorical.find(c => !charts.some(ch => ch.title.includes(c)));
+      if (catCol) {
+        const avgData = getAggregationByCategory(chartData, catCol, measureCol, 'average');
+        if (avgData.length > 0) {
+          charts.push({
+            type: 'bar',
+            title: `Average ${measureCol} by ${catCol}`,
+            data: avgData.slice(0, 15),
+            key: `chart${chartIndex}`,
+          });
+          chartIndex++;
+        }
+      }
+    }
+
+    // PRIORITY 4: Multi-measure comparisons (if we have multiple numeric columns)
+    if (usableNumeric.length >= 2 && chartIndex <= 6 && categorical.length > 0) {
+      const catCol = categorical[0];
+      const measure1 = usableNumeric[0];
+      const measure2 = usableNumeric[1];
+      
+      // Aggregate both measures by category in one pass
+      const groups = {};
+      chartData.forEach(row => {
+        const category = row[catCol];
+        const val1 = row[measure1];
+        const val2 = row[measure2];
+        
+        if (category !== null && category !== undefined && category !== '') {
+          const key = String(category);
+          if (!groups[key]) {
+            groups[key] = { name: key, [measure1]: 0, [measure2]: 0 };
+          }
+          
+          const num1 = typeof val1 === 'number' ? val1 : parseFloat(val1);
+          const num2 = typeof val2 === 'number' ? val2 : parseFloat(val2);
+          
+          if (!isNaN(num1)) groups[key][measure1] += num1;
+          if (!isNaN(num2)) groups[key][measure2] += num2;
+        }
+      });
+
+      const comparisonData = Object.values(groups)
+        .filter(item => item[measure1] !== 0 || item[measure2] !== 0)
+        .sort((a, b) => (b[measure1] + b[measure2]) - (a[measure1] + a[measure2]))
+        .slice(0, 10);
+
+      if (comparisonData.length > 0) {
+        charts.push({
+          type: 'bar',
+          title: `${measure1} vs ${measure2} by ${catCol}`,
+          data: comparisonData,
+          key: `chart${chartIndex}`,
+          multiBar: true,
+        });
+        chartIndex++;
+      }
+    }
+
+    // PRIORITY 5: Pie chart of aggregated totals by category
+    if (categorical.length > 0 && usableNumeric.length > 0 && chartIndex <= 6) {
+      const catCol = categorical.find(c => !charts.some(ch => ch.title.includes(`by ${c}`) && ch.type === 'pie'));
+      const measureCol = usableNumeric[0];
+      
+      if (catCol) {
+        const pieData = getAggregationByCategory(chartData, catCol, measureCol, 'sum')
+          .slice(0, 8);
+        
+        if (pieData.length > 0) {
+          charts.push({
+            type: 'pie',
+            title: `Distribution of ${measureCol} by ${catCol}`,
+            data: pieData,
+            key: `chart${chartIndex}`,
+          });
+          chartIndex++;
+        }
+      }
+    }
+
+    // PRIORITY 6: If we only have numeric columns (no categorical), show numeric distributions
+    if (categorical.length === 0 && allNumeric.length > 0 && chartIndex <= 6) {
+      const numCol = allNumeric[0];
+      const numericData = chartData
+        .map((row, idx) => ({
+          name: `Row ${idx + 1}`,
+          value: row[numCol] || 0,
+        }))
+        .filter(item => item.value !== 0)
+        .slice(0, 15);
+
+      if (numericData.length > 0) {
+        charts.push({
+          type: 'bar',
+          title: `Distribution: ${numCol}`,
+          data: numericData,
+          key: `chart${chartIndex}`,
+        });
+        chartIndex++;
+      }
+    }
+
+    // FALLBACK: If we have categorical data but haven't filled all charts, add more frequency charts
+    if (categorical.length > 0 && chartIndex <= 6) {
+      const usedCategories = charts
+        .filter(ch => ch.title && ch.title.startsWith('Count by'))
+        .map(ch => ch.title.replace('Count by ', '').trim());
+      
+      categorical.forEach(catCol => {
+        if (chartIndex > 6) return;
+        if (usedCategories.includes(catCol)) return;
+        
+        const freqData = getFrequencyDistribution(chartData, catCol);
+        if (freqData.length > 0) {
+          const usePie = freqData.length <= 8;
+          charts.push({
+            type: usePie ? 'pie' : 'bar',
+            title: `Count by ${catCol}`,
+            data: freqData.slice(0, usePie ? 8 : 15),
+            key: `chart${chartIndex}`,
+          });
+          chartIndex++;
+        }
       });
     }
 
-    // Chart 3: Bar chart comparing first two numeric columns
-    if (numericHeaders.length >= 2) {
-      charts.push({
-        type: 'bar',
-        title: `Comparison: ${numericHeaders[0]} vs ${numericHeaders[1]}`,
-        data: chartData.slice(0, 10).map((row, idx) => ({
-          name: `Item ${idx + 1}`,
-          [numericHeaders[0]]: row[numericHeaders[0]] || 0,
-          [numericHeaders[1]]: row[numericHeaders[1]] || 0,
-        })),
-        key: 'chart3',
-        multiBar: true,
-      });
-    }
-
-    // Chart 4: Pie chart of second numeric column
-    if (numericHeaders.length >= 2) {
-      const secondNumeric = numericHeaders[1];
-      const pieData = chartData.slice(0, 6).map((row, idx) => ({
-        name: `Item ${idx + 1}`,
-        value: Math.abs(row[secondNumeric] || 0),
-      }));
-      charts.push({
-        type: 'pie',
-        title: `Pie Chart: ${secondNumeric}`,
-        data: pieData,
-        key: 'chart4',
-      });
-    }
-
-    // Chart 5: Bar chart of third numeric column (if exists)
-    if (numericHeaders.length >= 3) {
-      const thirdNumeric = numericHeaders[2];
-      charts.push({
-        type: 'bar',
-        title: `Bar Chart: ${thirdNumeric}`,
-        data: chartData.slice(0, 10).map((row, idx) => ({
-          name: `Item ${idx + 1}`,
-          value: row[thirdNumeric] || 0,
-        })),
-        key: 'chart5',
-      });
-    }
-
-    // Chart 6: Pie chart aggregating all numeric values
-    if (numericHeaders.length > 0) {
-      const aggregated = numericHeaders.slice(0, 5).map(header => ({
-        name: header,
-        value: chartData.reduce((sum, row) => sum + Math.abs(row[header] || 0), 0),
-      }));
-      charts.push({
-        type: 'pie',
-        title: 'Aggregated Overview',
-        data: aggregated,
-        key: 'chart6',
-      });
-    }
-
-    // Fill up to 6 charts
+    // Fill remaining slots with empty charts if needed
     while (charts.length < 6) {
       charts.push({
         type: 'bar',
