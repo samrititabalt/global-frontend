@@ -52,6 +52,10 @@ const SolutionPro = () => {
   );
   const [expandedChart, setExpandedChart] = useState(null);
   const [showCustomization, setShowCustomization] = useState({});
+  const [contextMenu, setContextMenu] = useState(null);
+  const [draggedField, setDraggedField] = useState(null);
+  const [fieldRoles, setFieldRoles] = useState({}); // { columnName: 'dimension' | 'measure' }
+  const [fieldModes, setFieldModes] = useState({}); // { columnName: 'discrete' | 'continuous' }
   const gridRef = useRef(null);
   const dashboardRef = useRef(null);
   const CHART_TYPES = [
@@ -377,6 +381,139 @@ const SolutionPro = () => {
     }));
   };
 
+  // Handle right-click context menu for sorting
+  const handleChartLabelRightClick = (e, chartId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      chartId,
+    });
+  };
+
+  // Handle context menu selection
+  const handleContextMenuAction = (action, chartId) => {
+    if (action === 'sort-ascending') {
+      updateChartConfig(chartId, { sortOrder: 'ascending' });
+    } else if (action === 'sort-descending') {
+      updateChartConfig(chartId, { sortOrder: 'descending' });
+    } else if (action === 'clear-sorting') {
+      updateChartConfig(chartId, { sortOrder: 'none' });
+    }
+    setContextMenu(null);
+  };
+
+  // Close context menu on outside click
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setContextMenu(null);
+    };
+    if (contextMenu) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [contextMenu]);
+
+  // Handle drag start
+  const handleDragStart = (e, columnName) => {
+    setDraggedField(columnName);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  // Handle drag over
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  // Handle drop on axis
+  const handleDrop = (e, chartId, axis) => {
+    e.preventDefault();
+    if (!draggedField) return;
+
+    const columnInfo = getColumnInfo(draggedField);
+    const role = fieldRoles[draggedField] || (columnInfo.isNumeric ? 'measure' : 'dimension');
+    const mode = fieldModes[draggedField] || (role === 'dimension' ? 'discrete' : 'continuous');
+
+    // Initialize role and mode if not set
+    if (!fieldRoles[draggedField]) {
+      setFieldRoles(prev => ({ ...prev, [draggedField]: role }));
+    }
+    if (!fieldModes[draggedField]) {
+      setFieldModes(prev => ({ ...prev, [draggedField]: mode }));
+    }
+
+    const axisUpdate = {
+      column: draggedField,
+      type: role,
+      aggregation: role === 'measure' ? (axis === 'yAxis' ? 'sum' : 'none') : 'none',
+      label: '',
+      showLabel: true,
+    };
+
+    if (axis === 'xAxis') {
+      updateChartConfig(chartId, { xAxis: axisUpdate, enabled: true });
+    } else {
+      updateChartConfig(chartId, { yAxis: axisUpdate, enabled: true });
+    }
+
+    setDraggedField(null);
+  };
+
+  // Remove field from axis
+  const removeFieldFromAxis = (chartId, axis) => {
+    const emptyAxis = { column: '', type: 'dimension', aggregation: 'none', label: '', showLabel: true };
+    if (axis === 'xAxis') {
+      updateChartConfig(chartId, { xAxis: emptyAxis });
+    } else {
+      updateChartConfig(chartId, { yAxis: emptyAxis });
+    }
+  };
+
+  // Toggle field role
+  const toggleFieldRole = (columnName) => {
+    const newRole = fieldRoles[columnName] === 'dimension' ? 'measure' : 'dimension';
+    setFieldRoles(prev => ({
+      ...prev,
+      [columnName]: newRole,
+    }));
+
+    // Update chart configs that use this field
+    setChartConfigs(prev => prev.map(config => {
+      let updated = false;
+      const updates = {};
+
+      if (config.xAxis.column === columnName) {
+        updates.xAxis = {
+          ...config.xAxis,
+          type: newRole,
+          aggregation: newRole === 'measure' ? 'none' : 'none',
+        };
+        updated = true;
+      }
+
+      if (config.yAxis.column === columnName) {
+        updates.yAxis = {
+          ...config.yAxis,
+          type: newRole,
+          aggregation: newRole === 'measure' ? 'sum' : 'none',
+        };
+        updated = true;
+      }
+
+      return updated ? { ...config, ...updates } : config;
+    }));
+  };
+
+  // Toggle field mode
+  const toggleFieldMode = (columnName) => {
+    setFieldModes(prev => ({
+      ...prev,
+      [columnName]: prev[columnName] === 'discrete' ? 'continuous' : 'discrete',
+    }));
+  };
+
   // Toggle chart enabled
   const toggleChart = (chartId) => {
     setChartConfigs(prev => prev.map(config => {
@@ -454,6 +591,9 @@ const SolutionPro = () => {
         },
       })));
       setShowCustomization({});
+      setFieldRoles({});
+      setFieldModes({});
+      setContextMenu(null);
     }
   };
 
@@ -596,6 +736,12 @@ const SolutionPro = () => {
             width: '100%', 
             height: `${chartHeight}px`,
             overflow: needsHorizontalScroll ? 'auto' : 'visible'
+          }}
+          onContextMenu={(e) => {
+            // Only show context menu if clicking on chart area (not on controls)
+            if (e.target.closest('.chart-container') || e.target.closest('.recharts-wrapper')) {
+              handleChartLabelRightClick(e, config.id);
+            }
           }}
         >
           <div style={{ minWidth: needsHorizontalScroll ? chartWidth : '100%', height: '100%' }}>
@@ -765,8 +911,11 @@ const SolutionPro = () => {
                 <div className="flex-1">
                   <h3 className="font-semibold text-blue-900 mb-2">Chart Builder Instructions</h3>
                   <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                    <li>Select variables to build your own charts.</li>
+                    <li>Select variables to build your own charts using dropdowns or drag-and-drop.</li>
                     <li>Use dimensions for categories and measures for values.</li>
+                    <li>Drag fields from the field list onto X or Y axis drop zones.</li>
+                    <li>Toggle between Dimension/Measure and Discrete/Continuous for each field.</li>
+                    <li>Right-click on chart labels to sort data (Ascending, Descending, or Clear).</li>
                     <li>Choose aggregation methods to analyze your data.</li>
                     <li>For time series data, select a date column and apply CAGR or trend analysis.</li>
                     <li>To reuse this tool for multiple datasets, remove the old data first.</li>
@@ -904,6 +1053,114 @@ const SolutionPro = () => {
                     {/* Chart Configuration Panel */}
                     {expandedChart === config.id && (
                       <div className="mb-4 p-4 bg-white rounded-lg border border-gray-300 space-y-4">
+                        {/* Drag-and-Drop Interface */}
+                        <div className="mb-6 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                          <h4 className="text-sm font-semibold text-indigo-900 mb-3">Drag & Drop Fields</h4>
+                          
+                          {/* Drop Zones */}
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            {/* X-Axis Drop Zone */}
+                            <div
+                              onDragOver={handleDragOver}
+                              onDrop={(e) => handleDrop(e, config.id, 'xAxis')}
+                              className={`min-h-20 p-3 rounded-lg border-2 border-dashed transition-colors ${
+                                draggedField ? 'border-indigo-400 bg-indigo-100' : 'border-gray-300 bg-gray-50'
+                              }`}
+                            >
+                              <div className="text-xs font-medium text-gray-600 mb-2">X-Axis</div>
+                              {config.xAxis.column ? (
+                                <div className="flex items-center justify-between bg-white p-2 rounded border border-gray-200">
+                                  <span className="text-sm font-medium text-gray-700">{config.xAxis.column}</span>
+                                  <button
+                                    onClick={() => removeFieldFromAxis(config.id, 'xAxis')}
+                                    className="text-red-500 hover:text-red-700"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="text-xs text-gray-400">Drop a field here</div>
+                              )}
+                            </div>
+
+                            {/* Y-Axis Drop Zone */}
+                            <div
+                              onDragOver={handleDragOver}
+                              onDrop={(e) => handleDrop(e, config.id, 'yAxis')}
+                              className={`min-h-20 p-3 rounded-lg border-2 border-dashed transition-colors ${
+                                draggedField ? 'border-indigo-400 bg-indigo-100' : 'border-gray-300 bg-gray-50'
+                              }`}
+                            >
+                              <div className="text-xs font-medium text-gray-600 mb-2">Y-Axis</div>
+                              {config.yAxis.column ? (
+                                <div className="flex items-center justify-between bg-white p-2 rounded border border-gray-200">
+                                  <span className="text-sm font-medium text-gray-700">{config.yAxis.column}</span>
+                                  <button
+                                    onClick={() => removeFieldFromAxis(config.id, 'yAxis')}
+                                    className="text-red-500 hover:text-red-700"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="text-xs text-gray-400">Drop a field here</div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Draggable Fields List */}
+                          {availableColumns.length > 0 && (
+                            <div>
+                              <div className="text-xs font-medium text-gray-600 mb-2">Available Fields</div>
+                              <div className="space-y-2 max-h-40 overflow-y-auto">
+                                {availableColumns.map(col => {
+                                  const info = getColumnInfo(col);
+                                  const role = fieldRoles[col] || (info.isNumeric ? 'measure' : 'dimension');
+                                  const mode = fieldModes[col] || (role === 'dimension' ? 'discrete' : 'continuous');
+                                  
+                                  return (
+                                    <div
+                                      key={col}
+                                      draggable
+                                      onDragStart={(e) => handleDragStart(e, col)}
+                                      className="flex items-center gap-2 p-2 bg-white rounded border border-gray-200 hover:border-indigo-400 cursor-move"
+                                    >
+                                      <div className="flex-1">
+                                        <div className="text-sm font-medium text-gray-700">{col}</div>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <button
+                                            onClick={() => toggleFieldRole(col)}
+                                            className={`text-xs px-2 py-0.5 rounded ${
+                                              role === 'dimension'
+                                                ? 'bg-blue-100 text-blue-700'
+                                                : 'bg-green-100 text-green-700'
+                                            }`}
+                                          >
+                                            {role === 'dimension' ? 'Dimension' : 'Measure'}
+                                          </button>
+                                          <button
+                                            onClick={() => toggleFieldMode(col)}
+                                            className={`text-xs px-2 py-0.5 rounded ${
+                                              mode === 'discrete'
+                                                ? 'bg-purple-100 text-purple-700'
+                                                : 'bg-orange-100 text-orange-700'
+                                            }`}
+                                          >
+                                            {mode === 'discrete' ? 'Discrete' : 'Continuous'}
+                                          </button>
+                                        </div>
+                                      </div>
+                                      <div className="text-xs text-gray-400">
+                                        {info.isDate && '📅'} {info.isNumeric && '🔢'}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
                         {/* Chart Type */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Chart Type</label>
@@ -934,9 +1191,18 @@ const SolutionPro = () => {
                           <div className="space-y-2">
                             <select
                               value={config.xAxis.column}
-                              onChange={(e) => updateChartConfig(config.id, {
-                                xAxis: { ...config.xAxis, column: e.target.value }
-                              })}
+                              onChange={(e) => {
+                                const col = e.target.value;
+                                const role = fieldRoles[col] || (col ? (getColumnInfo(col).isNumeric ? 'measure' : 'dimension') : 'dimension');
+                                updateChartConfig(config.id, {
+                                  xAxis: { 
+                                    ...config.xAxis, 
+                                    column: col,
+                                    type: role,
+                                    aggregation: role === 'measure' ? 'none' : 'none'
+                                  }
+                                });
+                              }}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                             >
                               <option value="">Select column...</option>
@@ -985,9 +1251,18 @@ const SolutionPro = () => {
                           <div className="space-y-2">
                             <select
                               value={config.yAxis.column}
-                              onChange={(e) => updateChartConfig(config.id, {
-                                yAxis: { ...config.yAxis, column: e.target.value }
-                              })}
+                              onChange={(e) => {
+                                const col = e.target.value;
+                                const role = fieldRoles[col] || (col ? (getColumnInfo(col).isNumeric ? 'measure' : 'dimension') : 'measure');
+                                updateChartConfig(config.id, {
+                                  yAxis: { 
+                                    ...config.yAxis, 
+                                    column: col,
+                                    type: role,
+                                    aggregation: role === 'measure' ? 'sum' : 'none'
+                                  }
+                                });
+                              }}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                             >
                               <option value="">Select column...</option>
@@ -1366,11 +1641,42 @@ const SolutionPro = () => {
               <div className="text-sm text-green-800">
                 <p className="font-semibold mb-1">How to Copy Charts:</p>
                 <p>Click the "Copy" button on any chart, or right-click the chart and select "Copy Image" to paste it into Word, Excel, or email.</p>
+                <p className="mt-2"><strong>Tip:</strong> Right-click on chart labels to sort data (Ascending, Descending, or Clear Sorting).</p>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Context Menu for Sorting */}
+      {contextMenu && (
+        <div
+          className="fixed bg-white border border-gray-300 rounded-lg shadow-lg z-50 py-1"
+          style={{
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+          }}
+        >
+          <button
+            onClick={() => handleContextMenuAction('sort-ascending', contextMenu.chartId)}
+            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Sort Ascending
+          </button>
+          <button
+            onClick={() => handleContextMenuAction('sort-descending', contextMenu.chartId)}
+            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Sort Descending
+          </button>
+          <button
+            onClick={() => handleContextMenuAction('clear-sorting', contextMenu.chartId)}
+            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Clear Sorting
+          </button>
+        </div>
+      )}
 
       <Footer />
     </div>
