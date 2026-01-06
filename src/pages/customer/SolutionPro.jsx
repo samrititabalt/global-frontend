@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, Plus, LineChart, Scatter, AreaChart, Calendar } from 'lucide-react';
+import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, Plus, LineChart, TrendingUp, AreaChart, Calendar } from 'lucide-react';
 import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart as RechartsLineChart, Line, AreaChart as RechartsAreaChart, Area, ScatterChart, Scatter as RechartsScatter } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -40,7 +40,7 @@ const SolutionPro = () => {
     { value: 'pie', label: 'Pie Chart', icon: PieChart },
     { value: 'line', label: 'Line Chart', icon: LineChart },
     { value: 'area', label: 'Area Chart', icon: AreaChart },
-    { value: 'scatter', label: 'Scatter Plot', icon: Scatter },
+    { value: 'scatter', label: 'Scatter Plot', icon: TrendingUp },
   ];
   const AGGREGATIONS = [
     { value: 'none', label: 'None' },
