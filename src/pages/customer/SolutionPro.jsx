@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, Plus, LineChart, TrendingUp, AreaChart, Calendar } from 'lucide-react';
-import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart as RechartsLineChart, Line, AreaChart as RechartsAreaChart, Area, ScatterChart, Scatter as RechartsScatter } from 'recharts';
+import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, Plus, LineChart, AreaChart, Calendar, Palette, Type, Eye, EyeOff } from 'lucide-react';
+import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart as RechartsLineChart, Line, AreaChart as RechartsAreaChart, Area, LabelList } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { parse, isValid } from 'date-fns';
@@ -24,13 +24,32 @@ const SolutionPro = () => {
       id: `chart-${idx + 1}`,
       enabled: false,
       chartType: 'bar',
-      xAxis: { column: '', type: 'dimension', aggregation: 'none' },
-      yAxis: { column: '', type: 'measure', aggregation: 'sum' },
+      xAxis: { column: '', type: 'dimension', aggregation: 'none', label: '', showLabel: true },
+      yAxis: { column: '', type: 'measure', aggregation: 'sum', label: '', showLabel: true },
       title: '',
+      showTitle: true,
       error: null,
+      sortOrder: 'none', // 'none', 'ascending', 'descending'
+      // Appearance customization
+      appearance: {
+        fontSize: 'medium', // 'small', 'medium', 'large', or custom px
+        customFontSize: 14,
+        fontColor: '#000000',
+        colors: COLORS,
+        useMultiColor: true,
+        legendPosition: 'bottom', // 'top', 'bottom', 'left', 'right'
+        legendFontSize: 12,
+        legendFontColor: '#000000',
+        showLegend: true,
+        showDataLabels: false,
+        barThickness: 20,
+        lineThickness: 2,
+        opacity: 1,
+      },
     }))
   );
   const [expandedChart, setExpandedChart] = useState(null);
+  const [showCustomization, setShowCustomization] = useState({});
   const gridRef = useRef(null);
   const dashboardRef = useRef(null);
 
@@ -40,7 +59,11 @@ const SolutionPro = () => {
     { value: 'pie', label: 'Pie Chart', icon: PieChart },
     { value: 'line', label: 'Line Chart', icon: LineChart },
     { value: 'area', label: 'Area Chart', icon: AreaChart },
-    { value: 'scatter', label: 'Scatter Plot', icon: TrendingUp },
+  ];
+  const SORT_OPTIONS = [
+    { value: 'none', label: 'No Sorting' },
+    { value: 'ascending', label: 'Increasing (Ascending)' },
+    { value: 'descending', label: 'Decreasing (Descending)' },
   ];
   const AGGREGATIONS = [
     { value: 'none', label: 'None' },
@@ -172,15 +195,6 @@ const SolutionPro = () => {
       }
     }
 
-    // Scatter plots need two measures
-    if (chartType === 'scatter') {
-      if (!xAxis.column || !yAxis.column) {
-        return { valid: false, error: 'Scatter plots require both X and Y axes.' };
-      }
-      if (xAxis.type !== 'measure' || yAxis.type !== 'measure') {
-        return { valid: false, error: 'Scatter plots require numeric measures on both axes.' };
-      }
-    }
 
     // Line/Area charts work best with time on X-axis
     if ((chartType === 'line' || chartType === 'area') && xInfo && !xInfo.isDate && xAxis.type === 'dimension') {
@@ -265,23 +279,21 @@ const SolutionPro = () => {
           freq[key] = (freq[key] || 0) + 1;
         }
       });
-      return Object.entries(freq)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 15);
+      let result = Object.entries(freq)
+        .map(([name, value]) => ({ name, value }));
+
+      // Apply sorting
+      if (config.sortOrder === 'ascending') {
+        result = result.sort((a, b) => a.value - b.value);
+      } else if (config.sortOrder === 'descending') {
+        result = result.sort((a, b) => b.value - a.value);
+      } else {
+        result = result.sort((a, b) => b.value - a.value); // Default descending for pie
+      }
+
+      return result.slice(0, 15);
     }
 
-    // For scatter plots (two measures)
-    if (chartType === 'scatter' && xCol && yCol) {
-      return chartData
-        .map(row => ({
-          x: row[xCol] || 0,
-          y: row[yCol] || 0,
-          name: `${row[xCol] || 0}, ${row[yCol] || 0}`,
-        }))
-        .filter(item => !isNaN(item.x) && !isNaN(item.y))
-        .slice(0, 100);
-    }
 
     // For other charts: aggregate by X-axis category
     if (xCol && yCol) {
@@ -298,7 +310,7 @@ const SolutionPro = () => {
         }
       });
 
-      return Object.entries(groups).map(([name, values]) => {
+      let result = Object.entries(groups).map(([name, values]) => {
         let value;
         if (yAxis.aggregation !== 'none') {
           value = calculateAggregation(values.map(v => ({ [yCol]: v })), yCol, yAxis.aggregation);
@@ -306,13 +318,24 @@ const SolutionPro = () => {
           value = values[0];
         }
         return { name, value: value || 0 };
-      }).sort((a, b) => {
-        // Try to sort by numeric value, otherwise alphabetically
-        const aNum = parseFloat(a.name);
-        const bNum = parseFloat(b.name);
-        if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
-        return a.name.localeCompare(b.name);
       });
+
+      // Apply sorting
+      if (config.sortOrder === 'ascending') {
+        result = result.sort((a, b) => a.value - b.value);
+      } else if (config.sortOrder === 'descending') {
+        result = result.sort((a, b) => b.value - a.value);
+      } else {
+        // Default: try to sort by name if numeric, otherwise alphabetically
+        result = result.sort((a, b) => {
+          const aNum = parseFloat(a.name);
+          const bNum = parseFloat(b.name);
+          if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+          return a.name.localeCompare(b.name);
+        });
+      }
+
+      return result;
     }
 
     // Single column charts
@@ -324,10 +347,19 @@ const SolutionPro = () => {
           freq[key] = (freq[key] || 0) + 1;
         }
       });
-      return Object.entries(freq)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 15);
+      let result = Object.entries(freq)
+        .map(([name, value]) => ({ name, value }));
+
+      // Apply sorting
+      if (config.sortOrder === 'ascending') {
+        result = result.sort((a, b) => a.value - b.value);
+      } else if (config.sortOrder === 'descending') {
+        result = result.sort((a, b) => b.value - a.value);
+      } else {
+        result = result.sort((a, b) => b.value - a.value); // Default descending for frequency
+      }
+
+      return result.slice(0, 15);
     }
 
     return [];
@@ -399,11 +431,29 @@ const SolutionPro = () => {
         id: `chart-${idx + 1}`,
         enabled: false,
         chartType: 'bar',
-        xAxis: { column: '', type: 'dimension', aggregation: 'none' },
-        yAxis: { column: '', type: 'measure', aggregation: 'sum' },
+        xAxis: { column: '', type: 'dimension', aggregation: 'none', label: '', showLabel: true },
+        yAxis: { column: '', type: 'measure', aggregation: 'sum', label: '', showLabel: true },
         title: '',
+        showTitle: true,
         error: null,
+        sortOrder: 'none',
+        appearance: {
+          fontSize: 'medium',
+          customFontSize: 14,
+          fontColor: '#000000',
+          colors: COLORS,
+          useMultiColor: true,
+          legendPosition: 'bottom',
+          legendFontSize: 12,
+          legendFontColor: '#000000',
+          showLegend: true,
+          showDataLabels: false,
+          barThickness: 20,
+          lineThickness: 2,
+          opacity: 1,
+        },
       })));
+      setShowCustomization({});
     }
   };
 
@@ -506,10 +556,6 @@ const SolutionPro = () => {
         return config.xAxis.column ? `Distribution: ${config.xAxis.column}` : 'Pie Chart';
       }
       
-      if (config.chartType === 'scatter') {
-        return `${config.xAxis.column || 'X'} vs ${config.yAxis.column || 'Y'}`;
-      }
-      
       if (config.yAxis.column && config.xAxis.column) {
         const agg = config.yAxis.aggregation !== 'none' ? `${config.yAxis.aggregation} of ` : '';
         return `${agg}${config.yAxis.column} by ${config.xAxis.column}`;
@@ -523,19 +569,69 @@ const SolutionPro = () => {
     };
     
     const chartTitle = getChartTitle();
+    const appearance = config.appearance || {};
+    const fontSize = appearance.fontSize === 'small' ? 12 : appearance.fontSize === 'large' ? 16 : appearance.customFontSize || 14;
+    const xAxisLabel = config.xAxis.label || config.xAxis.column || '';
+    const yAxisLabel = config.yAxis.label || config.yAxis.column || '';
+    const colors = appearance.useMultiColor ? (appearance.colors || COLORS) : [appearance.colors?.[0] || COLORS[0]];
+
+    // Calculate chart dimensions for scrollbars
+    const needsHorizontalScroll = data.length > 20 && (config.chartType === 'bar' || config.chartType === 'line' || config.chartType === 'area');
+    const chartWidth = needsHorizontalScroll ? Math.max(800, data.length * 40) : '100%';
+    const chartHeight = 250;
 
     return (
       <div id={`chart-${config.id}`} className="chart-container">
-        <h4 className="text-sm font-semibold text-gray-700 mb-2">{chartTitle}</h4>
-        <ResponsiveContainer width="100%" height={250}>
+        {config.showTitle && (
+          <h4 
+            className="text-sm font-semibold mb-2" 
+            style={{ color: appearance.fontColor || '#000000', fontSize: `${fontSize}px` }}
+          >
+            {chartTitle}
+          </h4>
+        )}
+        <div 
+          className="relative"
+          style={{ 
+            width: '100%', 
+            height: `${chartHeight}px`,
+            overflow: needsHorizontalScroll ? 'auto' : 'visible'
+          }}
+        >
+          <div style={{ minWidth: needsHorizontalScroll ? chartWidth : '100%', height: '100%' }}>
+            <ResponsiveContainer width="100%" height={chartHeight}>
           {config.chartType === 'bar' && (
             <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="value" fill={COLORS[0]} />
+              <XAxis 
+                dataKey="name" 
+                label={config.xAxis.showLabel ? { value: xAxisLabel, position: 'insideBottom', offset: -5, style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' } } : undefined}
+                tick={{ fontSize: fontSize, fill: appearance.fontColor || '#000000' }}
+                angle={data.length > 10 ? -45 : 0}
+                textAnchor={data.length > 10 ? 'end' : 'middle'}
+                height={data.length > 10 ? 80 : 30}
+              />
+              <YAxis 
+                label={config.yAxis.showLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' } } : undefined}
+                tick={{ fontSize: fontSize, fill: appearance.fontColor || '#000000' }}
+              />
+              <Tooltip contentStyle={{ fontSize: `${fontSize}px` }} />
+              {appearance.showLegend && (
+                <Legend 
+                  wrapperStyle={{ fontSize: `${appearance.legendFontSize || 12}px`, color: appearance.legendFontColor || '#000000' }}
+                  verticalAlign={appearance.legendPosition === 'top' ? 'top' : appearance.legendPosition === 'bottom' ? 'bottom' : appearance.legendPosition === 'left' ? 'left' : 'right'}
+                />
+              )}
+              <Bar 
+                dataKey="value" 
+                fill={colors[0]} 
+                fillOpacity={appearance.opacity || 1}
+                barSize={appearance.barThickness || 20}
+              >
+                {appearance.showDataLabels && (
+                  <LabelList dataKey="value" position="top" style={{ fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' }} />
+                )}
+              </Bar>
             </BarChart>
           )}
           {config.chartType === 'pie' && (
@@ -545,50 +641,98 @@ const SolutionPro = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                label={appearance.showDataLabels ? ({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%` : false}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
               >
                 {data.map((entry, idx) => (
-                  <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                  <Cell key={`cell-${idx}`} fill={colors[idx % colors.length]} opacity={appearance.opacity || 1} />
                 ))}
               </Pie>
-              <Tooltip />
-              <Legend />
+              <Tooltip contentStyle={{ fontSize: `${fontSize}px` }} />
+              {appearance.showLegend && (
+                <Legend 
+                  wrapperStyle={{ fontSize: `${appearance.legendFontSize || 12}px`, color: appearance.legendFontColor || '#000000' }}
+                  verticalAlign={appearance.legendPosition === 'top' ? 'top' : appearance.legendPosition === 'bottom' ? 'bottom' : appearance.legendPosition === 'left' ? 'left' : 'right'}
+                />
+              )}
             </RechartsPieChart>
           )}
           {config.chartType === 'line' && (
             <RechartsLineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="value" stroke={COLORS[0]} />
+              <XAxis 
+                dataKey="name" 
+                label={config.xAxis.showLabel ? { value: xAxisLabel, position: 'insideBottom', offset: -5, style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' } } : undefined}
+                tick={{ fontSize: fontSize, fill: appearance.fontColor || '#000000' }}
+                angle={data.length > 10 ? -45 : 0}
+                textAnchor={data.length > 10 ? 'end' : 'middle'}
+                height={data.length > 10 ? 80 : 30}
+              />
+              <YAxis 
+                label={config.yAxis.showLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' } } : undefined}
+                tick={{ fontSize: fontSize, fill: appearance.fontColor || '#000000' }}
+              />
+              <Tooltip contentStyle={{ fontSize: `${fontSize}px` }} />
+              {appearance.showLegend && (
+                <Legend 
+                  wrapperStyle={{ fontSize: `${appearance.legendFontSize || 12}px`, color: appearance.legendFontColor || '#000000' }}
+                  verticalAlign={appearance.legendPosition === 'top' ? 'top' : appearance.legendPosition === 'bottom' ? 'bottom' : appearance.legendPosition === 'left' ? 'left' : 'right'}
+                />
+              )}
+              <Line 
+                type="monotone" 
+                dataKey="value" 
+                stroke={colors[0]} 
+                strokeWidth={appearance.lineThickness || 2}
+                strokeOpacity={appearance.opacity || 1}
+              >
+                {appearance.showDataLabels && (
+                  <LabelList dataKey="value" position="top" style={{ fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' }} />
+                )}
+              </Line>
             </RechartsLineChart>
           )}
           {config.chartType === 'area' && (
             <RechartsAreaChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Area type="monotone" dataKey="value" stroke={COLORS[0]} fill={COLORS[0]} fillOpacity={0.6} />
+              <XAxis 
+                dataKey="name" 
+                label={config.xAxis.showLabel ? { value: xAxisLabel, position: 'insideBottom', offset: -5, style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' } } : undefined}
+                tick={{ fontSize: fontSize, fill: appearance.fontColor || '#000000' }}
+                angle={data.length > 10 ? -45 : 0}
+                textAnchor={data.length > 10 ? 'end' : 'middle'}
+                height={data.length > 10 ? 80 : 30}
+              />
+              <YAxis 
+                label={config.yAxis.showLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' } } : undefined}
+                tick={{ fontSize: fontSize, fill: appearance.fontColor || '#000000' }}
+              />
+              <Tooltip contentStyle={{ fontSize: `${fontSize}px` }} />
+              {appearance.showLegend && (
+                <Legend 
+                  wrapperStyle={{ fontSize: `${appearance.legendFontSize || 12}px`, color: appearance.legendFontColor || '#000000' }}
+                  verticalAlign={appearance.legendPosition === 'top' ? 'top' : appearance.legendPosition === 'bottom' ? 'bottom' : appearance.legendPosition === 'left' ? 'left' : 'right'}
+                />
+              )}
+              <Area 
+                type="monotone" 
+                dataKey="value" 
+                stroke={colors[0]} 
+                fill={colors[0]} 
+                fillOpacity={(appearance.opacity || 1) * 0.6}
+                strokeWidth={appearance.lineThickness || 2}
+              >
+                {appearance.showDataLabels && (
+                  <LabelList dataKey="value" position="top" style={{ fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' }} />
+                )}
+              </Area>
             </RechartsAreaChart>
           )}
-          {config.chartType === 'scatter' && (
-            <ScatterChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="x" name={config.xAxis.column} type="number" />
-              <YAxis dataKey="y" name={config.yAxis.column} type="number" />
-              <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-              <Legend />
-              <RechartsScatter name={`${config.xAxis.column} vs ${config.yAxis.column}`} data={data} fill={COLORS[0]} />
-            </ScatterChart>
-          )}
-        </ResponsiveContainer>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
     );
   };
@@ -888,7 +1032,15 @@ const SolutionPro = () => {
 
                         {/* Custom Title */}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Chart Title (Optional)</label>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="block text-sm font-medium text-gray-700">Chart Title</label>
+                            <button
+                              onClick={() => updateChartConfig(config.id, { showTitle: !config.showTitle })}
+                              className="text-xs text-gray-600 hover:text-gray-800"
+                            >
+                              {config.showTitle ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
                           <input
                             type="text"
                             value={config.title}
@@ -897,6 +1049,294 @@ const SolutionPro = () => {
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                           />
                         </div>
+
+                        {/* Sorting */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Sort Order</label>
+                          <select
+                            value={config.sortOrder}
+                            onChange={(e) => updateChartConfig(config.id, { sortOrder: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          >
+                            {SORT_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Axis Labels */}
+                        {config.xAxis.column && (
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="block text-sm font-medium text-gray-700">X-Axis Label</label>
+                              <button
+                                onClick={() => updateChartConfig(config.id, {
+                                  xAxis: { ...config.xAxis, showLabel: !config.xAxis.showLabel }
+                                })}
+                                className="text-xs text-gray-600 hover:text-gray-800"
+                              >
+                                {config.xAxis.showLabel ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              value={config.xAxis.label}
+                              onChange={(e) => updateChartConfig(config.id, {
+                                xAxis: { ...config.xAxis, label: e.target.value }
+                              })}
+                              placeholder={config.xAxis.column}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            />
+                          </div>
+                        )}
+
+                        {config.yAxis.column && (
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="block text-sm font-medium text-gray-700">Y-Axis Label</label>
+                              <button
+                                onClick={() => updateChartConfig(config.id, {
+                                  yAxis: { ...config.yAxis, showLabel: !config.yAxis.showLabel }
+                                })}
+                                className="text-xs text-gray-600 hover:text-gray-800"
+                              >
+                                {config.yAxis.showLabel ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              value={config.yAxis.label}
+                              onChange={(e) => updateChartConfig(config.id, {
+                                yAxis: { ...config.yAxis, label: e.target.value }
+                              })}
+                              placeholder={config.yAxis.column}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            />
+                          </div>
+                        )}
+
+                        {/* Customization Toggle */}
+                        <div>
+                          <button
+                            onClick={() => setShowCustomization(prev => ({
+                              ...prev,
+                              [config.id]: !prev[config.id]
+                            }))}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors"
+                          >
+                            <Palette className="h-4 w-4" />
+                            {showCustomization[config.id] ? 'Hide' : 'Show'} Customization
+                          </button>
+                        </div>
+
+                        {/* Appearance Customization Panel */}
+                        {showCustomization[config.id] && (
+                          <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200 space-y-4">
+                            <h4 className="font-semibold text-purple-900 mb-3">Appearance Settings</h4>
+                            
+                            {/* Font Controls */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Font Size</label>
+                              <div className="flex gap-2">
+                                <select
+                                  value={config.appearance.fontSize}
+                                  onChange={(e) => updateChartConfig(config.id, {
+                                    appearance: { ...config.appearance, fontSize: e.target.value }
+                                  })}
+                                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                >
+                                  <option value="small">Small</option>
+                                  <option value="medium">Medium</option>
+                                  <option value="large">Large</option>
+                                  <option value="custom">Custom</option>
+                                </select>
+                                {config.appearance.fontSize === 'custom' && (
+                                  <input
+                                    type="number"
+                                    value={config.appearance.customFontSize}
+                                    onChange={(e) => updateChartConfig(config.id, {
+                                      appearance: { ...config.appearance, customFontSize: parseInt(e.target.value) || 14 }
+                                    })}
+                                    placeholder="px"
+                                    className="w-20 px-2 py-2 border border-gray-300 rounded-lg text-sm"
+                                  />
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Font Color</label>
+                              <input
+                                type="color"
+                                value={config.appearance.fontColor}
+                                onChange={(e) => updateChartConfig(config.id, {
+                                  appearance: { ...config.appearance, fontColor: e.target.value }
+                                })}
+                                className="w-full h-10 border border-gray-300 rounded-lg"
+                              />
+                            </div>
+
+                            {/* Color Controls */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Color Scheme</label>
+                              <div className="flex gap-2 mb-2">
+                                <button
+                                  onClick={() => updateChartConfig(config.id, {
+                                    appearance: { ...config.appearance, useMultiColor: true }
+                                  })}
+                                  className={`flex-1 px-3 py-2 rounded-lg text-sm ${
+                                    config.appearance.useMultiColor
+                                      ? 'bg-blue-600 text-white'
+                                      : 'bg-gray-200 text-gray-700'
+                                  }`}
+                                >
+                                  Multi-Color
+                                </button>
+                                <button
+                                  onClick={() => updateChartConfig(config.id, {
+                                    appearance: { ...config.appearance, useMultiColor: false }
+                                  })}
+                                  className={`flex-1 px-3 py-2 rounded-lg text-sm ${
+                                    !config.appearance.useMultiColor
+                                      ? 'bg-blue-600 text-white'
+                                      : 'bg-gray-200 text-gray-700'
+                                  }`}
+                                >
+                                  Single Color
+                                </button>
+                              </div>
+                              {!config.appearance.useMultiColor && (
+                                <input
+                                  type="color"
+                                  value={config.appearance.colors?.[0] || COLORS[0]}
+                                  onChange={(e) => updateChartConfig(config.id, {
+                                    appearance: { ...config.appearance, colors: [e.target.value] }
+                                  })}
+                                  className="w-full h-10 border border-gray-300 rounded-lg"
+                                />
+                              )}
+                            </div>
+
+                            {/* Legend Controls */}
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <label className="block text-sm font-medium text-gray-700">Show Legend</label>
+                                <button
+                                  onClick={() => updateChartConfig(config.id, {
+                                    appearance: { ...config.appearance, showLegend: !config.appearance.showLegend }
+                                  })}
+                                  className="text-xs text-gray-600 hover:text-gray-800"
+                                >
+                                  {config.appearance.showLegend ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                              </div>
+                              {config.appearance.showLegend && (
+                                <>
+                                  <select
+                                    value={config.appearance.legendPosition}
+                                    onChange={(e) => updateChartConfig(config.id, {
+                                      appearance: { ...config.appearance, legendPosition: e.target.value }
+                                    })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2"
+                                  >
+                                    <option value="top">Top</option>
+                                    <option value="bottom">Bottom</option>
+                                    <option value="left">Left</option>
+                                    <option value="right">Right</option>
+                                  </select>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="block text-xs text-gray-600 mb-1">Legend Font Size</label>
+                                      <input
+                                        type="number"
+                                        value={config.appearance.legendFontSize}
+                                        onChange={(e) => updateChartConfig(config.id, {
+                                          appearance: { ...config.appearance, legendFontSize: parseInt(e.target.value) || 12 }
+                                        })}
+                                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs text-gray-600 mb-1">Legend Color</label>
+                                      <input
+                                        type="color"
+                                        value={config.appearance.legendFontColor}
+                                        onChange={(e) => updateChartConfig(config.id, {
+                                          appearance: { ...config.appearance, legendFontColor: e.target.value }
+                                        })}
+                                        className="w-full h-8 border border-gray-300 rounded"
+                                      />
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+
+                            {/* Visual Controls */}
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <label className="block text-sm font-medium text-gray-700">Show Data Labels</label>
+                                <button
+                                  onClick={() => updateChartConfig(config.id, {
+                                    appearance: { ...config.appearance, showDataLabels: !config.appearance.showDataLabels }
+                                  })}
+                                  className="text-xs text-gray-600 hover:text-gray-800"
+                                >
+                                  {config.appearance.showDataLabels ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                              </div>
+                            </div>
+
+                            {(config.chartType === 'bar' || config.chartType === 'line' || config.chartType === 'area') && (
+                              <>
+                                {config.chartType === 'bar' && (
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Bar Thickness</label>
+                                    <input
+                                      type="number"
+                                      value={config.appearance.barThickness}
+                                      onChange={(e) => updateChartConfig(config.id, {
+                                        appearance: { ...config.appearance, barThickness: parseInt(e.target.value) || 20 }
+                                      })}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                      min="5"
+                                      max="50"
+                                    />
+                                  </div>
+                                )}
+                                {(config.chartType === 'line' || config.chartType === 'area') && (
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Line Thickness</label>
+                                    <input
+                                      type="number"
+                                      value={config.appearance.lineThickness}
+                                      onChange={(e) => updateChartConfig(config.id, {
+                                        appearance: { ...config.appearance, lineThickness: parseInt(e.target.value) || 2 }
+                                      })}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                      min="1"
+                                      max="10"
+                                    />
+                                  </div>
+                                )}
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">Opacity (0-1)</label>
+                                  <input
+                                    type="number"
+                                    value={config.appearance.opacity}
+                                    onChange={(e) => updateChartConfig(config.id, {
+                                      appearance: { ...config.appearance, opacity: Math.max(0, Math.min(1, parseFloat(e.target.value) || 1)) }
+                                    })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    min="0"
+                                    max="1"
+                                    step="0.1"
+                                  />
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
 
