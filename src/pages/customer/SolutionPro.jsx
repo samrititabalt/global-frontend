@@ -12,17 +12,24 @@ const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'
 
 const SolutionPro = () => {
   const [gridData, setGridData] = useState(() => {
-    // Initialize 100 rows x 10 columns
-    const rows = 100;
-    const cols = 10;
+    // Initialize 1000 rows x 20 columns
+    const rows = 1000;
+    const cols = 20;
     return Array(rows).fill(null).map(() => Array(cols).fill(''));
   });
   const [chartData, setChartData] = useState([]);
   const [annotations, setAnnotations] = useState({});
   const [showInstructions, setShowInstructions] = useState(true);
   const [activeCell, setActiveCell] = useState({ row: 0, col: 0 });
+  const [selectedCells, setSelectedCells] = useState([]); // Array of {row, col}
+  const [copiedCells, setCopiedCells] = useState(null); // {data: [[...]], startRow, startCol}
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartCell, setDragStartCell] = useState(null);
+  const [pptSlides, setPptSlides] = useState([]);
+  const [showPptBuilder, setShowPptBuilder] = useState(false);
+  const [dashboardCharts, setDashboardCharts] = useState([]); // Charts arranged on dashboard canvas
   const [chartConfigs, setChartConfigs] = useState(() => 
-    Array(6).fill(null).map((_, idx) => ({
+    Array(40).fill(null).map((_, idx) => ({
       id: `chart-${idx + 1}`,
       enabled: false,
       chartType: 'bar',
@@ -611,7 +618,7 @@ const SolutionPro = () => {
       cells.forEach((cell, cellIdx) => {
         const targetRow = startRow + lineIdx;
         const targetCol = startCol + cellIdx;
-        if (targetRow < 100 && targetCol < 10) {
+        if (targetRow < 1000 && targetCol < 20) {
           handleCellChange(targetRow, targetCol, cell.trim());
         }
       });
@@ -620,13 +627,204 @@ const SolutionPro = () => {
 
   const handleCellFocus = (rowIndex, colIndex) => {
     setActiveCell({ row: rowIndex, col: colIndex });
+    if (!isDragging) {
+      setSelectedCells([{ row: rowIndex, col: colIndex }]);
+    }
   };
+
+  // Excel-like interactions
+  const handleCellMouseDown = (rowIndex, colIndex, e) => {
+    if (e.shiftKey && activeCell.row !== -1) {
+      // Multi-select with Shift
+      const startRow = Math.min(activeCell.row, rowIndex);
+      const endRow = Math.max(activeCell.row, rowIndex);
+      const startCol = Math.min(activeCell.col, colIndex);
+      const endCol = Math.max(activeCell.col, colIndex);
+      const cells = [];
+      for (let r = startRow; r <= endRow; r++) {
+        for (let c = startCol; c <= endCol; c++) {
+          cells.push({ row: r, col: c });
+        }
+      }
+      setSelectedCells(cells);
+    } else {
+      setActiveCell({ row: rowIndex, col: colIndex });
+      setSelectedCells([{ row: rowIndex, col: colIndex }]);
+      setIsDragging(true);
+      setDragStartCell({ row: rowIndex, col: colIndex });
+    }
+  };
+
+  const handleCellMouseEnter = (rowIndex, colIndex) => {
+    if (isDragging && dragStartCell) {
+      const startRow = Math.min(dragStartCell.row, rowIndex);
+      const endRow = Math.max(dragStartCell.row, rowIndex);
+      const startCol = Math.min(dragStartCell.col, colIndex);
+      const endCol = Math.max(dragStartCell.col, colIndex);
+      const cells = [];
+      for (let r = startRow; r <= endRow; r++) {
+        for (let c = startCol; c <= endCol; c++) {
+          cells.push({ row: r, col: c });
+        }
+      }
+      setSelectedCells(cells);
+    }
+  };
+
+  const handleCellMouseUp = () => {
+    setIsDragging(false);
+    setDragStartCell(null);
+  };
+
+  // Copy selected cells
+  const handleCopy = (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      if (selectedCells.length > 0) {
+        const sortedCells = [...selectedCells].sort((a, b) => {
+          if (a.row !== b.row) return a.row - b.row;
+          return a.col - b.col;
+        });
+        const minRow = Math.min(...sortedCells.map(c => c.row));
+        const minCol = Math.min(...sortedCells.map(c => c.col));
+        const maxRow = Math.max(...sortedCells.map(c => c.row));
+        const maxCol = Math.max(...sortedCells.map(c => c.col));
+        
+        const data = [];
+        for (let r = minRow; r <= maxRow; r++) {
+          const row = [];
+          for (let c = minCol; c <= maxCol; c++) {
+            row.push(gridData[r]?.[c] || '');
+          }
+          data.push(row);
+        }
+        
+        const text = data.map(row => row.join('\t')).join('\n');
+        navigator.clipboard.writeText(text);
+        setCopiedCells({ data, startRow: minRow, startCol: minCol });
+        e.preventDefault();
+      }
+    }
+  };
+
+  // Paste cells
+  const handlePasteCells = (startRow, startCol) => {
+    if (copiedCells) {
+      const newData = [...gridData];
+      copiedCells.data.forEach((row, rowIdx) => {
+        row.forEach((cell, colIdx) => {
+          const targetRow = startRow + rowIdx;
+          const targetCol = startCol + colIdx;
+          if (targetRow < 1000 && targetCol < 20) {
+            if (!newData[targetRow]) newData[targetRow] = Array(20).fill('');
+            newData[targetRow][targetCol] = cell;
+          }
+        });
+      });
+      setGridData(newData);
+    }
+  };
+
+  // Drag-fill functionality
+  const handleDragFill = (sourceRow, sourceCol, targetRow, targetCol) => {
+    const sourceValue = gridData[sourceRow]?.[sourceCol] || '';
+    const newData = [...gridData];
+    
+    // Detect pattern
+    const isNumber = !isNaN(parseFloat(sourceValue)) && isFinite(sourceValue);
+    const isDate = !isNaN(Date.parse(sourceValue));
+    const textMatch = sourceValue.match(/^([A-Za-z]+)(\d+)$/);
+    
+    if (isNumber) {
+      const num = parseFloat(sourceValue);
+      const rowDiff = targetRow - sourceRow;
+      const colDiff = targetCol - sourceCol;
+      const steps = Math.max(Math.abs(rowDiff), Math.abs(colDiff));
+      const increment = rowDiff !== 0 ? (gridData[sourceRow + 1]?.[sourceCol] ? parseFloat(gridData[sourceRow + 1][sourceCol]) - num : 1) : 
+                       (gridData[sourceRow]?.[sourceCol + 1] ? parseFloat(gridData[sourceRow][sourceCol + 1]) - num : 1);
+      
+      for (let i = 1; i <= steps; i++) {
+        const r = sourceRow + (rowDiff > 0 ? i : rowDiff < 0 ? -i : 0);
+        const c = sourceCol + (colDiff > 0 ? i : colDiff < 0 ? -i : 0);
+        if (r < 1000 && c < 20) {
+          if (!newData[r]) newData[r] = Array(20).fill('');
+          newData[r][c] = String(num + (increment * i));
+        }
+      }
+    } else if (textMatch) {
+      const [, prefix, numStr] = textMatch;
+      const num = parseInt(numStr);
+      const rowDiff = targetRow - sourceRow;
+      const colDiff = targetCol - sourceCol;
+      const steps = Math.max(Math.abs(rowDiff), Math.abs(colDiff));
+      
+      for (let i = 1; i <= steps; i++) {
+        const r = sourceRow + (rowDiff > 0 ? i : rowDiff < 0 ? -i : 0);
+        const c = sourceCol + (colDiff > 0 ? i : colDiff < 0 ? -i : 0);
+        if (r < 1000 && c < 20) {
+          if (!newData[r]) newData[r] = Array(20).fill('');
+          newData[r][c] = `${prefix}${num + i}`;
+        }
+      }
+    } else {
+      // Fill with same value
+      const rowDiff = targetRow - sourceRow;
+      const colDiff = targetCol - sourceCol;
+      const steps = Math.max(Math.abs(rowDiff), Math.abs(colDiff));
+      
+      for (let i = 1; i <= steps; i++) {
+        const r = sourceRow + (rowDiff > 0 ? i : rowDiff < 0 ? -i : 0);
+        const c = sourceCol + (colDiff > 0 ? i : colDiff < 0 ? -i : 0);
+        if (r < 1000 && c < 20) {
+          if (!newData[r]) newData[r] = Array(20).fill('');
+          newData[r][c] = sourceValue;
+        }
+      }
+    }
+    
+    setGridData(newData);
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        handleCopy(e);
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        if (copiedCells && activeCell.row !== -1) {
+          handlePasteCells(activeCell.row, activeCell.col);
+          e.preventDefault();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+        handleCopy(e);
+        if (selectedCells.length > 0) {
+          const newData = [...gridData];
+          selectedCells.forEach(({ row, col }) => {
+            if (newData[row]) newData[row][col] = '';
+          });
+          setGridData(newData);
+        }
+        e.preventDefault();
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedCells.length > 0) {
+          const newData = [...gridData];
+          selectedCells.forEach(({ row, col }) => {
+            if (newData[row]) newData[row][col] = '';
+          });
+          setGridData(newData);
+          e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedCells, copiedCells, activeCell, gridData]);
 
   const clearGrid = () => {
     if (window.confirm('Are you sure you want to clear all data?')) {
-      setGridData(Array(100).fill(null).map(() => Array(10).fill('')));
+      setGridData(Array(1000).fill(null).map(() => Array(20).fill('')));
       setAnnotations({});
-      setChartConfigs(Array(6).fill(null).map((_, idx) => ({
+      setChartConfigs(Array(40).fill(null).map((_, idx) => ({
         id: `chart-${idx + 1}`,
         enabled: false,
         chartType: 'bar',
@@ -1462,7 +1660,7 @@ const SolutionPro = () => {
                     <li>Choose aggregation methods to analyze your data.</li>
                     <li>For time series data, select a date column and apply CAGR or trend analysis.</li>
                     <li>To reuse this tool for multiple datasets, remove the old data first.</li>
-                    <li>For large datasets beyond 100 rows or 10 columns, please contact the admin.</li>
+                    <li>For large datasets beyond 1000 rows or 20 columns, please contact the admin.</li>
                   </ul>
                 </div>
               </div>
@@ -1474,7 +1672,7 @@ const SolutionPro = () => {
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FileSpreadsheet className="h-5 w-5 text-blue-600" />
-                <h2 className="text-xl font-semibold text-gray-900">Data Input (100 rows × 10 columns)</h2>
+                <h2 className="text-xl font-semibold text-gray-900">Data Input (1000 rows × 20 columns)</h2>
               </div>
               <button
                 onClick={clearGrid}
@@ -1487,16 +1685,27 @@ const SolutionPro = () => {
             <div
               ref={gridRef}
               className="overflow-auto max-h-96 border-t border-gray-200"
+              style={{ scrollBehavior: 'smooth' }}
             >
               <table className="w-full border-collapse">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th className="border border-gray-300 p-2 text-xs font-semibold text-gray-600 bg-gray-100 w-12"></th>
-                    {Array.from({ length: 10 }, (_, i) => (
-                      <th key={i} className="border border-gray-300 p-2 text-xs font-semibold text-gray-600 bg-gray-100 min-w-24">
-                        {String.fromCharCode(65 + i)}
-                      </th>
-                    ))}
+                    {Array.from({ length: 20 }, (_, i) => {
+                      let colLabel;
+                      if (i < 26) {
+                        colLabel = String.fromCharCode(65 + i);
+                      } else {
+                        const first = Math.floor((i - 26) / 26);
+                        const second = (i - 26) % 26;
+                        colLabel = String.fromCharCode(65 + first) + String.fromCharCode(65 + second);
+                      }
+                      return (
+                        <th key={i} className="border border-gray-300 p-2 text-xs font-semibold text-gray-600 bg-gray-100 min-w-24">
+                          {colLabel}
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
@@ -1505,19 +1714,36 @@ const SolutionPro = () => {
                       <td className="border border-gray-300 p-1 text-xs text-gray-500 bg-gray-50 text-center font-semibold">
                         {rowIndex + 1}
                       </td>
-                      {row.map((cell, colIndex) => (
-                        <td key={colIndex} className="border border-gray-300 p-0">
-                          <input
-                            id={`cell-${rowIndex}-${colIndex}`}
-                            type="text"
-                            className="grid-cell w-full h-8 px-2 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:z-10"
-                            value={cell}
-                            onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                            onFocus={() => handleCellFocus(rowIndex, colIndex)}
-                            onPaste={handlePaste}
-                          />
-                        </td>
-                      ))}
+                      {row.map((cell, colIndex) => {
+                        const isSelected = selectedCells.some(sc => sc.row === rowIndex && sc.col === colIndex);
+                        return (
+                          <td 
+                            key={colIndex} 
+                            className={`border border-gray-300 p-0 relative ${isSelected ? 'bg-blue-100 ring-2 ring-blue-500' : ''}`}
+                            onMouseDown={(e) => handleCellMouseDown(rowIndex, colIndex, e)}
+                            onMouseEnter={() => handleCellMouseEnter(rowIndex, colIndex)}
+                            onMouseUp={handleCellMouseUp}
+                          >
+                            <input
+                              id={`cell-${rowIndex}-${colIndex}`}
+                              type="text"
+                              className="grid-cell w-full h-8 px-2 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:z-10 bg-transparent"
+                              value={cell}
+                              onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                              onFocus={() => handleCellFocus(rowIndex, colIndex)}
+                              onPaste={handlePaste}
+                            />
+                            {rowIndex === activeCell.row && colIndex === activeCell.col && (
+                              <div className="absolute bottom-0 right-0 w-2 h-2 bg-blue-600 cursor-nwse-resize" 
+                                   onMouseDown={(e) => {
+                                     e.stopPropagation();
+                                     // Drag fill handle
+                                   }}
+                              />
+                            )}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>
@@ -1556,7 +1782,15 @@ const SolutionPro = () => {
                     key={config.id}
                     className="bg-gray-50 rounded-lg p-4 border border-gray-200"
                   >
-                    <div className="flex items-center justify-between mb-4">
+                    <div 
+                      className="flex items-center justify-between mb-4"
+                      draggable={config.enabled}
+                      onDragStart={(e) => {
+                        if (config.enabled) {
+                          e.dataTransfer.setData('chartId', config.id);
+                        }
+                      }}
+                    >
                       <div className="flex items-center gap-2">
                         <h3 className="text-lg font-semibold text-gray-900">Chart {index + 1}</h3>
                         <button
@@ -1569,6 +1803,9 @@ const SolutionPro = () => {
                         >
                           {config.enabled ? 'Enabled' : 'Disabled'}
                         </button>
+                        {config.enabled && (
+                          <span className="text-xs text-gray-500">(Drag to dashboard)</span>
+                        )}
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -2173,6 +2410,418 @@ const SolutionPro = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* Dashboard Canvas */}
+          <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-6 w-6 text-blue-600" />
+                <h2 className="text-2xl font-semibold text-gray-900">Dashboard Canvas</h2>
+              </div>
+              <button
+                onClick={() => setDashboardCharts([])}
+                className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                Clear Canvas
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Drag charts from the list above onto this canvas to arrange your dashboard layout.
+            </p>
+            <div 
+              className="min-h-96 border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50"
+              onDrop={(e) => {
+                e.preventDefault();
+                const chartId = e.dataTransfer.getData('chartId');
+                if (chartId && !dashboardCharts.find(c => c.id === chartId)) {
+                  const chart = chartConfigs.find(c => c.id === chartId);
+                  if (chart && chart.enabled) {
+                    setDashboardCharts([...dashboardCharts, { ...chart, x: 0, y: 0, width: 400, height: 300 }]);
+                  }
+                }
+              }}
+              onDragOver={(e) => e.preventDefault()}
+            >
+              {dashboardCharts.length === 0 ? (
+                <div className="flex items-center justify-center h-96 text-gray-400">
+                  <div className="text-center">
+                    <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    <p>Drag charts here to build your dashboard</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="relative" style={{ minHeight: '400px' }}>
+                  {dashboardCharts.map((chart, idx) => (
+                    <div
+                      key={chart.id}
+                      className="absolute bg-white border-2 border-blue-500 rounded-lg p-2 shadow-lg"
+                      style={{
+                        left: `${chart.x}px`,
+                        top: `${chart.y}px`,
+                        width: `${chart.width}px`,
+                        height: `${chart.height}px`,
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-gray-700">Chart {idx + 1}</span>
+                        <button
+                          onClick={() => setDashboardCharts(dashboardCharts.filter(c => c.id !== chart.id))}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="overflow-hidden" style={{ height: `${chart.height - 40}px` }}>
+                        {renderChart(chart)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* PPT Builder */}
+          <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="h-6 w-6 text-blue-600" />
+                <h2 className="text-2xl font-semibold text-gray-900">PPT Builder</h2>
+              </div>
+              <button
+                onClick={() => setShowPptBuilder(!showPptBuilder)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                {showPptBuilder ? 'Hide Builder' : 'Show Builder'}
+              </button>
+            </div>
+
+            {showPptBuilder && (
+              <div className="space-y-6">
+                {/* PPT Controls */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      const newSlides = [
+                        { id: 'cover', type: 'cover', title: 'Presentation Title', subtitle: '', author: '', logos: [] },
+                        { id: 'agenda', type: 'agenda', items: [] },
+                      ];
+                      setPptSlides(newSlides);
+                    }}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    New Presentation
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Generate shareable link
+                      const link = `${window.location.origin}/ppt/${Date.now()}`;
+                      navigator.clipboard.writeText(link);
+                      alert('Shareable link copied to clipboard!');
+                    }}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    Generate Share Link
+                  </button>
+                  <button
+                    onClick={async () => {
+                      // Download as PDF
+                      if (dashboardRef.current) {
+                        const canvas = await html2canvas(dashboardRef.current);
+                        const pdf = new jsPDF('p', 'mm', 'a4');
+                        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0);
+                        pdf.save('presentation.pdf');
+                      }
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Download PPT as PDF
+                  </button>
+                </div>
+
+                {/* PPT Slides Editor */}
+                {pptSlides.length > 0 && (
+                  <div className="space-y-4">
+                    {pptSlides.map((slide, idx) => (
+                      <div key={slide.id} className="border border-gray-300 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="font-semibold text-gray-900">
+                            Slide {idx + 1}: {slide.type === 'cover' ? 'Cover' : slide.type === 'agenda' ? 'Agenda' : slide.type === 'summary' ? 'Executive Summary' : slide.type === 'content' ? slide.title : 'Thank You'}
+                          </h3>
+                          <button
+                            onClick={() => setPptSlides(pptSlides.filter((_, i) => i !== idx))}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                        {slide.type === 'cover' && (
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                              <input
+                                type="text"
+                                value={slide.title}
+                                onChange={(e) => {
+                                  const newSlides = [...pptSlides];
+                                  newSlides[idx].title = e.target.value;
+                                  setPptSlides(newSlides);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Subtitle (Optional)</label>
+                              <input
+                                type="text"
+                                value={slide.subtitle}
+                                onChange={(e) => {
+                                  const newSlides = [...pptSlides];
+                                  newSlides[idx].subtitle = e.target.value;
+                                  setPptSlides(newSlides);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Author</label>
+                              <input
+                                type="text"
+                                value={slide.author}
+                                onChange={(e) => {
+                                  const newSlides = [...pptSlides];
+                                  newSlides[idx].author = e.target.value;
+                                  setPptSlides(newSlides);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Upload Logos</label>
+                              <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const files = Array.from(e.target.files);
+                                  const newSlides = [...pptSlides];
+                                  if (!newSlides[idx].logos) newSlides[idx].logos = [];
+                                  files.forEach(file => {
+                                    const reader = new FileReader();
+                                    reader.onload = (event) => {
+                                      newSlides[idx].logos.push(event.target.result);
+                                      setPptSlides([...newSlides]);
+                                    };
+                                    reader.readAsDataURL(file);
+                                  });
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              />
+                              {slide.logos && slide.logos.length > 0 && (
+                                <div className="flex gap-2 mt-2">
+                                  {slide.logos.map((logo, logoIdx) => (
+                                    <img key={logoIdx} src={logo} alt={`Logo ${logoIdx + 1}`} className="h-16 w-auto" />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {slide.type === 'agenda' && (
+                          <div className="space-y-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Agenda Items (one per line)</label>
+                            <textarea
+                              value={slide.items?.join('\n') || ''}
+                              onChange={(e) => {
+                                const items = e.target.value.split('\n').filter(item => item.trim());
+                                const newSlides = [...pptSlides];
+                                newSlides[idx].items = items;
+                                setPptSlides(newSlides);
+                                
+                                // Auto-generate content slides
+                                const contentSlides = items.map((item, itemIdx) => ({
+                                  id: `content-${itemIdx}`,
+                                  type: 'content',
+                                  title: item,
+                                  content: '',
+                                  charts: [],
+                                }));
+                                
+                                // Insert after agenda, before thank you
+                                const thankYouIdx = newSlides.findIndex(s => s.type === 'thankyou');
+                                if (thankYouIdx > -1) {
+                                  newSlides.splice(thankYouIdx, 0, ...contentSlides);
+                                } else {
+                                  newSlides.push(...contentSlides);
+                                }
+                                setPptSlides(newSlides);
+                              }}
+                              rows={6}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              placeholder="Introduction&#10;Sector Growth by Region&#10;Market Trends&#10;Key Insights&#10;Recommendations"
+                            />
+                            <p className="text-xs text-gray-500">
+                              Each line will become a slide title. Maximum 50 slides total.
+                            </p>
+                          </div>
+                        )}
+
+                        {slide.type === 'content' && (
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Slide Title</label>
+                              <input
+                                type="text"
+                                value={slide.title}
+                                onChange={(e) => {
+                                  const newSlides = [...pptSlides];
+                                  newSlides[idx].title = e.target.value;
+                                  setPptSlides(newSlides);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
+                              <textarea
+                                value={slide.content}
+                                onChange={(e) => {
+                                  const newSlides = [...pptSlides];
+                                  newSlides[idx].content = e.target.value;
+                                  setPptSlides(newSlides);
+                                }}
+                                rows={4}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Add Charts</label>
+                              <select
+                                onChange={(e) => {
+                                  const chartId = e.target.value;
+                                  if (chartId) {
+                                    const chart = chartConfigs.find(c => c.id === chartId && c.enabled);
+                                    if (chart) {
+                                      const newSlides = [...pptSlides];
+                                      if (!newSlides[idx].charts) newSlides[idx].charts = [];
+                                      newSlides[idx].charts.push(chartId);
+                                      setPptSlides(newSlides);
+                                    }
+                                  }
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              >
+                                <option value="">Select a chart...</option>
+                                {chartConfigs.filter(c => c.enabled).map(c => (
+                                  <option key={c.id} value={c.id}>Chart {chartConfigs.indexOf(c) + 1}</option>
+                                ))}
+                              </select>
+                              {slide.charts && slide.charts.length > 0 && (
+                                <div className="mt-2 space-y-2">
+                                  {slide.charts.map((chartId, chartIdx) => {
+                                    const chart = chartConfigs.find(c => c.id === chartId);
+                                    return chart ? (
+                                      <div key={chartIdx} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                        <span className="text-sm">Chart {chartConfigs.indexOf(chart) + 1}</span>
+                                        <button
+                                          onClick={() => {
+                                            const newSlides = [...pptSlides];
+                                            newSlides[idx].charts = newSlides[idx].charts.filter((_, i) => i !== chartIdx);
+                                            setPptSlides(newSlides);
+                                          }}
+                                          className="text-red-500"
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </button>
+                                      </div>
+                                    ) : null;
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {slide.type === 'thankyou' && (
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Thank You Message</label>
+                              <input
+                                type="text"
+                                value={slide.message || 'Thank You'}
+                                onChange={(e) => {
+                                  const newSlides = [...pptSlides];
+                                  newSlides[idx].message = e.target.value;
+                                  setPptSlides(newSlides);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Contact Details</label>
+                              <textarea
+                                value={slide.contact || ''}
+                                onChange={(e) => {
+                                  const newSlides = [...pptSlides];
+                                  newSlides[idx].contact = e.target.value;
+                                  setPptSlides(newSlides);
+                                }}
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                placeholder="Email: info@tabalt.co.uk&#10;Phone: +44 7448614160"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Add Slide Buttons */}
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          if (pptSlides.length < 50) {
+                            const newSlides = [...pptSlides];
+                            const summaryIdx = newSlides.findIndex(s => s.type === 'summary');
+                            if (summaryIdx === -1) {
+                              // Add executive summary option
+                              const insertIdx = newSlides.findIndex(s => s.type === 'agenda') + 1;
+                              newSlides.splice(insertIdx, 0, {
+                                id: `summary-${Date.now()}`,
+                                type: 'summary',
+                                content: '',
+                              });
+                            }
+                            setPptSlides(newSlides);
+                          }
+                        }}
+                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                      >
+                        Add Executive Summary
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (pptSlides.length < 50) {
+                            setPptSlides([...pptSlides, {
+                              id: `thankyou-${Date.now()}`,
+                              type: 'thankyou',
+                              message: 'Thank You',
+                              contact: '',
+                            }]);
+                          }
+                        }}
+                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                      >
+                        Add Thank You Slide
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
