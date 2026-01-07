@@ -40,19 +40,19 @@ const ContactUs = () => {
     {
       icon: Mail,
       title: 'Email',
-      content: 'contact@asksam.com',
-      link: 'mailto:contact@asksam.com',
+      content: 'info@tabalt.co.uk',
+      link: 'mailto:info@tabalt.co.uk',
     },
     {
       icon: Phone,
       title: 'Phone',
-      content: '+1 (555) 123-4567',
-      link: 'tel:+15551234567',
+      content: '+44 7448614160',
+      link: 'tel:+447448614160',
     },
     {
       icon: MapPin,
       title: 'Office',
-      content: '123 Business Street, Suite 100, Miami, FL 33101',
+      content: '3 Herron Court, Bromley, London, United Kingdom',
       link: '#',
     },
   ];
@@ -158,7 +158,7 @@ const ContactUs = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="+44 7448614160"
                 />
               </div>
 

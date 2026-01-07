@@ -68,24 +68,40 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-white font-semibold mb-4">Stay Connected</h3>
-            <p className="text-gray-400 mb-4 text-sm">
-              Subscribe to our newsletter for updates and insights.
-            </p>
-            <form className="space-y-3">
-              <input
-                type="email"
-                placeholder="Your email"
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                aria-label="Email address"
-              />
-              <button
-                type="submit"
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                Subscribe
-              </button>
-            </form>
+            <h3 className="text-white font-semibold mb-4">Contact Us</h3>
+            <div className="space-y-3 text-sm">
+              <p className="text-gray-400">
+                <a href="mailto:info@tabalt.co.uk" className="text-white hover:text-blue-400 transition-colors">
+                  info@tabalt.co.uk
+                </a>
+              </p>
+              <p className="text-gray-400">
+                <a href="tel:+447448614160" className="text-white hover:text-blue-400 transition-colors">
+                  +44 7448614160
+                </a>
+              </p>
+              <p className="text-gray-400">
+                3 Herron Court, Bromley,<br />
+                London, United Kingdom
+              </p>
+            </div>
+            <div className="mt-6">
+              <h4 className="text-white font-semibold mb-3 text-sm">Stay Connected</h4>
+              <form className="space-y-3">
+                <input
+                  type="email"
+                  placeholder="Your email"
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-label="Email address"
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Subscribe
+                </button>
+              </form>
+            </div>
           </div>
         </div>
 

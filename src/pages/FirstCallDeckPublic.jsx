@@ -443,13 +443,13 @@ const FirstCallDeckPublic = () => {
                   Have questions? Our team is here to help you find the perfect solution for your business needs.
                 </p>
                 <a
-                  href="mailto:tabaltllp@gmail.com"
+                  href="mailto:info@tabalt.co.uk"
                   className="inline-block bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl"
                 >
                   Contact Us →
                 </a>
                 <p className="text-sm text-gray-500 mt-3">
-                  Email: <a href="mailto:tabaltllp@gmail.com" className="text-blue-600 hover:underline">tabaltllp@gmail.com</a>
+                  Email: <a href="mailto:info@tabalt.co.uk" className="text-blue-600 hover:underline">info@tabalt.co.uk</a>
                 </p>
               </div>
             </div>

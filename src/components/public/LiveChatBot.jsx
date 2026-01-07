@@ -50,7 +50,7 @@ This is an automated email from the Tabalt website chat bot.
 
       // Send email via backend API
       await api.post('/public/send-chat-email', {
-        to: 'tabaltllp@gmail.com',
+        to: 'info@tabalt.co.uk',
         subject: 'Chat History from Tabalt Website',
         text: emailContent,
         chatHistory: chatHistory,
@@ -78,7 +78,7 @@ This is an automated email from the Tabalt website chat bot.
     setTimeout(() => {
       const botResponse = {
         id: Date.now() + 1,
-        text: 'Thank you for your message! Our team will get back to you shortly. In the meantime, feel free to visit our website or email us at tabaltllp@gmail.com',
+        text: 'Thank you for your message! Our team will get back to you shortly. In the meantime, feel free to visit our website or email us at info@tabalt.co.uk',
         sender: 'bot',
         timestamp: new Date(),
       };
