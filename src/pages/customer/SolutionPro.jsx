@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, LineChart, AreaChart, Palette, Eye, EyeOff } from 'lucide-react';
+import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, LineChart, AreaChart, Palette, Eye, EyeOff, ChevronRight, ChevronLeft, Image as ImageIcon } from 'lucide-react';
 import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart as RechartsLineChart, Line, AreaChart as RechartsAreaChart, Area, LabelList, Text } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -57,7 +57,7 @@ const SolutionPro = () => {
       },
     }))
   );
-  const [expandedChart, setExpandedChart] = useState(null);
+  const [expandedChart, setExpandedChart] = useState('chart-1'); // Default to Chart 1
   const [showCustomization, setShowCustomization] = useState({});
   const [contextMenu, setContextMenu] = useState(null);
   const [draggedField, setDraggedField] = useState(null);
@@ -65,6 +65,11 @@ const SolutionPro = () => {
   const [fieldModes, setFieldModes] = useState({}); // { columnName: 'discrete' | 'continuous' }
   const [editingLabel, setEditingLabel] = useState(null); // { chartId, type, key, value }
   const [editedLabels, setEditedLabels] = useState({}); // { chartId: { xAxis: {...}, yAxis: {...}, categories: {...}, title: '', legend: {...} } }
+  const [currentChartIndex, setCurrentChartIndex] = useState(0); // Currently viewing chart index (0-39)
+  const [activeChartIds, setActiveChartIds] = useState(new Set(['chart-1'])); // Track which charts have been configured
+  const [pptPreviewMode, setPptPreviewMode] = useState(false);
+  const [iconLibrary, setIconLibrary] = useState([]); // Icon repository
+  const [selectedSlideForEdit, setSelectedSlideForEdit] = useState(null);
   const gridRef = useRef(null);
   const dashboardRef = useRef(null);
   const CHART_TYPES = [
@@ -591,11 +596,91 @@ const SolutionPro = () => {
         if (newEnabled && !expandedChart) {
           setExpandedChart(chartId);
         }
+        // Mark chart as active when enabled
+        if (newEnabled) {
+          setActiveChartIds(prev => new Set([...prev, chartId]));
+        }
         return { ...config, enabled: newEnabled };
       }
       return config;
     }));
   };
+
+  // Navigate to next chart
+  const moveToNextChart = () => {
+    const nextIndex = currentChartIndex + 1;
+    if (nextIndex < 40) {
+      setCurrentChartIndex(nextIndex);
+      const nextChartId = `chart-${nextIndex + 1}`;
+      setExpandedChart(nextChartId);
+      // Mark as active when navigating to it
+      setActiveChartIds(prev => new Set([...prev, nextChartId]));
+    }
+  };
+
+  // Navigate to previous chart
+  const moveToPreviousChart = () => {
+    if (currentChartIndex > 0) {
+      const prevIndex = currentChartIndex - 1;
+      setCurrentChartIndex(prevIndex);
+      const prevChartId = `chart-${prevIndex + 1}`;
+      setExpandedChart(prevChartId);
+      // Mark as active
+      setActiveChartIds(prev => new Set([...prev, prevChartId]));
+    }
+  };
+  
+  // Track chart configuration to mark as active
+  useEffect(() => {
+    chartConfigs.forEach(config => {
+      if (config.xAxis.column || config.yAxis.column) {
+        setActiveChartIds(prev => new Set([...prev, config.id]));
+      }
+    });
+  }, [chartConfigs.map(c => c.xAxis.column + c.yAxis.column).join(',')]);
+
+  // Get active charts only
+  const getActiveCharts = () => {
+    return chartConfigs.filter(config => activeChartIds.has(config.id) && config.enabled);
+  };
+
+  // Initialize icon library with common business icons
+  useEffect(() => {
+    // Common business/consulting icons (using Unicode/emoji as lightweight alternatives)
+    const icons = [
+      { id: 'arrow-up', name: 'Arrow Up', symbol: '↑', unicode: '↑' },
+      { id: 'arrow-down', name: 'Arrow Down', symbol: '↓', unicode: '↓' },
+      { id: 'arrow-right', name: 'Arrow Right', symbol: '→', unicode: '→' },
+      { id: 'arrow-left', name: 'Arrow Left', symbol: '←', unicode: '←' },
+      { id: 'check', name: 'Check Mark', symbol: '✓', unicode: '✓' },
+      { id: 'cross', name: 'Cross', symbol: '✗', unicode: '✗' },
+      { id: 'star', name: 'Star', symbol: '★', unicode: '★' },
+      { id: 'growth', name: 'Growth', symbol: '📈', unicode: '📈' },
+      { id: 'chart', name: 'Chart', symbol: '📊', unicode: '📊' },
+      { id: 'people', name: 'People', symbol: '👥', unicode: '👥' },
+      { id: 'lightbulb', name: 'Lightbulb', symbol: '💡', unicode: '💡' },
+      { id: 'target', name: 'Target', symbol: '🎯', unicode: '🎯' },
+      { id: 'money', name: 'Money', symbol: '💰', unicode: '💰' },
+      { id: 'rocket', name: 'Rocket', symbol: '🚀', unicode: '🚀' },
+      { id: 'shield', name: 'Shield', symbol: '🛡️', unicode: '🛡️' },
+      { id: 'clock', name: 'Clock', symbol: '⏰', unicode: '⏰' },
+      { id: 'trophy', name: 'Trophy', symbol: '🏆', unicode: '🏆' },
+      { id: 'medal', name: 'Medal', symbol: '🏅', unicode: '🏅' },
+      { id: 'fire', name: 'Fire', symbol: '🔥', unicode: '🔥' },
+      { id: 'gem', name: 'Gem', symbol: '💎', unicode: '💎' },
+    ];
+    setIconLibrary(icons);
+  }, []);
+  
+  // Mark chart as active when configured
+  useEffect(() => {
+    if (expandedChart && !activeChartIds.has(expandedChart)) {
+      const config = chartConfigs.find(c => c.id === expandedChart);
+      if (config && (config.xAxis.column || config.yAxis.column)) {
+        setActiveChartIds(prev => new Set([...prev, expandedChart]));
+      }
+    }
+  }, [expandedChart, chartConfigs]);
 
   const handleCellChange = (rowIndex, colIndex, value) => {
     const newData = [...gridData];
@@ -1776,59 +1861,73 @@ const SolutionPro = () => {
                 <p className="text-sm mt-2">Select variables and chart settings to begin visualizing your data.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {chartConfigs.map((config, index) => (
-                  <div
-                    key={config.id}
-                    className="bg-gray-50 rounded-lg p-4 border border-gray-200"
-                  >
-                    <div 
-                      className="flex items-center justify-between mb-4"
-                      draggable={config.enabled}
-                      onDragStart={(e) => {
-                        if (config.enabled) {
-                          e.dataTransfer.setData('chartId', config.id);
-                        }
-                      }}
+              <div className="space-y-6">
+                {/* Chart Navigation */}
+                <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-center gap-4">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Chart {currentChartIndex + 1}
+                    </h3>
+                    <button
+                      onClick={() => toggleChart(chartConfigs[currentChartIndex].id)}
+                      className={`px-3 py-1 text-xs rounded ${
+                        chartConfigs[currentChartIndex].enabled
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-200 text-gray-600'
+                      }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold text-gray-900">Chart {index + 1}</h3>
-                        <button
-                          onClick={() => toggleChart(config.id)}
-                          className={`px-3 py-1 text-xs rounded ${
-                            config.enabled
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-200 text-gray-600'
-                          }`}
-                        >
-                          {config.enabled ? 'Enabled' : 'Disabled'}
-                        </button>
-                        {config.enabled && (
-                          <span className="text-xs text-gray-500">(Drag to dashboard)</span>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setExpandedChart(expandedChart === config.id ? null : config.id)}
-                          className="p-1.5 text-gray-600 hover:bg-gray-200 rounded transition-colors"
-                          title="Configure chart"
-                        >
-                          <Settings className="h-4 w-4" />
-                        </button>
-                        {config.enabled && (
+                      {chartConfigs[currentChartIndex].enabled ? 'Enabled' : 'Disabled'}
+                    </button>
+                    <span className="text-sm text-gray-500">
+                      {Array.from(activeChartIds).length} active chart(s)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={moveToPreviousChart}
+                      disabled={currentChartIndex === 0}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ← Previous
+                    </button>
+                    <button
+                      onClick={moveToNextChart}
+                      disabled={currentChartIndex >= 39}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Move to Chart {currentChartIndex + 2} →
+                    </button>
+                  </div>
+                </div>
+
+                {/* Single Chart View */}
+                {(() => {
+                  const config = chartConfigs[currentChartIndex];
+                  return (
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
                           <button
-                            onClick={() => {
-                              const chartElement = document.getElementById(`chart-${config.id}`);
-                              copyChart(chartElement);
-                            }}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                            title="Copy chart"
+                            onClick={() => setExpandedChart(expandedChart === config.id ? null : config.id)}
+                            className="p-1.5 text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                            title="Configure chart"
                           >
-                            <Copy className="h-4 w-4" />
+                            <Settings className="h-4 w-4" />
                           </button>
-                        )}
+                          {config.enabled && (
+                            <button
+                              onClick={() => {
+                                const chartElement = document.getElementById(`chart-${config.id}`);
+                                copyChart(chartElement);
+                              }}
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              title="Copy chart"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
                     {/* Chart Configuration Panel */}
                     {expandedChart === config.id && (
@@ -2395,21 +2494,22 @@ const SolutionPro = () => {
                       </div>
                     )}
 
-                    {/* Chart Display */}
-                    {renderChart(config)}
+                      {/* Chart Display */}
+                      {renderChart(config)}
 
-                    {/* Annotation Input */}
-                    <div className="mt-4">
-                      <textarea
-                        placeholder="Add notes or annotations..."
-                        value={annotations[config.id] || ''}
-                        onChange={(e) => updateAnnotation(config.id, e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        rows={2}
-                      />
+                      {/* Annotation Input */}
+                      <div className="mt-4">
+                        <textarea
+                          placeholder="Add notes or annotations..."
+                          value={annotations[config.id] || ''}
+                          onChange={(e) => updateAnnotation(config.id, e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          rows={2}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -2428,57 +2528,94 @@ const SolutionPro = () => {
                 Clear Canvas
               </button>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
-              Drag charts from the list above onto this canvas to arrange your dashboard layout.
-            </p>
-            <div 
-              className="min-h-96 border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50"
-              onDrop={(e) => {
-                e.preventDefault();
-                const chartId = e.dataTransfer.getData('chartId');
-                if (chartId && !dashboardCharts.find(c => c.id === chartId)) {
-                  const chart = chartConfigs.find(c => c.id === chartId);
-                  if (chart && chart.enabled) {
-                    setDashboardCharts([...dashboardCharts, { ...chart, x: 0, y: 0, width: 400, height: 300 }]);
-                  }
-                }
-              }}
-              onDragOver={(e) => e.preventDefault()}
-            >
+            
+            {/* Add Charts Dropdown */}
+            {getActiveCharts().length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Add Charts</label>
+                <select
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === 'all') {
+                      // Add all active charts
+                      const activeCharts = getActiveCharts();
+                      setDashboardCharts(activeCharts.map((chart, idx) => ({
+                        ...chart,
+                        x: (idx % 2) * 420,
+                        y: Math.floor(idx / 2) * 320,
+                        width: 400,
+                        height: 300,
+                      })));
+                    } else if (value && value !== '') {
+                      const chart = chartConfigs.find(c => c.id === value && c.enabled);
+                      if (chart && !dashboardCharts.find(c => c.id === chart.id)) {
+                        setDashboardCharts([...dashboardCharts, {
+                          ...chart,
+                          x: (dashboardCharts.length % 2) * 420,
+                          y: Math.floor(dashboardCharts.length / 2) * 320,
+                          width: 400,
+                          height: 300,
+                        }]);
+                      }
+                    }
+                    e.target.value = '';
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                >
+                  <option value="">Select chart to add...</option>
+                  {getActiveCharts().map((chart) => {
+                    const index = chartConfigs.findIndex(c => c.id === chart.id);
+                    return (
+                      <option key={chart.id} value={chart.id}>
+                        Add Chart {index + 1}
+                      </option>
+                    );
+                  })}
+                  {getActiveCharts().length > 1 && (
+                    <option value="all">Add All {getActiveCharts().length} Charts</option>
+                  )}
+                </select>
+              </div>
+            )}
+
+            <div className="min-h-96 border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
               {dashboardCharts.length === 0 ? (
                 <div className="flex items-center justify-center h-96 text-gray-400">
                   <div className="text-center">
                     <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p>Drag charts here to build your dashboard</p>
+                    <p>Use the dropdown above to add active charts to the dashboard</p>
                   </div>
                 </div>
               ) : (
                 <div className="relative" style={{ minHeight: '400px' }}>
-                  {dashboardCharts.map((chart, idx) => (
-                    <div
-                      key={chart.id}
-                      className="absolute bg-white border-2 border-blue-500 rounded-lg p-2 shadow-lg"
-                      style={{
-                        left: `${chart.x}px`,
-                        top: `${chart.y}px`,
-                        width: `${chart.width}px`,
-                        height: `${chart.height}px`,
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-gray-700">Chart {idx + 1}</span>
-                        <button
-                          onClick={() => setDashboardCharts(dashboardCharts.filter(c => c.id !== chart.id))}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
+                  {dashboardCharts.map((chart, idx) => {
+                    const chartIndex = chartConfigs.findIndex(c => c.id === chart.id);
+                    return (
+                      <div
+                        key={chart.id}
+                        className="absolute bg-white border-2 border-blue-500 rounded-lg p-2 shadow-lg"
+                        style={{
+                          left: `${chart.x}px`,
+                          top: `${chart.y}px`,
+                          width: `${chart.width}px`,
+                          height: `${chart.height}px`,
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold text-gray-700">Chart {chartIndex + 1}</span>
+                          <button
+                            onClick={() => setDashboardCharts(dashboardCharts.filter(c => c.id !== chart.id))}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div className="overflow-hidden" style={{ height: `${chart.height - 40}px` }}>
+                          {renderChart(chart)}
+                        </div>
                       </div>
-                      <div className="overflow-hidden" style={{ height: `${chart.height - 40}px` }}>
-                        {renderChart(chart)}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -2502,54 +2639,102 @@ const SolutionPro = () => {
             {showPptBuilder && (
               <div className="space-y-6">
                 {/* PPT Controls */}
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap">
                   <button
                     onClick={() => {
-                      const newSlides = [
-                        { id: 'cover', type: 'cover', title: 'Presentation Title', subtitle: '', author: '', logos: [] },
-                        { id: 'agenda', type: 'agenda', items: [] },
-                      ];
+                      if (dashboardCharts.length === 0) {
+                        alert('Please add charts to the Dashboard Canvas first. The PPT will be generated based on charts in the dashboard.');
+                        return;
+                      }
+                      
+                      // Generate PPT structure based on dashboard charts
+                      const coverSlide = { 
+                        id: 'cover', 
+                        type: 'cover', 
+                        title: 'Presentation Title', 
+                        subtitle: '', 
+                        author: '', 
+                        logos: [],
+                        backgroundColor: '#FFFFFF',
+                        titleColor: '#1F2937',
+                        subtitleColor: '#6B7280',
+                      };
+                      
+                      // Generate agenda from dashboard charts
+                      const agendaItems = dashboardCharts.map((chart) => {
+                        const chartIndex = chartConfigs.findIndex(c => c.id === chart.id);
+                        return chart.title || `Chart ${chartIndex + 1}`;
+                      });
+                      
+                      const agendaSlide = { 
+                        id: 'agenda', 
+                        type: 'agenda', 
+                        items: agendaItems
+                      };
+                      
+                      // Generate content slides from dashboard charts (one per chart)
+                      const contentSlides = dashboardCharts.map((chart) => {
+                        const chartIndex = chartConfigs.findIndex(c => c.id === chart.id);
+                        return {
+                          id: `content-${chart.id}`,
+                          type: 'content',
+                          title: chart.title || `Chart ${chartIndex + 1}`,
+                          subtitle: '',
+                          content: '',
+                          chartId: chart.id,
+                          commentary: '',
+                          images: [],
+                          icons: [],
+                          backgroundColor: '#FFFFFF',
+                          titleColor: '#1F2937',
+                          textColor: '#374151',
+                        };
+                      });
+                      
+                      const thankYouSlide = {
+                        id: 'thankyou',
+                        type: 'thankyou',
+                        message: 'Thank You',
+                        contact: 'Email: info@tabalt.co.uk\nPhone: +44 7448614160\n3 Herron Court, Bromley, London, United Kingdom',
+                        backgroundColor: '#FFFFFF',
+                      };
+                      
+                      const newSlides = [coverSlide, agendaSlide, ...contentSlides, thankYouSlide];
                       setPptSlides(newSlides);
+                      setPptPreviewMode(true); // Automatically enter preview mode
                     }}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                   >
-                    New Presentation
+                    Generate PPT from Dashboard ({dashboardCharts.length} charts)
                   </button>
-                  <button
-                    onClick={() => {
-                      // Generate shareable link
-                      const link = `${window.location.origin}/ppt/${Date.now()}`;
-                      navigator.clipboard.writeText(link);
-                      alert('Shareable link copied to clipboard!');
-                    }}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                  >
-                    Generate Share Link
-                  </button>
-                  <button
-                    onClick={async () => {
-                      // Download as PDF
-                      if (dashboardRef.current) {
-                        const canvas = await html2canvas(dashboardRef.current);
-                        const pdf = new jsPDF('p', 'mm', 'a4');
-                        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0);
-                        pdf.save('presentation.pdf');
-                      }
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Download PPT as PDF
-                  </button>
+                  {pptSlides.length > 0 && (
+                    <button
+                      onClick={() => setPptPreviewMode(!pptPreviewMode)}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      {pptPreviewMode ? 'Exit Preview' : 'Preview PPT Deck'}
+                    </button>
+                  )}
                 </div>
 
-                {/* PPT Slides Editor */}
-                {pptSlides.length > 0 && (
+                    {/* PPT Slides Editor (Simplified - full editing in preview mode) */}
+                {pptSlides.length > 0 && !pptPreviewMode && (
                   <div className="space-y-4">
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-800">
+                        <strong>Tip:</strong> Click "Preview PPT Deck" to see and edit all slides in full preview mode.
+                        Current slides: {pptSlides.length} (Cover + Agenda + {dashboardCharts.length} Chart Slide{dashboardCharts.length !== 1 ? 's' : ''} + Thank You)
+                      </p>
+                    </div>
                     {pptSlides.map((slide, idx) => (
                       <div key={slide.id} className="border border-gray-300 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="font-semibold text-gray-900">
-                            Slide {idx + 1}: {slide.type === 'cover' ? 'Cover' : slide.type === 'agenda' ? 'Agenda' : slide.type === 'summary' ? 'Executive Summary' : slide.type === 'content' ? slide.title : 'Thank You'}
+                            {slide.type === 'cover' ? 'Slide 1: Cover Page' : 
+                             slide.type === 'agenda' ? 'Slide 2: Agenda' : 
+                             slide.type === 'summary' ? `Slide ${idx + 1}: Executive Summary` : 
+                             slide.type === 'content' ? `Slide ${idx + 1}: ${slide.title || 'Content'}` : 
+                             `Slide ${pptSlides.length}: Thank You`}
                           </h3>
                           <button
                             onClick={() => setPptSlides(pptSlides.filter((_, i) => i !== idx))}
@@ -2561,47 +2746,127 @@ const SolutionPro = () => {
 
                         {slide.type === 'cover' && (
                           <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
-                              <input
-                                type="text"
-                                value={slide.title}
-                                onChange={(e) => {
-                                  const newSlides = [...pptSlides];
-                                  newSlides[idx].title = e.target.value;
-                                  setPptSlides(newSlides);
-                                }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                              />
+                            {/* Professional Cover Page Preview */}
+                            <div className="mb-6 p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-gray-200" style={{ aspectRatio: '16/9' }}>
+                              <div className="h-full flex flex-col justify-between">
+                                {/* Top: Logos */}
+                                <div className="flex justify-between items-start mb-8">
+                                  {slide.logos && slide.logos.length > 0 ? (
+                                    <div className="flex gap-4">
+                                      {slide.logos.map((logo, logoIdx) => (
+                                        <img key={logoIdx} src={logo} alt={`Logo ${logoIdx + 1}`} className="h-12 w-auto max-w-32 object-contain" />
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="text-xs text-gray-400 italic">Upload logos here</div>
+                                  )}
+                                  <div className="text-xs text-gray-400 italic">Consulting Deck</div>
+                                </div>
+                                
+                                {/* Center: Title and Subtitle */}
+                                <div className="flex-1 flex flex-col justify-center items-center text-center space-y-4">
+                                  <input
+                                    type="text"
+                                    value={slide.title}
+                                    onChange={(e) => {
+                                      const newSlides = [...pptSlides];
+                                      newSlides[idx].title = e.target.value;
+                                      setPptSlides(newSlides);
+                                    }}
+                                    className="text-4xl font-bold text-gray-900 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2"
+                                    placeholder="Presentation Title"
+                                    style={{ color: slide.titleColor || '#1F2937' }}
+                                  />
+                                  {slide.subtitle && (
+                                    <input
+                                      type="text"
+                                      value={slide.subtitle}
+                                      onChange={(e) => {
+                                        const newSlides = [...pptSlides];
+                                        newSlides[idx].subtitle = e.target.value;
+                                        setPptSlides(newSlides);
+                                      }}
+                                      className="text-xl text-gray-600 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2"
+                                      placeholder="Subtitle (Optional)"
+                                      style={{ color: slide.subtitleColor || '#6B7280' }}
+                                    />
+                                  )}
+                                </div>
+                                
+                                {/* Bottom: Author */}
+                                <div className="text-right">
+                                  <input
+                                    type="text"
+                                    value={slide.author}
+                                    onChange={(e) => {
+                                      const newSlides = [...pptSlides];
+                                      newSlides[idx].author = e.target.value;
+                                      setPptSlides(newSlides);
+                                    }}
+                                    className="text-sm text-gray-600 bg-transparent border-none text-right focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2"
+                                    placeholder="Author Name"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Cover Page Controls */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Deck Title</label>
+                                <input
+                                  type="text"
+                                  value={slide.title}
+                                  onChange={(e) => {
+                                    const newSlides = [...pptSlides];
+                                    newSlides[idx].title = e.target.value;
+                                    setPptSlides(newSlides);
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Subtitle (Optional)</label>
+                                <input
+                                  type="text"
+                                  value={slide.subtitle || ''}
+                                  onChange={(e) => {
+                                    const newSlides = [...pptSlides];
+                                    newSlides[idx].subtitle = e.target.value;
+                                    setPptSlides(newSlides);
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Author Name</label>
+                                <input
+                                  type="text"
+                                  value={slide.author}
+                                  onChange={(e) => {
+                                    const newSlides = [...pptSlides];
+                                    newSlides[idx].author = e.target.value;
+                                    setPptSlides(newSlides);
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Background Color</label>
+                                <input
+                                  type="color"
+                                  value={slide.backgroundColor || '#FFFFFF'}
+                                  onChange={(e) => {
+                                    const newSlides = [...pptSlides];
+                                    newSlides[idx].backgroundColor = e.target.value;
+                                    setPptSlides(newSlides);
+                                  }}
+                                  className="w-full h-10 border border-gray-300 rounded-lg"
+                                />
+                              </div>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Subtitle (Optional)</label>
-                              <input
-                                type="text"
-                                value={slide.subtitle}
-                                onChange={(e) => {
-                                  const newSlides = [...pptSlides];
-                                  newSlides[idx].subtitle = e.target.value;
-                                  setPptSlides(newSlides);
-                                }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Author</label>
-                              <input
-                                type="text"
-                                value={slide.author}
-                                onChange={(e) => {
-                                  const newSlides = [...pptSlides];
-                                  newSlides[idx].author = e.target.value;
-                                  setPptSlides(newSlides);
-                                }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Upload Logos</label>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Upload Logos (Company, Client, etc.)</label>
                               <input
                                 type="file"
                                 multiple
@@ -2613,7 +2878,7 @@ const SolutionPro = () => {
                                   files.forEach(file => {
                                     const reader = new FileReader();
                                     reader.onload = (event) => {
-                                      newSlides[idx].logos.push(event.target.result);
+                                      newSlides[idx].logos.push({ url: event.target.result, x: 0, y: 0, width: 120, height: 60 });
                                       setPptSlides([...newSlides]);
                                     };
                                     reader.readAsDataURL(file);
@@ -2622,9 +2887,21 @@ const SolutionPro = () => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                               />
                               {slide.logos && slide.logos.length > 0 && (
-                                <div className="flex gap-2 mt-2">
+                                <div className="flex gap-4 mt-2">
                                   {slide.logos.map((logo, logoIdx) => (
-                                    <img key={logoIdx} src={logo} alt={`Logo ${logoIdx + 1}`} className="h-16 w-auto" />
+                                    <div key={logoIdx} className="relative">
+                                      <img src={typeof logo === 'string' ? logo : logo.url} alt={`Logo ${logoIdx + 1}`} className="h-16 w-auto max-w-32 object-contain border border-gray-200 rounded p-2" />
+                                      <button
+                                        onClick={() => {
+                                          const newSlides = [...pptSlides];
+                                          newSlides[idx].logos = newSlides[idx].logos.filter((_, i) => i !== logoIdx);
+                                          setPptSlides(newSlides);
+                                        }}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </div>
                                   ))}
                                 </div>
                               )}
@@ -2634,39 +2911,56 @@ const SolutionPro = () => {
 
                         {slide.type === 'agenda' && (
                           <div className="space-y-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Agenda Items (one per line)</label>
+                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 mb-4">
+                              <p className="text-sm text-blue-800">
+                                <strong>Tip:</strong> The agenda will automatically include titles from charts added to the Dashboard Canvas. 
+                                You can also manually edit the agenda items below.
+                              </p>
+                            </div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Agenda Items (one per line, or auto-generated from dashboard)</label>
                             <textarea
-                              value={slide.items?.join('\n') || ''}
+                              value={slide.items?.join('\n') || (dashboardCharts.length > 0 ? dashboardCharts.map(chart => {
+                                const chartIndex = chartConfigs.findIndex(c => c.id === chart.id);
+                                return chart.title || `Chart ${chartIndex + 1}`;
+                              }).join('\n') : '')}
                               onChange={(e) => {
                                 const items = e.target.value.split('\n').filter(item => item.trim());
                                 const newSlides = [...pptSlides];
                                 newSlides[idx].items = items;
-                                setPptSlides(newSlides);
-                                
-                                // Auto-generate content slides
-                                const contentSlides = items.map((item, itemIdx) => ({
-                                  id: `content-${itemIdx}`,
-                                  type: 'content',
-                                  title: item,
-                                  content: '',
-                                  charts: [],
-                                }));
-                                
-                                // Insert after agenda, before thank you
-                                const thankYouIdx = newSlides.findIndex(s => s.type === 'thankyou');
-                                if (thankYouIdx > -1) {
-                                  newSlides.splice(thankYouIdx, 0, ...contentSlides);
-                                } else {
-                                  newSlides.push(...contentSlides);
+                                // Remove existing content slides and regenerate
+                                const contentSlideIds = new Set(newSlides.filter(s => s.type === 'content').map(s => s.id));
+                                const filteredSlides = newSlides.filter(s => s.type !== 'content');
+                                // Insert new content slides after agenda, before thank you
+                                const thankYouIdx = filteredSlides.findIndex(s => s.type === 'thankyou');
+                                const agendaIdx = filteredSlides.findIndex(s => s.type === 'agenda');
+                                if (items.length > 0 && dashboardCharts.length > 0) {
+                                  const newContentSlides = items.map((item, itemIdx) => {
+                                    const chart = dashboardCharts[itemIdx] || dashboardCharts[0];
+                                    return {
+                                      id: `content-${chart.id}-${itemIdx}`,
+                                      type: 'content',
+                                      title: item,
+                                      subtitle: '',
+                                      chartId: chart.id,
+                                      commentary: '',
+                                      images: [],
+                                      icons: [],
+                                    };
+                                  });
+                                  if (thankYouIdx > -1) {
+                                    filteredSlides.splice(thankYouIdx, 0, ...newContentSlides);
+                                  } else {
+                                    filteredSlides.push(...newContentSlides);
+                                  }
                                 }
-                                setPptSlides(newSlides);
+                                setPptSlides(filteredSlides);
                               }}
                               rows={6}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                               placeholder="Introduction&#10;Sector Growth by Region&#10;Market Trends&#10;Key Insights&#10;Recommendations"
                             />
                             <p className="text-xs text-gray-500">
-                              Each line will become a slide title. Maximum 50 slides total.
+                              Each line represents an agenda item. Content slides are generated based on charts in the Dashboard Canvas.
                             </p>
                           </div>
                         )}
@@ -2674,7 +2968,7 @@ const SolutionPro = () => {
                         {slide.type === 'content' && (
                           <div className="space-y-4">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Slide Title</label>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Slide Title (Header)</label>
                               <input
                                 type="text"
                                 value={slide.title}
@@ -2687,63 +2981,144 @@ const SolutionPro = () => {
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
-                              <textarea
-                                value={slide.content}
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Sub-header/Description</label>
+                              <input
+                                type="text"
+                                value={slide.subtitle || ''}
                                 onChange={(e) => {
                                   const newSlides = [...pptSlides];
-                                  newSlides[idx].content = e.target.value;
+                                  newSlides[idx].subtitle = e.target.value;
                                   setPptSlides(newSlides);
                                 }}
-                                rows={4}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                placeholder="Brief description or subtitle"
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Add Charts</label>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Chart</label>
                               <select
+                                value={slide.chartId || ''}
                                 onChange={(e) => {
                                   const chartId = e.target.value;
-                                  if (chartId) {
-                                    const chart = chartConfigs.find(c => c.id === chartId && c.enabled);
-                                    if (chart) {
-                                      const newSlides = [...pptSlides];
-                                      if (!newSlides[idx].charts) newSlides[idx].charts = [];
-                                      newSlides[idx].charts.push(chartId);
-                                      setPptSlides(newSlides);
-                                    }
-                                  }
+                                  const newSlides = [...pptSlides];
+                                  newSlides[idx].chartId = chartId;
+                                  setPptSlides(newSlides);
                                 }}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                               >
                                 <option value="">Select a chart...</option>
-                                {chartConfigs.filter(c => c.enabled).map(c => (
-                                  <option key={c.id} value={c.id}>Chart {chartConfigs.indexOf(c) + 1}</option>
-                                ))}
+                                {dashboardCharts.map((chart) => {
+                                  const chartIndex = chartConfigs.findIndex(c => c.id === chart.id);
+                                  return (
+                                    <option key={chart.id} value={chart.id}>
+                                      Chart {chartIndex + 1}: {chart.title || `Chart ${chartIndex + 1}`}
+                                    </option>
+                                  );
+                                })}
                               </select>
-                              {slide.charts && slide.charts.length > 0 && (
-                                <div className="mt-2 space-y-2">
-                                  {slide.charts.map((chartId, chartIdx) => {
-                                    const chart = chartConfigs.find(c => c.id === chartId);
-                                    return chart ? (
-                                      <div key={chartIdx} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                        <span className="text-sm">Chart {chartConfigs.indexOf(chart) + 1}</span>
-                                        <button
-                                          onClick={() => {
-                                            const newSlides = [...pptSlides];
-                                            newSlides[idx].charts = newSlides[idx].charts.filter((_, i) => i !== chartIdx);
-                                            setPptSlides(newSlides);
-                                          }}
-                                          className="text-red-500"
-                                        >
-                                          <X className="h-4 w-4" />
-                                        </button>
-                                      </div>
-                                    ) : null;
-                                  })}
+                              {slide.chartId && (
+                                <div className="mt-2 p-2 bg-gray-50 rounded border border-gray-200">
+                                  <span className="text-sm text-gray-600">
+                                    Chart will appear on the left side of the slide
+                                  </span>
                                 </div>
                               )}
                             </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Commentary/Insights (Right Side Text)</label>
+                              <textarea
+                                value={slide.commentary || ''}
+                                onChange={(e) => {
+                                  const newSlides = [...pptSlides];
+                                  newSlides[idx].commentary = e.target.value;
+                                  setPptSlides(newSlides);
+                                }}
+                                rows={6}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                placeholder="Add your insights, analysis, or commentary here. This will appear on the right side of the slide."
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Add Image</label>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                      const reader = new FileReader();
+                                      reader.onload = (event) => {
+                                        const newSlides = [...pptSlides];
+                                        if (!newSlides[idx].images) newSlides[idx].images = [];
+                                        newSlides[idx].images.push({
+                                          id: `img-${Date.now()}`,
+                                          url: event.target.result,
+                                          x: 0,
+                                          y: 0,
+                                          width: 100,
+                                          height: 100,
+                                        });
+                                        setPptSlides(newSlides);
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Add Icon from Library</label>
+                                <button
+                                  onClick={() => setSelectedSlideForEdit(slide.id)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                                >
+                                  Open Icon Library
+                                </button>
+                              </div>
+                            </div>
+                            {slide.images && slide.images.length > 0 && (
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Images on Slide</label>
+                                {slide.images.map((img, imgIdx) => (
+                                  <div key={img.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                    <img src={img.url} alt={`Image ${imgIdx + 1}`} className="h-12 w-auto" />
+                                    <button
+                                      onClick={() => {
+                                        const newSlides = [...pptSlides];
+                                        newSlides[idx].images = newSlides[idx].images.filter((_, i) => i !== imgIdx);
+                                        setPptSlides(newSlides);
+                                      }}
+                                      className="text-red-500"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {slide.icons && slide.icons.length > 0 && (
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Icons on Slide</label>
+                                <div className="flex gap-2 flex-wrap">
+                                  {slide.icons.map((icon, iconIdx) => (
+                                    <div key={iconIdx} className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
+                                      <span className="text-2xl">{iconLibrary.find(i => i.id === icon.id)?.symbol || icon.symbol}</span>
+                                      <button
+                                        onClick={() => {
+                                          const newSlides = [...pptSlides];
+                                          newSlides[idx].icons = newSlides[idx].icons.filter((_, i) => i !== iconIdx);
+                                          setPptSlides(newSlides);
+                                        }}
+                                        className="text-red-500"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
 
@@ -2825,6 +3200,394 @@ const SolutionPro = () => {
               </div>
             )}
           </div>
+
+          {/* PPT Preview Mode */}
+          {pptPreviewMode && pptSlides.length > 0 && (
+            <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold text-gray-900">PPT Preview & Edit Mode</h2>
+                <button
+                  onClick={() => setPptPreviewMode(false)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Exit Preview
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                {pptSlides.map((slide, idx) => (
+                  <div key={slide.id} className="border-2 border-gray-300 rounded-lg overflow-hidden">
+                    <div className="bg-gray-100 px-4 py-2 flex items-center justify-between">
+                      <span className="text-sm font-semibold text-gray-700">
+                        {slide.type === 'cover' ? 'Slide 1: Cover Page' : 
+                         slide.type === 'agenda' ? 'Slide 2: Agenda' : 
+                         slide.type === 'summary' ? `Slide ${idx + 1}: Executive Summary` : 
+                         slide.type === 'content' ? `Slide ${idx + 1}: ${slide.title || 'Content'}` : 
+                         `Slide ${pptSlides.length}: Thank You`}
+                      </span>
+                      <button
+                        onClick={() => setPptSlides(pptSlides.filter((_, i) => i !== idx))}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    
+                    {/* Slide Preview */}
+                    <div id={`preview-slide-${slide.id}`} className="bg-white p-8" style={{ aspectRatio: '16/9', minHeight: '400px' }}>
+                      {slide.type === 'cover' && (
+                        <div className="h-full flex flex-col justify-between" style={{ backgroundColor: slide.backgroundColor || '#FFFFFF' }}>
+                          {/* Logos */}
+                          <div className="flex justify-between items-start">
+                            {slide.logos && slide.logos.length > 0 ? (
+                              <div className="flex gap-4">
+                                {slide.logos.map((logo, logoIdx) => (
+                                  <img key={logoIdx} src={typeof logo === 'string' ? logo : logo.url} alt={`Logo ${logoIdx + 1}`} 
+                                       className="h-16 w-auto max-w-40 object-contain cursor-move" 
+                                       draggable
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-xs text-gray-400 italic">Upload logos</div>
+                            )}
+                          </div>
+                          
+                          {/* Title */}
+                          <div className="text-center space-y-4">
+                            <input
+                              type="text"
+                              value={slide.title}
+                              onChange={(e) => {
+                                const newSlides = [...pptSlides];
+                                newSlides[idx].title = e.target.value;
+                                setPptSlides(newSlides);
+                              }}
+                              className="text-5xl font-bold bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2"
+                              placeholder="Presentation Title"
+                              style={{ color: slide.titleColor || '#1F2937' }}
+                            />
+                            {slide.subtitle && (
+                              <input
+                                type="text"
+                                value={slide.subtitle}
+                                onChange={(e) => {
+                                  const newSlides = [...pptSlides];
+                                  newSlides[idx].subtitle = e.target.value;
+                                  setPptSlides(newSlides);
+                                }}
+                                className="text-2xl text-gray-600 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2"
+                                placeholder="Subtitle"
+                                style={{ color: slide.subtitleColor || '#6B7280' }}
+                              />
+                            )}
+                          </div>
+                          
+                          {/* Author */}
+                          <div className="text-right">
+                            <input
+                              type="text"
+                              value={slide.author}
+                              onChange={(e) => {
+                                const newSlides = [...pptSlides];
+                                newSlides[idx].author = e.target.value;
+                                setPptSlides(newSlides);
+                              }}
+                              className="text-lg text-gray-600 bg-transparent border-none text-right focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2"
+                              placeholder="Author Name"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      
+                      {slide.type === 'content' && (
+                        <div className="h-full grid grid-cols-2 gap-6">
+                          {/* Left: Chart */}
+                          <div className="bg-gray-50 rounded-lg p-4 flex items-center justify-center">
+                            {slide.chartId ? (
+                              <div className="w-full h-full">
+                                {renderChart(chartConfigs.find(c => c.id === slide.chartId) || chartConfigs[currentChartIndex])}
+                              </div>
+                            ) : (
+                              <div className="text-center text-gray-400">
+                                <BarChart3 className="h-16 w-16 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">No chart selected</p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Right: Text/Commentary */}
+                          <div className="space-y-4">
+                            <input
+                              type="text"
+                              value={slide.title || ''}
+                              onChange={(e) => {
+                                const newSlides = [...pptSlides];
+                                newSlides[idx].title = e.target.value;
+                                setPptSlides(newSlides);
+                              }}
+                              className="text-2xl font-bold text-gray-900 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 w-full"
+                              placeholder="Slide Title"
+                            />
+                            <input
+                              type="text"
+                              value={slide.subtitle || ''}
+                              onChange={(e) => {
+                                const newSlides = [...pptSlides];
+                                newSlides[idx].subtitle = e.target.value;
+                                setPptSlides(newSlides);
+                              }}
+                              className="text-lg text-gray-600 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 w-full"
+                              placeholder="Sub-header/Description"
+                            />
+                            <textarea
+                              value={slide.commentary || ''}
+                              onChange={(e) => {
+                                const newSlides = [...pptSlides];
+                                newSlides[idx].commentary = e.target.value;
+                                setPptSlides(newSlides);
+                              }}
+                              className="w-full h-48 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                              placeholder="Add your insights, analysis, or commentary here..."
+                            />
+                            {/* Icons and Images on Slide */}
+                            {slide.icons && slide.icons.length > 0 && (
+                              <div className="flex gap-2 flex-wrap">
+                                {slide.icons.map((icon, iconIdx) => (
+                                  <div key={iconIdx} className="text-3xl cursor-move" draggable>
+                                    {iconLibrary.find(i => i.id === icon.id)?.symbol || icon.symbol}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {slide.images && slide.images.length > 0 && (
+                              <div className="flex gap-2 flex-wrap">
+                                {slide.images.map((img, imgIdx) => (
+                                  <img key={imgIdx} src={typeof img === 'string' ? img : img.url} alt={`Image ${imgIdx + 1}`} 
+                                       className="h-20 w-auto cursor-move" draggable />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {slide.type === 'agenda' && (
+                        <div className="h-full flex flex-col justify-center p-8">
+                          <h2 className="text-4xl font-bold text-gray-900 mb-8 text-center">Agenda</h2>
+                          <ul className="space-y-4">
+                            {(slide.items || (dashboardCharts.length > 0 ? dashboardCharts.map(chart => {
+                              const chartIndex = chartConfigs.findIndex(c => c.id === chart.id);
+                              return chart.title || `Chart ${chartIndex + 1}`;
+                            }) : [])).map((item, itemIdx) => (
+                              <li key={itemIdx} className="flex items-center gap-4 text-xl text-gray-700">
+                                <span className="text-blue-600 font-bold">{itemIdx + 1}.</span>
+                                <input
+                                  type="text"
+                                  value={item}
+                                  onChange={(e) => {
+                                    const newSlides = [...pptSlides];
+                                    const newItems = [...(newSlides[idx].items || [])];
+                                    newItems[itemIdx] = e.target.value;
+                                    newSlides[idx].items = newItems;
+                                    setPptSlides(newSlides);
+                                  }}
+                                  className="flex-1 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                                />
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {slide.type === 'summary' && (
+                        <div className="h-full flex flex-col justify-center p-8">
+                          <h2 className="text-4xl font-bold text-gray-900 mb-6 text-center">Executive Summary</h2>
+                          <textarea
+                            value={slide.content || ''}
+                            onChange={(e) => {
+                              const newSlides = [...pptSlides];
+                              newSlides[idx].content = e.target.value;
+                              setPptSlides(newSlides);
+                            }}
+                            className="flex-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            placeholder="Enter executive summary content here..."
+                          />
+                        </div>
+                      )}
+                      
+                      {slide.type === 'thankyou' && (
+                        <div className="h-full flex flex-col items-center justify-center space-y-6">
+                          <input
+                            type="text"
+                            value={slide.message || 'Thank You'}
+                            onChange={(e) => {
+                              const newSlides = [...pptSlides];
+                              newSlides[idx].message = e.target.value;
+                              setPptSlides(newSlides);
+                            }}
+                            className="text-5xl font-bold text-gray-900 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2"
+                          />
+                          <textarea
+                            value={slide.contact || ''}
+                            onChange={(e) => {
+                              const newSlides = [...pptSlides];
+                              newSlides[idx].contact = e.target.value;
+                              setPptSlides(newSlides);
+                            }}
+                            className="text-lg text-gray-600 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2 resize-none"
+                            rows={4}
+                            placeholder="Contact details"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Slide Edit Controls */}
+                      <div className="border-t border-gray-200 p-4 bg-gray-50 flex gap-3 flex-wrap">
+                        <button
+                          onClick={() => {
+                            const newSlides = [...pptSlides];
+                            if (!newSlides[idx].images) newSlides[idx].images = [];
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = 'image/*';
+                            input.onchange = (e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  newSlides[idx].images.push({ id: `img-${Date.now()}`, url: event.target.result, x: 0, y: 0, width: 100, height: 100 });
+                                  setPptSlides([...newSlides]);
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            };
+                            input.click();
+                          }}
+                          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          Add Image
+                        </button>
+                        <button
+                          onClick={() => setSelectedSlideForEdit(slide.id)}
+                          className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                        >
+                          Add Icon
+                        </button>
+                        <select
+                          value={slide.titleColor || '#1F2937'}
+                          onChange={(e) => {
+                            const newSlides = [...pptSlides];
+                            newSlides[idx].titleColor = e.target.value;
+                            setPptSlides(newSlides);
+                          }}
+                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg"
+                        >
+                          <option value="#1F2937">Title Color</option>
+                          <option value="#000000">Black</option>
+                          <option value="#FFFFFF">White</option>
+                          <option value="#3B82F6">Blue</option>
+                          <option value="#EF4444">Red</option>
+                        </select>
+                        <select
+                          value="Arial"
+                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg"
+                        >
+                          <option value="Arial">Arial</option>
+                          <option value="Tahoma">Tahoma</option>
+                          <option value="Calibri">Calibri</option>
+                          <option value="Times New Roman">Times New Roman</option>
+                          <option value="Helvetica">Helvetica</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Download & Share Buttons */}
+                <div className="flex gap-3 p-4 bg-gray-100 rounded-lg">
+                  <button
+                    onClick={async () => {
+                      const pdf = new jsPDF('p', 'mm', 'a4');
+                      for (let i = 0; i < pptSlides.length; i++) {
+                        if (i > 0) pdf.addPage();
+                        const slideElement = document.getElementById(`preview-slide-${pptSlides[i].id}`);
+                        if (slideElement) {
+                          const canvas = await html2canvas(slideElement);
+                          const imgData = canvas.toDataURL('image/png');
+                          const imgWidth = 210;
+                          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                          pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                        }
+                      }
+                      pdf.save('presentation.pdf');
+                    }}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                  >
+                    Download PPT as PDF
+                  </button>
+                  <button
+                    onClick={async () => {
+                      // Download as PPTX (would require pptxgenjs library)
+                      alert('PPT file download will be available soon. For now, please use PDF format.');
+                    }}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                  >
+                    Download PPT File
+                  </button>
+                  <button
+                    onClick={() => {
+                      const link = `${window.location.origin}/ppt/${Date.now()}`;
+                      navigator.clipboard.writeText(link);
+                      alert('Shareable link copied to clipboard: ' + link);
+                    }}
+                    className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+                  >
+                    Generate & Copy Share Link
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Icon Library Modal */}
+          {selectedSlideForEdit && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-y-auto p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900">Icon Library</h3>
+                  <button
+                    onClick={() => setSelectedSlideForEdit(null)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-5 gap-4">
+                  {iconLibrary.map((icon) => (
+                    <button
+                      key={icon.id}
+                      onClick={() => {
+                        const slideIdx = pptSlides.findIndex(s => s.id === selectedSlideForEdit);
+                        if (slideIdx !== -1) {
+                          const newSlides = [...pptSlides];
+                          if (!newSlides[slideIdx].icons) newSlides[slideIdx].icons = [];
+                          newSlides[slideIdx].icons.push({ id: icon.id, symbol: icon.symbol });
+                          setPptSlides(newSlides);
+                        }
+                        setSelectedSlideForEdit(null);
+                      }}
+                      className="p-4 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-500 transition-colors text-center"
+                      title={icon.name}
+                    >
+                      <div className="text-4xl mb-2">{icon.symbol}</div>
+                      <div className="text-xs text-gray-600">{icon.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Copy Instructions */}
           <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
