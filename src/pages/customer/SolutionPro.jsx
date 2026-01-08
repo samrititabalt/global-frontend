@@ -70,7 +70,7 @@ const SolutionPro = () => {
   const [pptPreviewMode, setPptPreviewMode] = useState(false);
   const [iconLibrary, setIconLibrary] = useState([]); // Icon repository
   const [selectedSlideForEdit, setSelectedSlideForEdit] = useState(null);
-  const [draggingElement, setDraggingElement] = useState(null); // { slideId, elementId, type: 'image' | 'icon' | 'logo', offsetX, offsetY }
+  const [draggingElement, setDraggingElement] = useState(null); // { slideId, elementId, type: 'image' | 'icon', offsetX, offsetY }
   const [resizingElement, setResizingElement] = useState(null); // { slideId, elementId, type, startWidth, startHeight, startX, startY }
   const [xAxisLabelOptions, setXAxisLabelOptions] = useState({}); // { chartId: { reduceFont: boolean, horizontalScroll: boolean, skipLabels: number } }
   const gridRef = useRef(null);
@@ -694,21 +694,7 @@ const SolutionPro = () => {
         const newSlides = [...pptSlides];
         const slide = newSlides[slideIdx];
         
-        if (draggingElement.type === 'logo' && slide.logos) {
-          const logoIdx = parseInt(draggingElement.elementId.split('-')[1]);
-          const slideElement = document.getElementById(`preview-slide-${slide.id}`);
-          if (slideElement) {
-            const rect = slideElement.getBoundingClientRect();
-            const logo = slide.logos[logoIdx];
-            if (logo) {
-              const newLogo = typeof logo === 'object' ? { ...logo } : { url: logo, x: 0, y: 0, width: 120, height: 60 };
-              newLogo.x = Math.max(0, Math.min(rect.width - (newLogo.width || 120), e.clientX - rect.left - draggingElement.offsetX));
-              newLogo.y = Math.max(0, Math.min(rect.height - (newLogo.height || 60), e.clientY - rect.top - draggingElement.offsetY));
-              slide.logos[logoIdx] = newLogo;
-              setPptSlides(newSlides);
-            }
-          }
-        } else if (draggingElement.type === 'image' && slide.images) {
+        if (draggingElement.type === 'image' && slide.images) {
           const imgIdx = parseInt(draggingElement.elementId.split('-')[1]);
           const slideElement = document.getElementById(`preview-slide-${slide.id}`);
           if (slideElement) {
@@ -750,15 +736,7 @@ const SolutionPro = () => {
         const newWidth = Math.max(50, resizingElement.startWidth + deltaX);
         const newHeight = Math.max(50, resizingElement.startHeight + deltaY);
         
-        if (resizingElement.type === 'logo' && slide.logos) {
-          const logoIdx = parseInt(resizingElement.elementId.split('-')[1]);
-          const logo = slide.logos[logoIdx];
-          if (logo && typeof logo === 'object') {
-            logo.width = newWidth;
-            logo.height = newHeight;
-            setPptSlides(newSlides);
-          }
-        } else if (resizingElement.type === 'image' && slide.images) {
+        if (resizingElement.type === 'image' && slide.images) {
           const imgIdx = parseInt(resizingElement.elementId.split('-')[1]);
           const img = slide.images[imgIdx];
           if (img) {
@@ -1193,37 +1171,6 @@ const SolutionPro = () => {
 
     return (
       <div id={`chart-${config.id}`} className="chart-container">
-        {config.showTitle && (
-          <div className="mb-2">
-            {isEditingTitle ? (
-              <input
-                type="text"
-                value={editingLabel.value}
-                onChange={(e) => setEditingLabel({ ...editingLabel, value: e.target.value })}
-                onBlur={() => saveEditedLabel(config.id, 'title', '', editingLabel.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    saveEditedLabel(config.id, 'title', '', editingLabel.value);
-                  } else if (e.key === 'Escape') {
-                    setEditingLabel(null);
-                  }
-                }}
-                autoFocus
-                className="text-sm font-semibold px-2 py-1 border-2 border-blue-500 rounded"
-                style={{ color: appearance.fontColor || '#000000', fontSize: `${fontSize}px` }}
-              />
-            ) : (
-              <h4 
-                className="text-sm font-semibold mb-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition-colors" 
-                style={{ color: appearance.fontColor || '#000000', fontSize: `${fontSize}px` }}
-                onClick={(e) => handleLabelClick(e, config.id, 'title', '', editedTitle)}
-                title="Click to edit title"
-              >
-                {editedTitle}
-              </h4>
-            )}
-          </div>
-        )}
         <div 
           className="relative"
           style={{ 
@@ -1242,7 +1189,6 @@ const SolutionPro = () => {
             <ResponsiveContainer width="100%" height={chartHeight}>
           {config.chartType === 'bar' && (
             <BarChart data={dataWithEditedLabels}>
-              <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="name" 
                 label={config.xAxis.showLabel ? { 
@@ -1402,7 +1348,6 @@ const SolutionPro = () => {
           )}
           {config.chartType === 'line' && (
             <RechartsLineChart data={dataWithEditedLabels}>
-              <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="name" 
                 label={config.xAxis.showLabel ? ({ viewBox }) => {
@@ -1583,7 +1528,6 @@ const SolutionPro = () => {
           )}
           {config.chartType === 'area' && (
             <RechartsAreaChart data={dataWithEditedLabels}>
-              <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="name" 
                 label={config.xAxis.showLabel ? ({ viewBox }) => {
@@ -1765,6 +1709,39 @@ const SolutionPro = () => {
           )}
             </ResponsiveContainer>
           </div>
+          
+          {/* Chart Title - Below Chart, Centered */}
+          {config.showTitle && (
+            <div className="mt-4 text-center">
+              {isEditingTitle ? (
+                <input
+                  type="text"
+                  value={editingLabel.value}
+                  onChange={(e) => setEditingLabel({ ...editingLabel, value: e.target.value })}
+                  onBlur={() => saveEditedLabel(config.id, 'title', '', editingLabel.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      saveEditedLabel(config.id, 'title', '', editingLabel.value);
+                    } else if (e.key === 'Escape') {
+                      setEditingLabel(null);
+                    }
+                  }}
+                  autoFocus
+                  className="text-sm font-semibold px-2 py-1 mx-auto text-center border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                  style={{ color: appearance.fontColor || '#000000', fontSize: `${fontSize}px` }}
+                />
+              ) : (
+                <h4 
+                  className="text-sm font-semibold cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition-colors inline-block" 
+                  style={{ color: appearance.fontColor || '#000000', fontSize: `${fontSize}px` }}
+                  onClick={(e) => handleLabelClick(e, config.id, 'title', '', editedTitle)}
+                  title="Click to edit title"
+                >
+                  {editedTitle}
+                </h4>
+              )}
+            </div>
+          )}
           
           {/* Editable Label Overlay */}
           {editingLabel && editingLabel.chartId === config.id && editingLabel.type !== 'title' && (
@@ -2844,7 +2821,7 @@ const SolutionPro = () => {
                         title: 'Presentation Title', 
                         subtitle: '', 
                         author: '', 
-                        logos: [],
+                        images: [],
                         backgroundColor: '#FFFFFF',
                         titleColor: '#1F2937',
                         subtitleColor: '#6B7280',
@@ -2936,69 +2913,6 @@ const SolutionPro = () => {
 
                         {slide.type === 'cover' && (
                           <div className="space-y-4">
-                            {/* Professional Cover Page Preview */}
-                            <div className="mb-6 p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-gray-200" style={{ aspectRatio: '16/9' }}>
-                              <div className="h-full flex flex-col justify-between">
-                                {/* Top: Logos */}
-                                <div className="flex justify-between items-start mb-8">
-                                  {slide.logos && slide.logos.length > 0 ? (
-                                    <div className="flex gap-4">
-                                      {slide.logos.map((logo, logoIdx) => (
-                                        <img key={logoIdx} src={logo} alt={`Logo ${logoIdx + 1}`} className="h-12 w-auto max-w-32 object-contain" />
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <div className="text-xs text-gray-400 italic">Upload logos here</div>
-                                  )}
-                                  <div className="text-xs text-gray-400 italic">Consulting Deck</div>
-                                </div>
-                                
-                                {/* Center: Title and Subtitle */}
-                                <div className="flex-1 flex flex-col justify-center items-center text-center space-y-4">
-                                  <input
-                                    type="text"
-                                    value={slide.title}
-                                    onChange={(e) => {
-                                      const newSlides = [...pptSlides];
-                                      newSlides[idx].title = e.target.value;
-                                      setPptSlides(newSlides);
-                                    }}
-                                    className="text-4xl font-bold text-gray-900 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2"
-                                    placeholder="Presentation Title"
-                                    style={{ color: slide.titleColor || '#1F2937' }}
-                                  />
-                                  {slide.subtitle && (
-                                    <input
-                                      type="text"
-                                      value={slide.subtitle}
-                                      onChange={(e) => {
-                                        const newSlides = [...pptSlides];
-                                        newSlides[idx].subtitle = e.target.value;
-                                        setPptSlides(newSlides);
-                                      }}
-                                      className="text-xl text-gray-600 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2"
-                                      placeholder="Subtitle (Optional)"
-                                      style={{ color: slide.subtitleColor || '#6B7280' }}
-                                    />
-                                  )}
-                                </div>
-                                
-                                {/* Bottom: Author */}
-                                <div className="text-right">
-                                  <input
-                                    type="text"
-                                    value={slide.author}
-                                    onChange={(e) => {
-                                      const newSlides = [...pptSlides];
-                                      newSlides[idx].author = e.target.value;
-                                      setPptSlides(newSlides);
-                                    }}
-                                    className="text-sm text-gray-600 bg-transparent border-none text-right focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2"
-                                    placeholder="Author Name"
-                                  />
-                                </div>
-                              </div>
-                            </div>
                             
                             {/* Cover Page Controls */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3056,45 +2970,39 @@ const SolutionPro = () => {
                               </div>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Add Logo</label>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Add Image</label>
                               <button
                                 onClick={() => {
                                   const input = document.createElement('input');
                                   input.type = 'file';
-                                  input.multiple = true;
                                   input.accept = 'image/*';
                                   input.onchange = (e) => {
-                                    const files = Array.from(e.target.files || []);
-                                    const newSlides = [...pptSlides];
-                                    if (!newSlides[idx].logos) newSlides[idx].logos = [];
-                                    files.forEach((file, fileIdx) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
                                       const reader = new FileReader();
                                       reader.onload = (event) => {
-                                        newSlides[idx].logos.push({
+                                        const newSlides = [...pptSlides];
+                                        if (!newSlides[idx].images) newSlides[idx].images = [];
+                                        const existingImgs = newSlides[idx].images.length;
+                                        newSlides[idx].images.push({
+                                          id: `img-${Date.now()}`,
                                           url: event.target.result,
-                                          x: fileIdx * 200,
-                                          y: 20,
-                                          width: 120,
-                                          height: 60
+                                          x: (existingImgs % 3) * 170,
+                                          y: Math.floor(existingImgs / 3) * 170,
+                                          width: 150,
+                                          height: 150
                                         });
-                                        setPptSlides([...newSlides]);
+                                        setPptSlides(newSlides);
                                       };
                                       reader.readAsDataURL(file);
-                                    });
+                                    }
                                   };
                                   input.click();
                                 }}
                                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                               >
-                                Add Logo
+                                Add Image
                               </button>
-                              {slide.logos && slide.logos.length > 0 && (
-                                <div className="mt-3">
-                                  <p className="text-xs text-gray-600 mb-2">
-                                    {slide.logos.length} logo(s) added. In preview mode, you can drag and resize them.
-                                  </p>
-                                </div>
-                              )}
                             </div>
                           </div>
                         )}
@@ -3426,80 +3334,75 @@ const SolutionPro = () => {
                     {/* Slide Preview */}
                     <div id={`preview-slide-${slide.id}`} className="bg-white p-8" style={{ aspectRatio: '16/9', minHeight: '400px', paddingBottom: '120px' }}>
                       {slide.type === 'cover' && (
-                        <div className="h-full flex flex-col justify-between p-8" style={{ backgroundColor: slide.backgroundColor || '#FFFFFF' }}>
-                          {/* Logos Area - Top Center */}
-                          <div className="flex justify-center items-start min-h-[100px]">
-                            {slide.logos && slide.logos.length > 0 ? (
-                              <div className="flex gap-6 flex-wrap justify-center">
-                                {slide.logos.map((logo, logoIdx) => (
-                                  <div
-                                    key={logoIdx}
-                                    className="relative group"
-                                    style={{
-                                      position: 'absolute',
-                                      left: typeof logo === 'object' && logo.x !== undefined ? `${logo.x}px` : `${logoIdx * 200}px`,
-                                      top: typeof logo === 'object' && logo.y !== undefined ? `${logo.y}px` : '20px',
-                                      width: typeof logo === 'object' && logo.width !== undefined ? `${logo.width}px` : '120px',
-                                      cursor: draggingElement?.elementId === `logo-${logoIdx}` ? 'grabbing' : 'grab',
-                                    }}
-                                    onMouseDown={(e) => {
-                                      if (e.target.closest('.resize-handle')) return;
-                                      const rect = e.currentTarget.getBoundingClientRect();
+                        <div className="h-full flex flex-col justify-center relative" style={{ backgroundColor: slide.backgroundColor || '#FFFFFF' }}>
+                          {/* Images on Cover Page */}
+                          {slide.images && slide.images.length > 0 && (
+                            <div className="absolute inset-0 pointer-events-none">
+                              {slide.images.map((img, imgIdx) => (
+                                <div
+                                  key={imgIdx}
+                                  className="absolute group pointer-events-auto"
+                                  style={{
+                                    left: `${img.x || 0}px`,
+                                    top: `${img.y || 0}px`,
+                                    width: `${img.width || 150}px`,
+                                    height: `${img.height || 150}px`,
+                                    cursor: draggingElement?.elementId === `image-${imgIdx}` ? 'grabbing' : 'grab',
+                                  }}
+                                  onMouseDown={(e) => {
+                                    if (e.target.closest('.resize-handle')) return;
+                                    const slideElement = document.getElementById(`preview-slide-${slide.id}`);
+                                    if (slideElement) {
+                                      const slideRect = slideElement.getBoundingClientRect();
                                       setDraggingElement({
                                         slideId: slide.id,
-                                        elementId: `logo-${logoIdx}`,
-                                        type: 'logo',
-                                        offsetX: e.clientX - rect.left - (typeof logo === 'object' ? logo.x || 0 : logoIdx * 200),
-                                        offsetY: e.clientY - rect.top - (typeof logo === 'object' ? logo.y || 0 : 20),
+                                        elementId: `image-${imgIdx}`,
+                                        type: 'image',
+                                        offsetX: e.clientX - slideRect.left - (img.x || 0),
+                                        offsetY: e.clientY - slideRect.top - (img.y || 0),
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <img
+                                    src={typeof img === 'string' ? img : img.url}
+                                    alt={`Image ${imgIdx + 1}`}
+                                    className="w-full h-full object-contain"
+                                    draggable={false}
+                                  />
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const newSlides = [...pptSlides];
+                                      newSlides[idx].images = newSlides[idx].images.filter((_, i) => i !== imgIdx);
+                                      setPptSlides(newSlides);
+                                    }}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                  <div
+                                    className="resize-handle absolute bottom-0 right-0 w-4 h-4 bg-blue-500 cursor-se-resize opacity-0 group-hover:opacity-100"
+                                    onMouseDown={(e) => {
+                                      e.stopPropagation();
+                                      setResizingElement({
+                                        slideId: slide.id,
+                                        elementId: `image-${imgIdx}`,
+                                        type: 'image',
+                                        startWidth: img.width || 150,
+                                        startHeight: img.height || 150,
+                                        startX: e.clientX,
+                                        startY: e.clientY,
                                       });
                                     }}
-                                  >
-                                    <img
-                                      src={typeof logo === 'string' ? logo : logo.url}
-                                      alt={`Logo ${logoIdx + 1}`}
-                                      className="h-auto w-full object-contain border border-gray-200 rounded p-2 bg-white shadow-sm"
-                                      style={{
-                                        width: typeof logo === 'object' && logo.width !== undefined ? `${logo.width}px` : '120px',
-                                        height: typeof logo === 'object' && logo.height !== undefined ? `${logo.height}px` : 'auto',
-                                      }}
-                                      draggable={false}
-                                    />
-                                    <button
-                                      onClick={() => {
-                                        const newSlides = [...pptSlides];
-                                        newSlides[idx].logos = newSlides[idx].logos.filter((_, i) => i !== logoIdx);
-                                        setPptSlides(newSlides);
-                                      }}
-                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </button>
-                                    <div
-                                      className="resize-handle absolute bottom-0 right-0 w-4 h-4 bg-blue-500 cursor-se-resize opacity-0 group-hover:opacity-100"
-                                      onMouseDown={(e) => {
-                                        e.stopPropagation();
-                                        const logoObj = typeof logo === 'object' ? logo : { url: logo, x: logoIdx * 200, y: 20, width: 120, height: 60 };
-                                        setResizingElement({
-                                          slideId: slide.id,
-                                          elementId: `logo-${logoIdx}`,
-                                          type: 'logo',
-                                          startWidth: logoObj.width || 120,
-                                          startHeight: logoObj.height || 60,
-                                          startX: e.clientX,
-                                          startY: e.clientY,
-                                        });
-                                      }}
-                                    />
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="text-sm text-gray-400 text-center">Logo area - Click "Add Logo" to upload</div>
-                            )}
-                          </div>
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           
                           {/* Title - Centered */}
-                          <div className="text-center space-y-6 flex-1 flex flex-col justify-center px-8">
+                          <div className="text-center space-y-6 px-8 py-12 relative z-10">
                             <div className="space-y-4">
                               <input
                                 type="text"
@@ -3513,25 +3416,23 @@ const SolutionPro = () => {
                                 placeholder="Presentation Title"
                                 style={{ color: slide.titleColor || '#1F2937', wordWrap: 'break-word', overflowWrap: 'break-word' }}
                               />
-                              {slide.subtitle !== undefined && (
-                                <input
-                                  type="text"
-                                  value={slide.subtitle || ''}
-                                  onChange={(e) => {
-                                    const newSlides = [...pptSlides];
-                                    newSlides[idx].subtitle = e.target.value;
-                                    setPptSlides(newSlides);
-                                  }}
-                                  className="text-2xl text-gray-600 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2 w-full max-w-3xl mx-auto"
-                                  placeholder="Subtitle (Optional)"
-                                  style={{ color: slide.subtitleColor || '#6B7280' }}
-                                />
-                              )}
+                              <input
+                                type="text"
+                                value={slide.subtitle || ''}
+                                onChange={(e) => {
+                                  const newSlides = [...pptSlides];
+                                  newSlides[idx].subtitle = e.target.value;
+                                  setPptSlides(newSlides);
+                                }}
+                                className="text-2xl text-gray-600 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2 w-full max-w-3xl mx-auto"
+                                placeholder="Subtitle (Optional)"
+                                style={{ color: slide.subtitleColor || '#6B7280' }}
+                              />
                             </div>
                           </div>
                           
                           {/* Author - Bottom Right */}
-                          <div className="text-right pr-8 pb-4">
+                          <div className="absolute bottom-8 right-8">
                             <input
                               type="text"
                               value={slide.author || ''}
@@ -3550,7 +3451,7 @@ const SolutionPro = () => {
                       {slide.type === 'content' && (
                         <div className="h-full grid grid-cols-2 gap-6">
                           {/* Left: Chart */}
-                          <div className="bg-gray-50 rounded-lg p-4 flex items-center justify-center">
+                          <div className="p-4 flex items-center justify-center">
                             {slide.chartId ? (
                               <div className="w-full h-full">
                                 {renderChart(chartConfigs.find(c => c.id === slide.chartId) || chartConfigs[currentChartIndex])}
@@ -3594,7 +3495,7 @@ const SolutionPro = () => {
                                 newSlides[idx].commentary = e.target.value;
                                 setPptSlides(newSlides);
                               }}
-                              className="w-full h-48 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                              className="w-full h-48 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                               placeholder="Add your insights, analysis, or commentary here..."
                             />
                             {/* Icons and Images on Slide */}
@@ -3689,7 +3590,7 @@ const SolutionPro = () => {
                                   <img
                                     src={typeof img === 'string' ? img : img.url}
                                     alt={`Image ${imgIdx + 1}`}
-                                    className="w-full h-full object-contain border border-gray-200 rounded"
+                                    className="w-full h-full object-contain"
                                     draggable={false}
                                   />
                                   <button
