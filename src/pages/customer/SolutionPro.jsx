@@ -70,6 +70,9 @@ const SolutionPro = () => {
   const [pptPreviewMode, setPptPreviewMode] = useState(false);
   const [iconLibrary, setIconLibrary] = useState([]); // Icon repository
   const [selectedSlideForEdit, setSelectedSlideForEdit] = useState(null);
+  const [draggingElement, setDraggingElement] = useState(null); // { slideId, elementId, type: 'image' | 'icon' | 'logo', offsetX, offsetY }
+  const [resizingElement, setResizingElement] = useState(null); // { slideId, elementId, type, startWidth, startHeight, startX, startY }
+  const [xAxisLabelOptions, setXAxisLabelOptions] = useState({}); // { chartId: { reduceFont: boolean, horizontalScroll: boolean, skipLabels: number } }
   const gridRef = useRef(null);
   const dashboardRef = useRef(null);
   const CHART_TYPES = [
@@ -682,6 +685,114 @@ const SolutionPro = () => {
     }
   }, [expandedChart, chartConfigs]);
 
+  // Handle dragging and resizing elements on slides
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (draggingElement) {
+        const slideIdx = pptSlides.findIndex(s => s.id === draggingElement.slideId);
+        if (slideIdx === -1) return;
+        const newSlides = [...pptSlides];
+        const slide = newSlides[slideIdx];
+        
+        if (draggingElement.type === 'logo' && slide.logos) {
+          const logoIdx = parseInt(draggingElement.elementId.split('-')[1]);
+          const slideElement = document.getElementById(`preview-slide-${slide.id}`);
+          if (slideElement) {
+            const rect = slideElement.getBoundingClientRect();
+            const logo = slide.logos[logoIdx];
+            if (logo) {
+              const newLogo = typeof logo === 'object' ? { ...logo } : { url: logo, x: 0, y: 0, width: 120, height: 60 };
+              newLogo.x = Math.max(0, Math.min(rect.width - (newLogo.width || 120), e.clientX - rect.left - draggingElement.offsetX));
+              newLogo.y = Math.max(0, Math.min(rect.height - (newLogo.height || 60), e.clientY - rect.top - draggingElement.offsetY));
+              slide.logos[logoIdx] = newLogo;
+              setPptSlides(newSlides);
+            }
+          }
+        } else if (draggingElement.type === 'image' && slide.images) {
+          const imgIdx = parseInt(draggingElement.elementId.split('-')[1]);
+          const slideElement = document.getElementById(`preview-slide-${slide.id}`);
+          if (slideElement) {
+            const rect = slideElement.getBoundingClientRect();
+            const img = slide.images[imgIdx];
+            if (img) {
+              img.x = Math.max(0, Math.min(rect.width - (img.width || 150), e.clientX - rect.left - draggingElement.offsetX));
+              img.y = Math.max(0, Math.min(rect.height - (img.height || 150), e.clientY - rect.top - draggingElement.offsetY));
+              setPptSlides(newSlides);
+            }
+          }
+        } else if (draggingElement.type === 'icon' && slide.icons) {
+          const iconIdx = parseInt(draggingElement.elementId.split('-')[1]);
+          const slideElement = document.getElementById(`preview-slide-${slide.id}`);
+          if (slideElement) {
+            const rect = slideElement.getBoundingClientRect();
+            const icon = slide.icons[iconIdx];
+            if (icon) {
+              if (!icon.x) icon.x = 0;
+              if (!icon.y) icon.y = 0;
+              if (!icon.width) icon.width = 80;
+              if (!icon.height) icon.height = 80;
+              icon.x = Math.max(0, Math.min(rect.width - (icon.width || 80), e.clientX - rect.left - draggingElement.offsetX));
+              icon.y = Math.max(0, Math.min(rect.height - (icon.height || 80), e.clientY - rect.top - draggingElement.offsetY));
+              setPptSlides(newSlides);
+            }
+          }
+        }
+      }
+      
+      if (resizingElement) {
+        const slideIdx = pptSlides.findIndex(s => s.id === resizingElement.slideId);
+        if (slideIdx === -1) return;
+        const newSlides = [...pptSlides];
+        const slide = newSlides[slideIdx];
+        
+        const deltaX = e.clientX - resizingElement.startX;
+        const deltaY = e.clientY - resizingElement.startY;
+        const newWidth = Math.max(50, resizingElement.startWidth + deltaX);
+        const newHeight = Math.max(50, resizingElement.startHeight + deltaY);
+        
+        if (resizingElement.type === 'logo' && slide.logos) {
+          const logoIdx = parseInt(resizingElement.elementId.split('-')[1]);
+          const logo = slide.logos[logoIdx];
+          if (logo && typeof logo === 'object') {
+            logo.width = newWidth;
+            logo.height = newHeight;
+            setPptSlides(newSlides);
+          }
+        } else if (resizingElement.type === 'image' && slide.images) {
+          const imgIdx = parseInt(resizingElement.elementId.split('-')[1]);
+          const img = slide.images[imgIdx];
+          if (img) {
+            img.width = newWidth;
+            img.height = newHeight;
+            setPptSlides(newSlides);
+          }
+        } else if (resizingElement.type === 'icon' && slide.icons) {
+          const iconIdx = parseInt(resizingElement.elementId.split('-')[1]);
+          const icon = slide.icons[iconIdx];
+          if (icon) {
+            icon.width = newWidth;
+            icon.height = newHeight;
+            setPptSlides(newSlides);
+          }
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      setDraggingElement(null);
+      setResizingElement(null);
+    };
+
+    if (draggingElement || resizingElement) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [draggingElement, resizingElement, pptSlides]);
+
   const handleCellChange = (rowIndex, colIndex, value) => {
     const newData = [...gridData];
     newData[rowIndex][colIndex] = value;
@@ -1072,7 +1183,8 @@ const SolutionPro = () => {
     }));
 
     // Calculate chart dimensions for scrollbars
-    const needsHorizontalScroll = data.length > 20 && (config.chartType === 'bar' || config.chartType === 'line' || config.chartType === 'area');
+    const labelOptions = xAxisLabelOptions[config.id] || { reduceFont: false, horizontalScroll: false, skipLabels: 0 };
+    const needsHorizontalScroll = (data.length > 20 && (config.chartType === 'bar' || config.chartType === 'line' || config.chartType === 'area')) || labelOptions.horizontalScroll;
     const chartWidth = needsHorizontalScroll ? Math.max(800, data.length * 40) : '100%';
     const chartHeight = 250;
 
@@ -1136,7 +1248,7 @@ const SolutionPro = () => {
                 label={config.xAxis.showLabel ? { 
                   value: xAxisLabel, 
                   position: 'insideBottom', 
-                  offset: -5, 
+                  offset: 10, 
                   style: { fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000', cursor: 'pointer' },
                   onClick: (e) => {
                     e.preventDefault();
@@ -1145,13 +1257,20 @@ const SolutionPro = () => {
                   }
                 } : undefined}
                 tick={(props) => {
-                  const { x, y, payload } = props;
+                  const { x, y, payload, index } = props;
                   const edited = getEditedLabel(config.id, 'category', payload.value, payload.value);
                   const isEditing = editingLabel?.chartId === config.id && editingLabel?.type === 'category' && editingLabel?.key === payload.value;
                   
+                  const labelOptions = xAxisLabelOptions[config.id] || { reduceFont: false, horizontalScroll: false, skipLabels: 0 };
+                  const effectiveFontSize = labelOptions.reduceFont ? Math.max(8, fontSize * 0.7) : fontSize;
+                  const skipEveryN = labelOptions.skipLabels || 0;
+                  const shouldShowLabel = skipEveryN === 0 || index % (skipEveryN + 1) === 0;
+                  
+                  if (!shouldShowLabel) return null;
+                  
                   if (isEditing) {
                     return (
-                      <foreignObject x={x - 50} y={y - 10} width="100" height="20">
+                      <foreignObject x={x - 50} y={y + 10} width="100" height="20">
                         <input
                           type="text"
                           value={editingLabel.value}
@@ -1166,7 +1285,7 @@ const SolutionPro = () => {
                           }}
                           autoFocus
                           className="w-full px-1 py-0.5 text-xs border-2 border-blue-500 rounded"
-                          style={{ fontSize: `${fontSize}px` }}
+                          style={{ fontSize: `${effectiveFontSize}px` }}
                         />
                       </foreignObject>
                     );
@@ -1175,10 +1294,11 @@ const SolutionPro = () => {
                   return (
                     <Text
                       x={x}
-                      y={y}
+                      y={y + 15}
+                      dy={5}
                       textAnchor={data.length > 10 ? 'end' : 'middle'}
                       angle={data.length > 10 ? -45 : 0}
-                      fontSize={fontSize}
+                      fontSize={effectiveFontSize}
                       fill={appearance.fontColor || '#000000'}
                       cursor="pointer"
                       onClick={(e) => {
@@ -1196,7 +1316,7 @@ const SolutionPro = () => {
                     </Text>
                   );
                 }}
-                height={data.length > 10 ? 80 : 30}
+                height={data.length > 10 ? 100 : 50}
               />
               <YAxis 
                 label={config.yAxis.showLabel ? { 
@@ -1312,7 +1432,7 @@ const SolutionPro = () => {
                   return (
                     <text
                       x={viewBox.x + viewBox.width / 2}
-                      y={viewBox.y + viewBox.height - 5}
+                      y={viewBox.y + viewBox.height + 5}
                       textAnchor="middle"
                       fontSize={fontSize}
                       fill={appearance.fontColor || '#000000'}
@@ -1328,13 +1448,20 @@ const SolutionPro = () => {
                   );
                 } : undefined}
                 tick={(props) => {
-                  const { x, y, payload } = props;
+                  const { x, y, payload, index } = props;
                   const edited = getEditedLabel(config.id, 'category', payload.value, payload.value);
                   const isEditing = editingLabel?.chartId === config.id && editingLabel?.type === 'category' && editingLabel?.key === payload.value;
                   
+                  const labelOptions = xAxisLabelOptions[config.id] || { reduceFont: false, horizontalScroll: false, skipLabels: 0 };
+                  const effectiveFontSize = labelOptions.reduceFont ? Math.max(8, fontSize * 0.7) : fontSize;
+                  const skipEveryN = labelOptions.skipLabels || 0;
+                  const shouldShowLabel = skipEveryN === 0 || index % (skipEveryN + 1) === 0;
+                  
+                  if (!shouldShowLabel) return null;
+                  
                   if (isEditing) {
                     return (
-                      <foreignObject x={x - 50} y={y - 10} width="100" height="20">
+                      <foreignObject x={x - 50} y={y + 10} width="100" height="20">
                         <input
                           type="text"
                           value={editingLabel.value}
@@ -1349,7 +1476,7 @@ const SolutionPro = () => {
                           }}
                           autoFocus
                           className="w-full px-1 py-0.5 text-xs border-2 border-blue-500 rounded"
-                          style={{ fontSize: `${fontSize}px` }}
+                          style={{ fontSize: `${effectiveFontSize}px` }}
                         />
                       </foreignObject>
                     );
@@ -1358,10 +1485,11 @@ const SolutionPro = () => {
                   return (
                     <Text
                       x={x}
-                      y={y}
+                      y={y + 15}
+                      dy={5}
                       textAnchor={data.length > 10 ? 'end' : 'middle'}
                       angle={data.length > 10 ? -45 : 0}
-                      fontSize={fontSize}
+                      fontSize={effectiveFontSize}
                       fill={appearance.fontColor || '#000000'}
                       cursor="pointer"
                       onClick={(e) => {
@@ -1379,7 +1507,7 @@ const SolutionPro = () => {
                     </Text>
                   );
                 }}
-                height={data.length > 10 ? 80 : 30}
+                height={data.length > 10 ? 100 : 50}
               />
               <YAxis 
                 label={config.yAxis.showLabel ? ({ viewBox }) => {
@@ -1485,7 +1613,7 @@ const SolutionPro = () => {
                   return (
                     <text
                       x={viewBox.x + viewBox.width / 2}
-                      y={viewBox.y + viewBox.height - 5}
+                      y={viewBox.y + viewBox.height + 5}
                       textAnchor="middle"
                       fontSize={fontSize}
                       fill={appearance.fontColor || '#000000'}
@@ -1501,13 +1629,20 @@ const SolutionPro = () => {
                   );
                 } : undefined}
                 tick={(props) => {
-                  const { x, y, payload } = props;
+                  const { x, y, payload, index } = props;
                   const edited = getEditedLabel(config.id, 'category', payload.value, payload.value);
                   const isEditing = editingLabel?.chartId === config.id && editingLabel?.type === 'category' && editingLabel?.key === payload.value;
                   
+                  const labelOptions = xAxisLabelOptions[config.id] || { reduceFont: false, horizontalScroll: false, skipLabels: 0 };
+                  const effectiveFontSize = labelOptions.reduceFont ? Math.max(8, fontSize * 0.7) : fontSize;
+                  const skipEveryN = labelOptions.skipLabels || 0;
+                  const shouldShowLabel = skipEveryN === 0 || index % (skipEveryN + 1) === 0;
+                  
+                  if (!shouldShowLabel) return null;
+                  
                   if (isEditing) {
                     return (
-                      <foreignObject x={x - 50} y={y - 10} width="100" height="20">
+                      <foreignObject x={x - 50} y={y + 10} width="100" height="20">
                         <input
                           type="text"
                           value={editingLabel.value}
@@ -1522,7 +1657,7 @@ const SolutionPro = () => {
                           }}
                           autoFocus
                           className="w-full px-1 py-0.5 text-xs border-2 border-blue-500 rounded"
-                          style={{ fontSize: `${fontSize}px` }}
+                          style={{ fontSize: `${effectiveFontSize}px` }}
                         />
                       </foreignObject>
                     );
@@ -1531,10 +1666,11 @@ const SolutionPro = () => {
                   return (
                     <Text
                       x={x}
-                      y={y}
+                      y={y + 15}
+                      dy={5}
                       textAnchor={data.length > 10 ? 'end' : 'middle'}
                       angle={data.length > 10 ? -45 : 0}
-                      fontSize={fontSize}
+                      fontSize={effectiveFontSize}
                       fill={appearance.fontColor || '#000000'}
                       cursor="pointer"
                       onClick={(e) => {
@@ -1552,7 +1688,7 @@ const SolutionPro = () => {
                     </Text>
                   );
                 }}
-                height={data.length > 10 ? 80 : 30}
+                height={data.length > 10 ? 100 : 50}
               />
               <YAxis 
                 label={config.yAxis.showLabel ? ({ viewBox }) => {
@@ -2269,6 +2405,60 @@ const SolutionPro = () => {
                           </div>
                         )}
 
+                        {/* X-Axis Label Options for Many Labels */}
+                        {config.xAxis.column && (() => {
+                          const chartData = generateChartData(config);
+                          const hasManyLabels = chartData && chartData.length > 10;
+                          const labelOptions = xAxisLabelOptions[config.id] || { reduceFont: false, horizontalScroll: false, skipLabels: 0 };
+                          return hasManyLabels ? (
+                            <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">X-Axis Label Options (Many Labels Detected)</label>
+                              <div className="space-y-2">
+                                <label className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={labelOptions.reduceFont || false}
+                                    onChange={(e) => setXAxisLabelOptions(prev => ({
+                                      ...prev,
+                                      [config.id]: { ...prev[config.id], reduceFont: e.target.checked }
+                                    }))}
+                                    className="w-4 h-4"
+                                  />
+                                  <span className="text-sm text-gray-700">Reduce Font Size</span>
+                                </label>
+                                <label className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={labelOptions.horizontalScroll || false}
+                                    onChange={(e) => setXAxisLabelOptions(prev => ({
+                                      ...prev,
+                                      [config.id]: { ...prev[config.id], horizontalScroll: e.target.checked }
+                                    }))}
+                                    className="w-4 h-4"
+                                  />
+                                  <span className="text-sm text-gray-700">Enable Horizontal Scroll</span>
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <label className="text-sm text-gray-700">Skip Labels:</label>
+                                  <select
+                                    value={labelOptions.skipLabels || 0}
+                                    onChange={(e) => setXAxisLabelOptions(prev => ({
+                                      ...prev,
+                                      [config.id]: { ...prev[config.id], skipLabels: parseInt(e.target.value) || 0 }
+                                    }))}
+                                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                                  >
+                                    <option value="0">Show All</option>
+                                    <option value="1">Skip Every 2nd</option>
+                                    <option value="2">Skip Every 3rd</option>
+                                    <option value="3">Skip Every 4th</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          ) : null;
+                        })()}
+
                         {/* Customization Toggle */}
                         <div>
                           <button
@@ -2866,43 +3056,43 @@ const SolutionPro = () => {
                               </div>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Upload Logos (Company, Client, etc.)</label>
-                              <input
-                                type="file"
-                                multiple
-                                accept="image/*"
-                                onChange={(e) => {
-                                  const files = Array.from(e.target.files);
-                                  const newSlides = [...pptSlides];
-                                  if (!newSlides[idx].logos) newSlides[idx].logos = [];
-                                  files.forEach(file => {
-                                    const reader = new FileReader();
-                                    reader.onload = (event) => {
-                                      newSlides[idx].logos.push({ url: event.target.result, x: 0, y: 0, width: 120, height: 60 });
-                                      setPptSlides([...newSlides]);
-                                    };
-                                    reader.readAsDataURL(file);
-                                  });
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Add Logo</label>
+                              <button
+                                onClick={() => {
+                                  const input = document.createElement('input');
+                                  input.type = 'file';
+                                  input.multiple = true;
+                                  input.accept = 'image/*';
+                                  input.onchange = (e) => {
+                                    const files = Array.from(e.target.files || []);
+                                    const newSlides = [...pptSlides];
+                                    if (!newSlides[idx].logos) newSlides[idx].logos = [];
+                                    files.forEach((file, fileIdx) => {
+                                      const reader = new FileReader();
+                                      reader.onload = (event) => {
+                                        newSlides[idx].logos.push({
+                                          url: event.target.result,
+                                          x: fileIdx * 200,
+                                          y: 20,
+                                          width: 120,
+                                          height: 60
+                                        });
+                                        setPptSlides([...newSlides]);
+                                      };
+                                      reader.readAsDataURL(file);
+                                    });
+                                  };
+                                  input.click();
                                 }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                              />
+                                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                              >
+                                Add Logo
+                              </button>
                               {slide.logos && slide.logos.length > 0 && (
-                                <div className="flex gap-4 mt-2">
-                                  {slide.logos.map((logo, logoIdx) => (
-                                    <div key={logoIdx} className="relative">
-                                      <img src={typeof logo === 'string' ? logo : logo.url} alt={`Logo ${logoIdx + 1}`} className="h-16 w-auto max-w-32 object-contain border border-gray-200 rounded p-2" />
-                                      <button
-                                        onClick={() => {
-                                          const newSlides = [...pptSlides];
-                                          newSlides[idx].logos = newSlides[idx].logos.filter((_, i) => i !== logoIdx);
-                                          setPptSlides(newSlides);
-                                        }}
-                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                                      >
-                                        <X className="h-3 w-3" />
-                                      </button>
-                                    </div>
-                                  ))}
+                                <div className="mt-3">
+                                  <p className="text-xs text-gray-600 mb-2">
+                                    {slide.logos.length} logo(s) added. In preview mode, you can drag and resize them.
+                                  </p>
                                 </div>
                               )}
                             </div>
@@ -3234,60 +3424,117 @@ const SolutionPro = () => {
                     </div>
                     
                     {/* Slide Preview */}
-                    <div id={`preview-slide-${slide.id}`} className="bg-white p-8" style={{ aspectRatio: '16/9', minHeight: '400px' }}>
+                    <div id={`preview-slide-${slide.id}`} className="bg-white p-8" style={{ aspectRatio: '16/9', minHeight: '400px', paddingBottom: '120px' }}>
                       {slide.type === 'cover' && (
-                        <div className="h-full flex flex-col justify-between" style={{ backgroundColor: slide.backgroundColor || '#FFFFFF' }}>
-                          {/* Logos */}
-                          <div className="flex justify-between items-start">
+                        <div className="h-full flex flex-col justify-between p-8" style={{ backgroundColor: slide.backgroundColor || '#FFFFFF' }}>
+                          {/* Logos Area - Top Center */}
+                          <div className="flex justify-center items-start min-h-[100px]">
                             {slide.logos && slide.logos.length > 0 ? (
-                              <div className="flex gap-4">
+                              <div className="flex gap-6 flex-wrap justify-center">
                                 {slide.logos.map((logo, logoIdx) => (
-                                  <img key={logoIdx} src={typeof logo === 'string' ? logo : logo.url} alt={`Logo ${logoIdx + 1}`} 
-                                       className="h-16 w-auto max-w-40 object-contain cursor-move" 
-                                       draggable
-                                  />
+                                  <div
+                                    key={logoIdx}
+                                    className="relative group"
+                                    style={{
+                                      position: 'absolute',
+                                      left: typeof logo === 'object' && logo.x !== undefined ? `${logo.x}px` : `${logoIdx * 200}px`,
+                                      top: typeof logo === 'object' && logo.y !== undefined ? `${logo.y}px` : '20px',
+                                      width: typeof logo === 'object' && logo.width !== undefined ? `${logo.width}px` : '120px',
+                                      cursor: draggingElement?.elementId === `logo-${logoIdx}` ? 'grabbing' : 'grab',
+                                    }}
+                                    onMouseDown={(e) => {
+                                      if (e.target.closest('.resize-handle')) return;
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      setDraggingElement({
+                                        slideId: slide.id,
+                                        elementId: `logo-${logoIdx}`,
+                                        type: 'logo',
+                                        offsetX: e.clientX - rect.left - (typeof logo === 'object' ? logo.x || 0 : logoIdx * 200),
+                                        offsetY: e.clientY - rect.top - (typeof logo === 'object' ? logo.y || 0 : 20),
+                                      });
+                                    }}
+                                  >
+                                    <img
+                                      src={typeof logo === 'string' ? logo : logo.url}
+                                      alt={`Logo ${logoIdx + 1}`}
+                                      className="h-auto w-full object-contain border border-gray-200 rounded p-2 bg-white shadow-sm"
+                                      style={{
+                                        width: typeof logo === 'object' && logo.width !== undefined ? `${logo.width}px` : '120px',
+                                        height: typeof logo === 'object' && logo.height !== undefined ? `${logo.height}px` : 'auto',
+                                      }}
+                                      draggable={false}
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        const newSlides = [...pptSlides];
+                                        newSlides[idx].logos = newSlides[idx].logos.filter((_, i) => i !== logoIdx);
+                                        setPptSlides(newSlides);
+                                      }}
+                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </button>
+                                    <div
+                                      className="resize-handle absolute bottom-0 right-0 w-4 h-4 bg-blue-500 cursor-se-resize opacity-0 group-hover:opacity-100"
+                                      onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        const logoObj = typeof logo === 'object' ? logo : { url: logo, x: logoIdx * 200, y: 20, width: 120, height: 60 };
+                                        setResizingElement({
+                                          slideId: slide.id,
+                                          elementId: `logo-${logoIdx}`,
+                                          type: 'logo',
+                                          startWidth: logoObj.width || 120,
+                                          startHeight: logoObj.height || 60,
+                                          startX: e.clientX,
+                                          startY: e.clientY,
+                                        });
+                                      }}
+                                    />
+                                  </div>
                                 ))}
                               </div>
                             ) : (
-                              <div className="text-xs text-gray-400 italic">Upload logos</div>
+                              <div className="text-sm text-gray-400 text-center">Logo area - Click "Add Logo" to upload</div>
                             )}
                           </div>
                           
-                          {/* Title */}
-                          <div className="text-center space-y-4">
-                            <input
-                              type="text"
-                              value={slide.title}
-                              onChange={(e) => {
-                                const newSlides = [...pptSlides];
-                                newSlides[idx].title = e.target.value;
-                                setPptSlides(newSlides);
-                              }}
-                              className="text-5xl font-bold bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2"
-                              placeholder="Presentation Title"
-                              style={{ color: slide.titleColor || '#1F2937' }}
-                            />
-                            {slide.subtitle && (
+                          {/* Title - Centered */}
+                          <div className="text-center space-y-6 flex-1 flex flex-col justify-center px-8">
+                            <div className="space-y-4">
                               <input
                                 type="text"
-                                value={slide.subtitle}
+                                value={slide.title || ''}
                                 onChange={(e) => {
                                   const newSlides = [...pptSlides];
-                                  newSlides[idx].subtitle = e.target.value;
+                                  newSlides[idx].title = e.target.value;
                                   setPptSlides(newSlides);
                                 }}
-                                className="text-2xl text-gray-600 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2"
-                                placeholder="Subtitle"
-                                style={{ color: slide.subtitleColor || '#6B7280' }}
+                                className="text-5xl font-bold bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-3 w-full max-w-4xl mx-auto"
+                                placeholder="Presentation Title"
+                                style={{ color: slide.titleColor || '#1F2937', wordWrap: 'break-word', overflowWrap: 'break-word' }}
                               />
-                            )}
+                              {slide.subtitle !== undefined && (
+                                <input
+                                  type="text"
+                                  value={slide.subtitle || ''}
+                                  onChange={(e) => {
+                                    const newSlides = [...pptSlides];
+                                    newSlides[idx].subtitle = e.target.value;
+                                    setPptSlides(newSlides);
+                                  }}
+                                  className="text-2xl text-gray-600 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2 w-full max-w-3xl mx-auto"
+                                  placeholder="Subtitle (Optional)"
+                                  style={{ color: slide.subtitleColor || '#6B7280' }}
+                                />
+                              )}
+                            </div>
                           </div>
                           
-                          {/* Author */}
-                          <div className="text-right">
+                          {/* Author - Bottom Right */}
+                          <div className="text-right pr-8 pb-4">
                             <input
                               type="text"
-                              value={slide.author}
+                              value={slide.author || ''}
                               onChange={(e) => {
                                 const newSlides = [...pptSlides];
                                 newSlides[idx].author = e.target.value;
@@ -3351,23 +3598,129 @@ const SolutionPro = () => {
                               placeholder="Add your insights, analysis, or commentary here..."
                             />
                             {/* Icons and Images on Slide */}
-                            {slide.icons && slide.icons.length > 0 && (
-                              <div className="flex gap-2 flex-wrap">
-                                {slide.icons.map((icon, iconIdx) => (
-                                  <div key={iconIdx} className="text-3xl cursor-move" draggable>
-                                    {iconLibrary.find(i => i.id === icon.id)?.symbol || icon.symbol}
+                            <div className="relative" style={{ minHeight: '200px' }}>
+                              {slide.icons && slide.icons.map((icon, iconIdx) => {
+                                const iconData = iconLibrary.find(i => i.id === icon.id) || icon;
+                                return (
+                                  <div
+                                    key={iconIdx}
+                                    className="absolute group cursor-grab active:cursor-grabbing"
+                                    style={{
+                                      left: `${icon.x || 0}px`,
+                                      top: `${icon.y || 0}px`,
+                                      width: `${icon.width || 80}px`,
+                                      height: `${icon.height || 80}px`,
+                                      fontSize: `${icon.width || 80}px`,
+                                      cursor: draggingElement?.elementId === `icon-${iconIdx}` ? 'grabbing' : 'grab',
+                                    }}
+                                    onMouseDown={(e) => {
+                                      if (e.target.closest('.resize-handle')) return;
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      const slideElement = document.getElementById(`preview-slide-${slide.id}`);
+                                      if (slideElement) {
+                                        const slideRect = slideElement.getBoundingClientRect();
+                                        setDraggingElement({
+                                          slideId: slide.id,
+                                          elementId: `icon-${iconIdx}`,
+                                          type: 'icon',
+                                          offsetX: e.clientX - slideRect.left - (icon.x || 0),
+                                          offsetY: e.clientY - slideRect.top - (icon.y || 0),
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <div className="text-center leading-none">{iconData.symbol}</div>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const newSlides = [...pptSlides];
+                                        newSlides[idx].icons = newSlides[idx].icons.filter((_, i) => i !== iconIdx);
+                                        setPptSlides(newSlides);
+                                      }}
+                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                    <div
+                                      className="resize-handle absolute bottom-0 right-0 w-3 h-3 bg-blue-500 cursor-se-resize opacity-0 group-hover:opacity-100"
+                                      onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        setResizingElement({
+                                          slideId: slide.id,
+                                          elementId: `icon-${iconIdx}`,
+                                          type: 'icon',
+                                          startWidth: icon.width || 80,
+                                          startHeight: icon.height || 80,
+                                          startX: e.clientX,
+                                          startY: e.clientY,
+                                        });
+                                      }}
+                                    />
                                   </div>
-                                ))}
-                              </div>
-                            )}
-                            {slide.images && slide.images.length > 0 && (
-                              <div className="flex gap-2 flex-wrap">
-                                {slide.images.map((img, imgIdx) => (
-                                  <img key={imgIdx} src={typeof img === 'string' ? img : img.url} alt={`Image ${imgIdx + 1}`} 
-                                       className="h-20 w-auto cursor-move" draggable />
-                                ))}
-                              </div>
-                            )}
+                                );
+                              })}
+                              {slide.images && slide.images.map((img, imgIdx) => (
+                                <div
+                                  key={imgIdx}
+                                  className="absolute group cursor-grab active:cursor-grabbing"
+                                  style={{
+                                    left: `${img.x || 0}px`,
+                                    top: `${img.y || 0}px`,
+                                    width: `${img.width || 150}px`,
+                                    height: `${img.height || 150}px`,
+                                    cursor: draggingElement?.elementId === `image-${imgIdx}` ? 'grabbing' : 'grab',
+                                  }}
+                                  onMouseDown={(e) => {
+                                    if (e.target.closest('.resize-handle')) return;
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    const slideElement = document.getElementById(`preview-slide-${slide.id}`);
+                                    if (slideElement) {
+                                      const slideRect = slideElement.getBoundingClientRect();
+                                      setDraggingElement({
+                                        slideId: slide.id,
+                                        elementId: `image-${imgIdx}`,
+                                        type: 'image',
+                                        offsetX: e.clientX - slideRect.left - (img.x || 0),
+                                        offsetY: e.clientY - slideRect.top - (img.y || 0),
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <img
+                                    src={typeof img === 'string' ? img : img.url}
+                                    alt={`Image ${imgIdx + 1}`}
+                                    className="w-full h-full object-contain border border-gray-200 rounded"
+                                    draggable={false}
+                                  />
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const newSlides = [...pptSlides];
+                                      newSlides[idx].images = newSlides[idx].images.filter((_, i) => i !== imgIdx);
+                                      setPptSlides(newSlides);
+                                    }}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                  <div
+                                    className="resize-handle absolute bottom-0 right-0 w-4 h-4 bg-blue-500 cursor-se-resize opacity-0 group-hover:opacity-100"
+                                    onMouseDown={(e) => {
+                                      e.stopPropagation();
+                                      setResizingElement({
+                                        slideId: slide.id,
+                                        elementId: `image-${imgIdx}`,
+                                        type: 'image',
+                                        startWidth: img.width || 150,
+                                        startHeight: img.height || 150,
+                                        startX: e.clientX,
+                                        startY: e.clientY,
+                                      });
+                                    }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -3417,7 +3770,7 @@ const SolutionPro = () => {
                       )}
                       
                       {slide.type === 'thankyou' && (
-                        <div className="h-full flex flex-col items-center justify-center space-y-6">
+                        <div className="h-full flex flex-col items-center justify-center space-y-6 px-8 py-8">
                           <input
                             type="text"
                             value={slide.message || 'Thank You'}
@@ -3426,7 +3779,8 @@ const SolutionPro = () => {
                               newSlides[idx].message = e.target.value;
                               setPptSlides(newSlides);
                             }}
-                            className="text-5xl font-bold text-gray-900 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2"
+                            className="text-5xl font-bold text-gray-900 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-3 w-full max-w-2xl mx-auto"
+                            style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
                           />
                           <textarea
                             value={slide.contact || ''}
@@ -3435,15 +3789,16 @@ const SolutionPro = () => {
                               newSlides[idx].contact = e.target.value;
                               setPptSlides(newSlides);
                             }}
-                            className="text-lg text-gray-600 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2 resize-none"
+                            className="text-lg text-gray-600 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-4 py-2 resize-none w-full max-w-xl mx-auto"
                             rows={4}
                             placeholder="Contact details"
+                            style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
                           />
                         </div>
                       )}
                       
                       {/* Slide Edit Controls */}
-                      <div className="border-t border-gray-200 p-4 bg-gray-50 flex gap-3 flex-wrap">
+                      <div className="border-t border-gray-200 p-4 bg-gray-50 flex gap-3 flex-wrap items-center">
                         <button
                           onClick={() => {
                             const newSlides = [...pptSlides];
@@ -3456,7 +3811,16 @@ const SolutionPro = () => {
                               if (file) {
                                 const reader = new FileReader();
                                 reader.onload = (event) => {
-                                  newSlides[idx].images.push({ id: `img-${Date.now()}`, url: event.target.result, x: 0, y: 0, width: 100, height: 100 });
+                                  const slideElement = document.getElementById(`preview-slide-${slide.id}`);
+                                  const existingImgs = newSlides[idx].images.length;
+                                  newSlides[idx].images.push({
+                                    id: `img-${Date.now()}`,
+                                    url: event.target.result,
+                                    x: (existingImgs % 3) * 170,
+                                    y: Math.floor(existingImgs / 3) * 170,
+                                    width: 150,
+                                    height: 150
+                                  });
                                   setPptSlides([...newSlides]);
                                 };
                                 reader.readAsDataURL(file);
@@ -3474,31 +3838,19 @@ const SolutionPro = () => {
                         >
                           Add Icon
                         </button>
-                        <select
-                          value={slide.titleColor || '#1F2937'}
-                          onChange={(e) => {
-                            const newSlides = [...pptSlides];
-                            newSlides[idx].titleColor = e.target.value;
-                            setPptSlides(newSlides);
-                          }}
-                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg"
-                        >
-                          <option value="#1F2937">Title Color</option>
-                          <option value="#000000">Black</option>
-                          <option value="#FFFFFF">White</option>
-                          <option value="#3B82F6">Blue</option>
-                          <option value="#EF4444">Red</option>
-                        </select>
-                        <select
-                          value="Arial"
-                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg"
-                        >
-                          <option value="Arial">Arial</option>
-                          <option value="Tahoma">Tahoma</option>
-                          <option value="Calibri">Calibri</option>
-                          <option value="Times New Roman">Times New Roman</option>
-                          <option value="Helvetica">Helvetica</option>
-                        </select>
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm text-gray-700">Title Color:</label>
+                          <input
+                            type="color"
+                            value={slide.titleColor || '#1F2937'}
+                            onChange={(e) => {
+                              const newSlides = [...pptSlides];
+                              newSlides[idx].titleColor = e.target.value;
+                              setPptSlides(newSlides);
+                            }}
+                            className="w-10 h-8 border border-gray-300 rounded cursor-pointer"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -3509,15 +3861,32 @@ const SolutionPro = () => {
                   <button
                     onClick={async () => {
                       const pdf = new jsPDF('p', 'mm', 'a4');
-                      for (let i = 0; i < pptSlides.length; i++) {
+                      // Only export actual slides, no blank slides
+                      const validSlides = pptSlides.filter(s => s.type);
+                      for (let i = 0; i < validSlides.length; i++) {
                         if (i > 0) pdf.addPage();
-                        const slideElement = document.getElementById(`preview-slide-${pptSlides[i].id}`);
+                        const slideElement = document.getElementById(`preview-slide-${validSlides[i].id}`);
                         if (slideElement) {
-                          const canvas = await html2canvas(slideElement);
+                          // Hide the controls before capturing
+                          const controls = slideElement.querySelector('.border-t.border-gray-200');
+                          if (controls) controls.style.display = 'none';
+                          
+                          const canvas = await html2canvas(slideElement, {
+                            scale: 2,
+                            useCORS: true,
+                            logging: false,
+                            backgroundColor: '#ffffff',
+                            windowWidth: slideElement.scrollWidth,
+                            windowHeight: slideElement.scrollHeight,
+                          });
+                          
+                          // Restore controls
+                          if (controls) controls.style.display = '';
+                          
                           const imgData = canvas.toDataURL('image/png');
                           const imgWidth = 210;
                           const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                          pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                          pdf.addImage(imgData, 'PNG', 5, 5, imgWidth - 10, imgHeight - 10);
                         }
                       }
                       pdf.save('presentation.pdf');
@@ -3525,15 +3894,6 @@ const SolutionPro = () => {
                     className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                   >
                     Download PPT as PDF
-                  </button>
-                  <button
-                    onClick={async () => {
-                      // Download as PPTX (would require pptxgenjs library)
-                      alert('PPT file download will be available soon. For now, please use PDF format.');
-                    }}
-                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
-                  >
-                    Download PPT File
                   </button>
                   <button
                     onClick={() => {
@@ -3572,7 +3932,15 @@ const SolutionPro = () => {
                         if (slideIdx !== -1) {
                           const newSlides = [...pptSlides];
                           if (!newSlides[slideIdx].icons) newSlides[slideIdx].icons = [];
-                          newSlides[slideIdx].icons.push({ id: icon.id, symbol: icon.symbol });
+                          const existingIcons = newSlides[slideIdx].icons.length;
+                          newSlides[slideIdx].icons.push({
+                            id: icon.id,
+                            symbol: icon.symbol,
+                            x: (existingIcons % 3) * 100,
+                            y: Math.floor(existingIcons / 3) * 100,
+                            width: 80,
+                            height: 80
+                          });
                           setPptSlides(newSlides);
                         }
                         setSelectedSlideForEdit(null);
