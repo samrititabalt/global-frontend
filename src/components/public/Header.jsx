@@ -38,6 +38,7 @@ const Header = () => {
     { name: 'Forecasts', path: '/solutions/forecasts' },
     { name: 'Risk & Fraud', path: '/solutions/risk-fraud' },
     { name: 'Hiring', path: '/solutions/hiring' },
+    { name: 'Run Facebook Ads', path: '/solutions/facebook-ads', key: 'facebookAds' },
   ];
 
   useEffect(() => {
@@ -204,20 +205,42 @@ const Header = () => {
                     exit={{ opacity: 0, y: -10 }}
                     className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
                   >
-                    {solutions.map((solution) => (
-                      <Link
-                        key={solution.path}
-                        to={solution.path}
-                        className={`block px-4 py-2.5 text-sm transition-colors ${
-                          isActive(solution.path)
-                            ? 'text-blue-600 bg-blue-50'
-                            : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-                        }`}
-                        onClick={() => setIsSolutionsDropdownOpen(false)}
-                      >
-                        {solution.name}
-                      </Link>
-                    ))}
+                    {solutions.map((solution) => {
+                      const isFacebook = solution.key === 'facebookAds';
+                      const linkPath =
+                        isFacebook && !isAuthenticated
+                          ? '/customer/login?redirect=/solutions/facebook-ads'
+                          : solution.path;
+                      const label =
+                        isFacebook && !isAuthenticated ? 'Get Started' : solution.name;
+
+                      return (
+                        <Link
+                          key={solution.path}
+                          to={linkPath}
+                          className={`block px-4 py-2.5 text-sm transition-colors ${
+                            isActive(solution.path)
+                              ? 'text-blue-600 bg-blue-50'
+                              : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                          }`}
+                          onClick={() => setIsSolutionsDropdownOpen(false)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span>{label}</span>
+                            {isFacebook && (
+                              <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                                New
+                              </span>
+                            )}
+                          </div>
+                          {isFacebook && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Facebook Ads Quick Launch
+                            </p>
+                          )}
+                        </Link>
+                      );
+                    })}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -349,23 +372,45 @@ const Header = () => {
                       className="overflow-hidden"
                     >
                       <div className="pl-4 pt-2 space-y-2">
-                        {solutions.map((solution) => (
-                          <Link
-                            key={solution.path}
-                            to={solution.path}
-                            className={`block text-sm py-2 ${
-                              isActive(solution.path)
-                                ? 'text-blue-600'
-                                : 'text-gray-600 hover:text-gray-900'
-                            }`}
-                            onClick={() => {
-                              setIsMobileMenuOpen(false);
-                              setIsMobileSolutionsOpen(false);
-                            }}
-                          >
-                            {solution.name}
-                          </Link>
-                        ))}
+                        {solutions.map((solution) => {
+                          const isFacebook = solution.key === 'facebookAds';
+                          const linkPath =
+                            isFacebook && !isAuthenticated
+                              ? '/customer/login?redirect=/solutions/facebook-ads'
+                              : solution.path;
+                          const label =
+                            isFacebook && !isAuthenticated ? 'Get Started' : solution.name;
+
+                          return (
+                            <Link
+                              key={solution.path}
+                              to={linkPath}
+                              className={`block text-sm py-2 ${
+                                isActive(solution.path)
+                                  ? 'text-blue-600'
+                                  : 'text-gray-600 hover:text-gray-900'
+                              }`}
+                              onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                setIsMobileSolutionsOpen(false);
+                              }}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span>{label}</span>
+                                {isFacebook && (
+                                  <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                                    New
+                                  </span>
+                                )}
+                              </div>
+                              {isFacebook && (
+                                <p className="text-xs text-gray-500">
+                                  Facebook Ads Quick Launch
+                                </p>
+                              )}
+                            </Link>
+                          );
+                        })}
                       </div>
                     </motion.div>
                   )}

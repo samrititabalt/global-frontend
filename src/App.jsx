@@ -70,6 +70,7 @@ import MergeSpreadsheets from './pages/solutions/MergeSpreadsheets';
 import Forecasts from './pages/solutions/Forecasts';
 import RiskFraud from './pages/solutions/RiskFraud';
 import Hiring from './pages/solutions/Hiring';
+import FacebookAdsQuickLaunch from './pages/solutions/FacebookAdsQuickLaunch';
 import SolutionPro from './pages/customer/SolutionPro';
 
 function App() {
@@ -107,6 +108,7 @@ function App() {
             <Route path="/solutions/forecasts" element={<Forecasts />} />
             <Route path="/solutions/risk-fraud" element={<RiskFraud />} />
             <Route path="/solutions/hiring" element={<Hiring />} />
+            <Route path="/solutions/facebook-ads" element={<FacebookAdsQuickLaunch />} />
 
             {/* Customer Routes */}
             <Route path="/customer/login" element={<CustomerLogin />} />
