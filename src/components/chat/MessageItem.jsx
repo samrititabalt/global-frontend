@@ -32,10 +32,37 @@ const MessageItem = ({
     50
   );
 
+  const senderRole = message.senderRole || (typeof sender === 'object' ? sender?.role : undefined);
+  const isAIMessage = senderRole === 'ai';
+  const isAgentMessage = senderRole === 'agent';
+
   const longPressHandlers = useLongPress(
     () => !isSelectionMode && onLongPress(message),
     300
   );
+
+  const baseBubbleClass = (() => {
+    if (message.isDeleted) {
+      return 'bg-gray-200 text-gray-500 italic';
+    }
+
+    if (isAIMessage) {
+      return 'bg-purple-50 text-purple-900 border border-purple-200 shadow-sm';
+    }
+
+    if (isCustomerView) {
+      return isOwn
+        ? 'bg-gray-100 text-gray-900 rounded-br-sm border border-gray-200'
+        : 'bg-blue-500 text-white rounded-bl-sm';
+    }
+
+    return isOwn
+      ? 'bg-blue-500 text-white rounded-br-sm'
+      : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200';
+  })();
+
+  const selectionClass = isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : '';
+  const bubbleClasses = `rounded-2xl px-4 py-2 transition-all relative ${baseBubbleClass} ${selectionClass} ${isSelectionMode ? 'cursor-pointer' : ''}`;
 
   return (
     <div
@@ -46,19 +73,7 @@ const MessageItem = ({
           onSelect(message._id);
         }
       }}
-      className={`rounded-2xl px-4 py-2 transition-all relative ${
-        isSelected
-          ? 'ring-2 ring-blue-500 bg-blue-50'
-          : message.isDeleted
-          ? 'bg-gray-200 text-gray-500 italic'
-          : isCustomerView
-          ? (isOwn
-              ? 'bg-gray-100 text-gray-900 rounded-br-sm border border-gray-200' // Customer messages: light grey
-              : 'bg-blue-500 text-white rounded-bl-sm') // Agent messages: blue
-          : (isOwn
-              ? 'bg-blue-500 text-white rounded-br-sm' // Agent's own messages: blue
-              : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200') // Customer messages: white
-      } ${isSelectionMode ? 'cursor-pointer' : ''}`}
+      className={bubbleClasses}
     >
       {/* Reply Preview - Clickable to scroll to original message */}
       {message.replyTo && !message.isDeleted && (

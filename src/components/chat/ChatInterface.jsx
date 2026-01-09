@@ -147,9 +147,15 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     
     const customerId = chatSession?.customer?._id?.toString() || chatSession?.customer?.toString();
     const currentUserId = currentUser?._id?.toString() || currentUser?.id?.toString();
+    const fallbackAI = {
+      _id: 'SAM_AI',
+      name: 'SamAI',
+      role: 'ai',
+      isOnline: true
+    };
     
     if (customerId === currentUserId) {
-      return chatSession?.agent || null;
+      return chatSession?.agent || fallbackAI;
     } else {
       return chatSession?.customer || null;
     }
@@ -162,6 +168,14 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
     if (currentUser.role === 'agent') return 'customer';
     return '';
   }, [otherUser, currentUser?.role]);
+
+  const canStartCall = useMemo(() => {
+    return Boolean(
+      chatSession?.agent &&
+      otherUserRole === 'agent' &&
+      otherUserOnline
+    );
+  }, [chatSession?.agent, otherUserRole, otherUserOnline]);
 
   const colorPalette = useMemo(
     () => ['bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500', 'bg-rose-500', 'bg-sky-500', 'bg-indigo-500'],
@@ -179,6 +193,14 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
   }, [colorPalette]);
 
   const renderAvatar = useCallback((user, sizeClasses = 'w-10 h-10', textClasses = 'text-base') => {
+    if (user?.role === 'ai') {
+      return (
+        <div className={`${sizeClasses} ${textClasses} bg-gradient-to-br from-purple-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-semibold`}>
+          🤖
+        </div>
+      );
+    }
+
     if (user?.avatar) {
       return (
         <img
@@ -683,6 +705,10 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
 
   useEffect(() => {
     // Initial online state from chatSession if present
+    if (otherUser?.role === 'ai') {
+      setOtherUserOnline(true);
+      return;
+    }
     if (otherUser) {
       // Check if user has isOnline property
       if (typeof otherUser.isOnline === 'boolean') {
@@ -796,11 +822,25 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
         <div className="flex items-center space-x-2">
           {!isCallActive ? (
             <button
-              onClick={startCall}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Start voice call"
+              type="button"
+              onClick={() => {
+                if (canStartCall) {
+                  startCall();
+                }
+              }}
+              disabled={!canStartCall}
+              className={`p-2 rounded-lg transition-colors ${
+                canStartCall
+                  ? 'hover:bg-gray-100 text-gray-600'
+                  : 'bg-gray-100 text-gray-300 cursor-not-allowed'
+              }`}
+              title={
+                canStartCall
+                  ? 'Start voice call'
+                  : 'Voice calls are available once a live agent is online'
+              }
             >
-              <Phone className="w-5 h-5 text-gray-600" />
+              <Phone className="w-5 h-5" />
             </button>
           ) : (
             <button
@@ -868,7 +908,14 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
           
           // Get sender info from message
           const sender = typeof message.sender === 'object' ? message.sender : null;
-          const senderName = sender?.name || (isOwn ? currentUser?.name : otherUser?.name) || 'User';
+          const senderRole = message.senderRole || sender?.role;
+          const isAIMessage = senderRole === 'ai';
+          const senderName = (() => {
+            if (isAIMessage) return 'SamAI';
+            if (senderRole === 'agent' && sender?.name) return `Agent ${sender.name}`;
+            if (senderRole === 'agent') return 'Agent';
+            return sender?.name || (isOwn ? currentUser?.name : otherUser?.name) || 'User';
+          })();
           const senderAvatar = sender?.avatar || (isOwn ? currentUser?.avatar : otherUser?.avatar);
 
           return (
@@ -900,7 +947,11 @@ const ChatInterface = ({ chatSession, currentUser, socket }) => {
                 >
                   {/* Sender Name - Show for non-own messages */}
                   {!isOwn && showAvatar && senderName && (
-                    <span className="text-xs font-medium text-gray-600 mb-1 px-1">
+                    <span
+                      className={`text-xs font-semibold mb-1 px-1 ${
+                        isAIMessage ? 'text-purple-600' : senderRole === 'agent' ? 'text-blue-600' : 'text-gray-600'
+                      }`}
+                    >
                       {senderName}
                     </span>
                   )}
