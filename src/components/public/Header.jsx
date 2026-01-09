@@ -259,16 +259,16 @@ const Header = () => {
                 Dashboard
               </Link>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 overflow-visible">
                 <Link
                   to="/customer/signup"
-                  className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl text-center"
+                  className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl text-center border border-gray-900 hover:border-gray-800"
                 >
                   Sign up
                 </Link>
                 <Link
                   to="/customer/login"
-                  className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl text-center"
+                  className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl text-center border border-gray-900 hover:border-gray-800"
                 >
                   Customer Login
                 </Link>
@@ -455,17 +455,17 @@ const Header = () => {
                   Dashboard
                 </Link>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 overflow-visible">
                   <Link
                     to="/customer/signup"
-                    className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all"
+                    className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all border border-gray-900 hover:border-gray-800"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Sign up
                   </Link>
                   <Link
                     to="/customer/login"
-                    className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all"
+                    className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all border border-gray-900 hover:border-gray-800"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Customer Login
