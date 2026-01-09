@@ -123,12 +123,15 @@ const Footer = () => {
               >
                 Admin Login
               </Link>
-              <div className="flex space-x-6 text-sm">
-                <Link to="/terms" className="hover:text-white transition-colors">
-                  Terms & Conditions
+              <div className="flex flex-wrap justify-center md:justify-end space-x-6 text-sm">
+                <Link to="/terms-of-service" className="hover:text-white transition-colors">
+                  Terms of Service
                 </Link>
-                <Link to="/privacy" className="hover:text-white transition-colors">
+                <Link to="/privacy-policy" className="hover:text-white transition-colors">
                   Privacy Policy
+                </Link>
+                <Link to="/data-deletion" className="hover:text-white transition-colors">
+                  Data Deletion
                 </Link>
               </div>
             </div>
