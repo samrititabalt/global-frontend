@@ -38,11 +38,23 @@ const AdminAgents = () => {
 
   useEffect(() => {
     if (searchTerm) {
-      const filtered = agents.filter(agent =>
-        agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        agent.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        agent.serviceCategory?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const searchLower = searchTerm.toLowerCase();
+      const filtered = agents.filter(agent => {
+        const nameMatch = agent.name.toLowerCase().includes(searchLower);
+        const emailMatch = agent.email.toLowerCase().includes(searchLower);
+        const phoneMatch = agent.phone?.toLowerCase().includes(searchLower);
+        const countryMatch = agent.country?.toLowerCase().includes(searchLower);
+        
+        // Check single service category
+        const singleCategoryMatch = agent.serviceCategory?.name?.toLowerCase().includes(searchLower);
+        
+        // Check multiple service categories
+        const multiCategoryMatch = agent.serviceCategories?.some(cat => 
+          (cat.name || cat).toLowerCase().includes(searchLower)
+        );
+        
+        return nameMatch || emailMatch || phoneMatch || countryMatch || singleCategoryMatch || multiCategoryMatch;
+      });
       setFilteredAgents(filtered);
     } else {
       setFilteredAgents(agents);
@@ -294,17 +306,30 @@ const AdminAgents = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="bg-white rounded-lg shadow-lg p-4">
+        <div className="bg-white rounded-lg shadow-lg p-4 border border-gray-200">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search by name, email, or service..."
+              placeholder="Search by name, email, phone, country, or service category..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
+          {searchTerm && (
+            <p className="mt-2 text-xs text-gray-500">
+              Found {filteredAgents.length} agent{filteredAgents.length !== 1 ? 's' : ''} matching "{searchTerm}"
+            </p>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -343,30 +368,34 @@ const AdminAgents = () => {
         </div>
 
         {/* Agents Table */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <h2 className="text-lg font-semibold text-gray-900">All Agents</h2>
+            <p className="text-sm text-gray-500 mt-1">Manage and monitor all your agents</p>
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Agent
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Contact
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Service Category
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Service Categories
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Service Minutes
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Current Balance
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Total Earned
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -374,13 +403,29 @@ const AdminAgents = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredAgents.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
-                      {searchTerm ? 'No agents found matching your search.' : 'No agents found.'}
+                    <td colSpan="7" className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center">
+                        <User className="w-12 h-12 text-gray-300 mb-3" />
+                        <p className="text-gray-500 font-medium">
+                          {searchTerm ? 'No agents found matching your search.' : 'No agents found.'}
+                        </p>
+                        {!searchTerm && (
+                          <button
+                            onClick={() => {
+                              resetForm();
+                              setShowModal(true);
+                            }}
+                            className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium"
+                          >
+                            Add Your First Agent
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ) : (
                   filteredAgents.map((agent) => (
-                    <tr key={agent._id} className="hover:bg-gray-50 transition">
+                    <tr key={agent._id} className="hover:bg-blue-50/30 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           {agent.avatar ? (
@@ -400,13 +445,16 @@ const AdminAgents = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-900">
-                          <Mail className="w-4 h-4 mr-2 text-gray-400" />
-                          {agent.email}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center text-sm text-gray-900 mb-1">
+                          <Mail className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+                          <span className="truncate max-w-xs">{agent.email}</span>
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          Password: <span className="font-mono font-semibold text-gray-700">{agent.plainPassword || 'N/A'}</span>
+                        <div className="text-xs text-gray-500 mt-1.5">
+                          <span className="font-medium">Password:</span>{' '}
+                          <span className="font-mono font-semibold text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded">
+                            {agent.plainPassword || 'N/A'}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -429,59 +477,72 @@ const AdminAgents = () => {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4">
                         <div className="flex items-center">
-                          <Clock className="w-4 h-4 mr-2 text-green-600" />
-                          <span className="text-sm font-semibold text-gray-900">
-                            {formatMinutes(agent.agentMinutes)}
+                          <Clock className="w-4 h-4 mr-2 text-green-600 flex-shrink-0" />
+                          <div>
+                            <span className="text-sm font-semibold text-gray-900 block">
+                              {formatMinutes(agent.agentMinutes)}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {Number(agent.agentMinutes || 0).toLocaleString()} min
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <span className="text-sm font-semibold text-gray-900 block">
+                            {formatMinutes(agent.totalMinutesEarned)}
                           </span>
-                          <span className="text-sm text-gray-500 ml-1">
-                            ({Number(agent.agentMinutes || 0).toLocaleString()} min)
+                          <span className="text-xs text-gray-500">
+                            {Number(agent.totalMinutesEarned || 0).toLocaleString()} min
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatMinutes(agent.totalMinutesEarned)}
-                        <span className="text-gray-500 ml-1">
-                          ({Number(agent.totalMinutesEarned || 0).toLocaleString()} min)
-                        </span>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <span className={`w-2 h-2 rounded-full mr-2 ${
+                            agent.isOnline ? 'bg-green-500' : 'bg-gray-400'
+                          }`}></span>
+                          <span className={`px-3 py-1 inline-flex text-xs font-semibold rounded-full ${
+                            agent.isOnline 
+                              ? 'bg-green-100 text-green-800 border border-green-200' 
+                              : 'bg-gray-100 text-gray-800 border border-gray-200'
+                          }`}>
+                            {agent.isOnline ? 'Online' : 'Offline'}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          agent.isOnline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {agent.isOnline ? 'Online' : 'Offline'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-2">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-1.5">
                           <button
                             onClick={() => handleEdit(agent)}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
+                            className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 transition shadow-sm"
+                            title="Edit Agent"
                           >
-                            <Edit className="w-4 h-4 mr-1" />
-                            Edit
+                            <Edit className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => openPasswordModal(agent)}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition"
+                            className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-purple-500 transition shadow-sm"
                             title="Change Password"
                           >
                             🔑
                           </button>
                           <button
                             onClick={() => handleAdjustMinutes(agent)}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition"
+                            className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-500 transition shadow-sm"
+                            title="Adjust Minutes"
                           >
-                            <Plus className="w-4 h-4 mr-1" />
-                            Minutes
+                            <Plus className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDelete(agent._id)}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition"
+                            className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500 transition shadow-sm"
+                            title="Delete Agent"
                           >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            Delete
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
