@@ -87,7 +87,7 @@ const Header = () => {
           : 'bg-transparent'
       }`}
     >
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
@@ -270,7 +270,7 @@ const Header = () => {
                   to="/customer/login"
                   className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl text-center"
                 >
-                  Existing Customers Login
+                  Customer Login
                 </Link>
               </div>
             )}
@@ -468,7 +468,7 @@ const Header = () => {
                     className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Existing Customers Login
+                    Customer Login
                   </Link>
                 </div>
               )}
