@@ -87,7 +87,7 @@ const Header = () => {
           : 'bg-transparent'
       }`}
     >
-      <nav className="w-full px-4 sm:px-6 lg:px-8">
+      <nav className="w-full px-4 sm:px-6 lg:px-8 relative">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
@@ -251,30 +251,33 @@ const Header = () => {
             >
               Home
             </Link>
-            {isCustomer ? (
+            {isCustomer && (
               <Link
                 to="/customer/dashboard"
                 className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl"
               >
                 Dashboard
               </Link>
-            ) : (
-              <div className="flex flex-col gap-2 overflow-visible">
-                <Link
-                  to="/customer/signup"
-                  className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl text-center border border-gray-900 hover:border-gray-800"
-                >
-                  Sign up
-                </Link>
-                <Link
-                  to="/customer/login"
-                  className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl text-center border border-gray-900 hover:border-gray-800"
-                >
-                  Customer Login
-                </Link>
-              </div>
             )}
           </div>
+
+          {/* Button Block - Top Right */}
+          {!isCustomer && (
+            <div className="hidden md:flex absolute top-2 right-4 sm:right-6 lg:right-8 flex-col gap-2 z-50">
+              <Link
+                to="/customer/signup"
+                className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl text-center border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap"
+              >
+                Sign up
+              </Link>
+              <Link
+                to="/customer/login"
+                className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl text-center border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap"
+              >
+                Customer Login
+              </Link>
+            </div>
+          )}
 
           {/* Mobile Menu Button */}
           <button
@@ -455,17 +458,17 @@ const Header = () => {
                   Dashboard
                 </Link>
               ) : (
-                <div className="space-y-2 overflow-visible">
+                <div className="space-y-2">
                   <Link
                     to="/customer/signup"
-                    className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all border border-gray-900 hover:border-gray-800"
+                    className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all border-2 border-gray-900 hover:border-gray-800"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Sign up
                   </Link>
                   <Link
                     to="/customer/login"
-                    className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all border border-gray-900 hover:border-gray-800"
+                    className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all border-2 border-gray-900 hover:border-gray-800"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Customer Login
