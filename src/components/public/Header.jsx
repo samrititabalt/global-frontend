@@ -251,20 +251,29 @@ const Header = () => {
             >
               Home
             </Link>
-            {!isAuthenticated && (
+            {isCustomer ? (
               <Link
-                to="/customer/login"
-                className="text-gray-700 hover:text-gray-900 font-medium transition-colors text-sm px-4 py-2 rounded-lg hover:bg-gray-100 border border-gray-300"
+                to="/customer/dashboard"
+                className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl"
               >
-                Existing Customers Login
+                Dashboard
               </Link>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Link
+                  to="/customer/signup"
+                  className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl text-center"
+                >
+                  Sign up
+                </Link>
+                <Link
+                  to="/customer/login"
+                  className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl text-center"
+                >
+                  Existing Customers Login
+                </Link>
+              </div>
             )}
-            <Link
-              to={isCustomer ? "/customer/dashboard" : "/customer/signup"}
-              className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl"
-            >
-              {isCustomer ? "Dashboard" : "Sign up"}
-            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -437,22 +446,32 @@ const Header = () => {
               >
                 Home
               </Link>
-              {!isAuthenticated && (
+              {isCustomer ? (
                 <Link
-                  to="/customer/login"
-                  className="block w-full text-gray-700 hover:text-gray-900 font-medium text-center py-3 px-6 rounded-lg hover:bg-gray-100 border border-gray-300 transition-all"
+                  to="/customer/dashboard"
+                  className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Existing Customers Login
+                  Dashboard
                 </Link>
+              ) : (
+                <div className="space-y-2">
+                  <Link
+                    to="/customer/signup"
+                    className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Sign up
+                  </Link>
+                  <Link
+                    to="/customer/login"
+                    className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Existing Customers Login
+                  </Link>
+                </div>
               )}
-              <Link
-                to={isCustomer ? "/customer/dashboard" : "/customer/signup"}
-                className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                {isCustomer ? "Dashboard" : "Sign up"}
-              </Link>
             </div>
           </motion.div>
         )}
