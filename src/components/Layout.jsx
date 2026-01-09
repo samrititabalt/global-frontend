@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FiLogOut } from 'react-icons/fi';
+import Header from './public/Header';
 
 const Layout = ({ children, title }) => {
   const { user, logout } = useAuth();
@@ -36,56 +37,38 @@ const Layout = ({ children, title }) => {
         <div className="absolute bottom-0 left-0 w-[32rem] h-[32rem] bg-purple-100 rounded-full blur-[140px] opacity-60"></div>
       </div>
       <div className="relative z-10 flex flex-col min-h-screen">
-        <nav className="bg-white/80 border-b border-white/60 backdrop-blur-xl sticky top-0 z-50 shadow-sm">
+        {/* Public Header with Solutions tab - Always visible */}
+        <Header />
+        
+        {/* Dashboard-specific navigation bar */}
+        <nav className="bg-white/80 border-b border-white/60 backdrop-blur-xl sticky top-20 z-40 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-20">
-              <div className="flex items-center space-x-8">
-                <Link to={getDashboardPath()} className="flex items-center gap-3 group">
-                  {!logoError ? (
-                    <div className="flex flex-col">
-                      <img
-                        src="/assets/tabalt-logo.png.jpg"
-                        alt="Tabalt Logo"
-                        className="h-10 w-auto object-contain"
-                        onError={() => setLogoError(true)}
-                      />
-                      <span className="text-xs text-gray-600 font-medium mt-1">UK Outsourcing Partners</span>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col">
-                      <span className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                        Tabalt
-                      </span>
-                      <span className="text-xs text-gray-600 font-medium">UK Outsourcing Partners</span>
-                    </div>
-                  )}
+            <div className="flex justify-between items-center h-16">
+              <div className="hidden md:flex items-center space-x-6">
+                {role === 'customer' && (
+                  <Link
+                    to="/customer/plans"
+                    className="text-gray-700 hover:text-gray-900 font-medium transition-colors text-sm"
+                  >
+                    Plans
+                  </Link>
+                )}
+                <Link
+                  to={getDashboardPath()}
+                  className="text-gray-700 hover:text-gray-900 font-medium transition-colors text-sm"
+                >
+                  Dashboard
                 </Link>
-                <div className="hidden md:flex items-center space-x-6">
-                  {role === 'customer' && (
-                    <Link
-                      to="/customer/plans"
-                      className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
-                    >
-                      Plans
-                    </Link>
-                  )}
-                  <Link
-                    to={getDashboardPath()}
-                    className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    to={getProfilePath()}
-                    className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
-                  >
-                    Profile
-                  </Link>
-                </div>
+                <Link
+                  to={getProfilePath()}
+                  className="text-gray-700 hover:text-gray-900 font-medium transition-colors text-sm"
+                >
+                  Profile
+                </Link>
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4 ml-auto">
                 <div className="hidden md:flex items-center space-x-3">
-                  <span className="text-gray-700 font-medium">{user?.name}</span>
+                  <span className="text-gray-700 font-medium text-sm">{user?.name}</span>
                   {role && (
                     <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 uppercase tracking-wide">
                       {role}
@@ -99,7 +82,7 @@ const Layout = ({ children, title }) => {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-gray-900 font-medium transition-colors rounded-full border border-transparent hover:border-gray-200"
+                  className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-gray-900 font-medium transition-colors rounded-full border border-transparent hover:border-gray-200 text-sm"
                 >
                   <FiLogOut className="h-5 w-5" />
                   <span className="hidden sm:inline">Logout</span>
@@ -108,7 +91,7 @@ const Layout = ({ children, title }) => {
             </div>
           </div>
         </nav>
-        <main className="flex-1">
+        <main className="flex-1 pt-24">
           <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${title ? 'pt-10 pb-6' : 'py-8'}`}>
             {title && (
               <div className="pb-6">

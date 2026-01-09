@@ -247,6 +247,12 @@ const Header = () => {
             </div>
 
             <Link
+              to="/"
+              className="text-gray-700 hover:text-gray-900 font-medium transition-colors text-sm px-4 py-2 rounded-lg hover:bg-gray-100"
+            >
+              Home
+            </Link>
+            <Link
               to={isCustomer ? "/customer/dashboard" : "/customer/signup"}
               className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl"
             >
@@ -417,6 +423,13 @@ const Header = () => {
                 </AnimatePresence>
               </div>
 
+              <Link
+                to="/"
+                className="block w-full text-gray-700 hover:text-gray-900 font-medium text-center py-3 px-6 rounded-lg hover:bg-gray-100 transition-all"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Home
+              </Link>
               <Link
                 to={isCustomer ? "/customer/dashboard" : "/customer/signup"}
                 className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all"
