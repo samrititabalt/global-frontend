@@ -8,13 +8,16 @@ const LiveChatBot = () => {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: 'Hello! Welcome to Tabalt. How can we help you today?',
+      text: 'Hi! Welcome to Tabalt 👋\nBefore we begin, could you please share your email address and phone number?',
       sender: 'bot',
       timestamp: new Date(),
     },
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [userPhone, setUserPhone] = useState('');
   const messagesEndRef = useRef(null);
   const chatHistoryRef = useRef([]);
 
@@ -32,31 +35,57 @@ const LiveChatBot = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const sendEmailWithChatHistory = async (chatHistory) => {
+  // Extract email and phone from text
+  const extractEmail = (text) => {
+    const emailRegex = /[\w.-]+@[\w.-]+\.\w+/gi;
+    const matches = text.match(emailRegex);
+    return matches ? matches[0] : null;
+  };
+
+  const extractPhone = (text) => {
+    // Match various phone formats: +44, 07, (0), spaces, dashes, parentheses, etc.
+    // More flexible regex to catch UK and international numbers
+    const phoneRegex = /(?:\+?\d{1,4}[\s-]?)?\(?\d{1,4}\)?[\s-]?\d{1,4}[\s-]?\d{1,4}[\s-]?\d{1,9}/gi;
+    const matches = text.match(phoneRegex);
+    if (matches && matches.length > 0) {
+      // Clean up the phone number but keep structure
+      let phone = matches[0].trim();
+      // Remove spaces, dashes, parentheses but keep + if present
+      phone = phone.replace(/[\s-()]/g, '');
+      // Ensure it has at least 10 digits
+      const digits = phone.replace(/\D/g, '');
+      if (digits.length >= 10) {
+        return phone;
+      }
+    }
+    return null;
+  };
+
+  // Validate email format
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Validate phone number (UK format or international)
+  const isValidPhone = (phone) => {
+    if (!phone || typeof phone !== 'string') return false;
+    // Remove spaces, dashes, parentheses for validation
+    const cleanPhone = phone.replace(/[\s-()]/g, '');
+    // Must have at least 10 digits (for UK numbers) or 11+ with country code
+    const digits = cleanPhone.replace(/\D/g, '');
+    return digits.length >= 10 && digits.length <= 15;
+  };
+
+  // Send contact info to agent
+  const sendContactInfo = async (email, phoneNumber) => {
     try {
-      const emailContent = `
-Chat History from Tabalt Website
-
-Timestamp: ${new Date().toLocaleString()}
-
-Messages:
-${chatHistory.map((msg, idx) => 
-  `${idx + 1}. [${msg.sender === 'bot' ? 'Bot' : 'Visitor'}] ${msg.timestamp.toLocaleTimeString()}: ${msg.text}`
-).join('\n')}
-
----
-This is an automated email from the Tabalt website chat bot.
-      `;
-
-      // Send email via backend API
-      await api.post('/public/send-chat-email', {
-        to: 'info@tabalt.co.uk',
-        subject: 'Chat History from Tabalt Website',
-        text: emailContent,
-        chatHistory: chatHistory,
+      await api.post('/public/send-contact-info', {
+        email,
+        phoneNumber,
       });
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('Error sending contact info:', error);
     }
   };
 
@@ -71,24 +100,135 @@ This is an automated email from the Tabalt website chat bot.
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const messageText = inputMessage.trim();
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse = {
-        id: Date.now() + 1,
-        text: 'Thank you for your message! Our team will get back to you shortly. In the meantime, feel free to visit our website or email us at info@tabalt.co.uk',
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botResponse]);
-      setIsTyping(false);
+    // If onboarding is not complete, extract email and phone
+    if (!onboardingComplete) {
+      // Extract email and phone from all messages (including current and previous)
+      let extractedEmail = extractEmail(messageText);
+      let extractedPhone = extractPhone(messageText);
 
-      // Send chat history to email after bot response
-      const updatedHistory = [...chatHistoryRef.current, userMessage, botResponse];
-      sendEmailWithChatHistory(updatedHistory);
-    }, 1000);
+      // Also check previous messages if not found in current message
+      if (!extractedEmail || !extractedPhone) {
+        for (const msg of messages) {
+          if (msg.sender === 'user' && msg.text) {
+            if (!extractedEmail) extractedEmail = extractEmail(msg.text);
+            if (!extractedPhone) extractedPhone = extractPhone(msg.text);
+            if (extractedEmail && extractedPhone) break;
+          }
+        }
+      }
+
+      // Determine current values: prefer stored, then extracted
+      const currentEmail = userEmail || extractedEmail || '';
+      const currentPhone = userPhone || extractedPhone || '';
+
+      // Update state if we found new values
+      if (extractedEmail && extractedEmail !== userEmail) {
+        setUserEmail(extractedEmail);
+      }
+      if (extractedPhone && extractedPhone !== userPhone) {
+        setUserPhone(extractedPhone);
+      }
+
+      // Validate and check if we have both
+      if (currentEmail && currentPhone) {
+        // Validate email format
+        if (!isValidEmail(currentEmail)) {
+          setIsTyping(false);
+          const validationMessage = {
+            id: Date.now() + 1,
+            text: 'I received an email address, but it doesn\'t appear to be in a valid format. Could you please provide a valid email address?',
+            sender: 'bot',
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, validationMessage]);
+          return;
+        }
+
+        // Validate phone number
+        if (!isValidPhone(currentPhone)) {
+          setIsTyping(false);
+          const validationMessage = {
+            id: Date.now() + 1,
+            text: 'I received a phone number, but it doesn\'t appear to be valid. Could you please provide a valid phone number (including country code if outside UK)?',
+            sender: 'bot',
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, validationMessage]);
+          return;
+        }
+
+        // Both are valid - send to agent and complete onboarding
+        await sendContactInfo(currentEmail, currentPhone);
+        setOnboardingComplete(true);
+
+        const onboardingCompleteMessage = {
+          id: Date.now() + 1,
+          text: 'Perfect! Thank you for providing your contact information. How can I help you today?',
+          sender: 'bot',
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, onboardingCompleteMessage]);
+        setIsTyping(false);
+      } else {
+        // Still missing information
+        setIsTyping(false);
+        let missingInfo = [];
+        if (!currentEmail) missingInfo.push('email address');
+        if (!currentPhone) missingInfo.push('phone number');
+
+        const promptMessage = {
+          id: Date.now() + 1,
+          text: `I still need your ${missingInfo.join(' and ')}. Could you please share ${missingInfo.length > 1 ? 'both' : 'it'}?`,
+          sender: 'bot',
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, promptMessage]);
+      }
+    } else {
+      // Onboarding complete - use GPT-4 Mini
+      try {
+        // Prepare chat history for API (include all messages for context)
+        const conversationHistory = messages
+          .filter(msg => msg.id !== 1) // Exclude only the initial greeting
+          .map(msg => ({
+            sender: msg.sender,
+            text: msg.text,
+            timestamp: msg.timestamp
+          }));
+
+        const response = await api.post('/public/chatbot-message', {
+          message: messageText,
+          chatHistory: conversationHistory,
+        });
+
+        if (response.data.success) {
+          const botResponse = {
+            id: Date.now() + 1,
+            text: response.data.message,
+            sender: 'bot',
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, botResponse]);
+        } else {
+          throw new Error(response.data.message || 'Failed to get response');
+        }
+      } catch (error) {
+        console.error('Chatbot API error:', error);
+        const errorMessage = {
+          id: Date.now() + 1,
+          text: 'I apologize, but I\'m having trouble processing your message right now. Please try again in a moment.',
+          sender: 'bot',
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      } finally {
+        setIsTyping(false);
+      }
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -99,12 +239,25 @@ This is an automated email from the Tabalt website chat bot.
   };
 
   const handleClose = () => {
-    if (messages.length > 1) {
-      // Send final chat history when closing
-      sendEmailWithChatHistory(chatHistoryRef.current);
-    }
     setIsOpen(false);
     setIsMinimized(false);
+  };
+
+  // Reset chat when reopening (fresh conversation)
+  const handleOpen = () => {
+    setIsOpen(true);
+    // Reset onboarding state and messages for fresh conversation
+    setOnboardingComplete(false);
+    setUserEmail('');
+    setUserPhone('');
+    setMessages([
+      {
+        id: 1,
+        text: 'Hi! Welcome to Tabalt 👋\nBefore we begin, could you please share your email address and phone number?',
+        sender: 'bot',
+        timestamp: new Date(),
+      },
+    ]);
   };
 
   return (
@@ -112,7 +265,7 @@ This is an automated email from the Tabalt website chat bot.
       {/* Chat Button */}
       {!isOpen && (
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={handleOpen}
           className="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-2xl hover:bg-blue-700 transition-all z-50 flex items-center justify-center group"
           aria-label="Open chat"
         >
