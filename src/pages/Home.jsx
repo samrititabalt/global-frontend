@@ -28,6 +28,9 @@ const Home = () => {
       videoPath = `${baseUrl}/uploads/videos/homepage-video.mp4`;
     }
     
+    console.log('Setting video URL:', videoPath);
+    console.log('API URL:', apiUrl);
+    
     // Set video URL immediately
     setVideoUrl(videoPath);
     // Reset error state when URL changes
@@ -80,41 +83,42 @@ const Home = () => {
       
       {/* Futuristic Video Background Section */}
       <section className="relative w-full h-screen overflow-hidden">
-        {/* Video Background - Uploaded video from backend (always rendered when URL is available) */}
-        {videoUrl && (
-          <video
-            key={videoUrl}
-            className={`absolute inset-0 w-full h-full object-cover z-[1] ${videoError ? 'hidden' : ''}`}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            style={{ objectFit: 'cover' }}
-            onError={(e) => {
-              // Hide video if it fails to load, show fallback image
-              console.error('Video failed to load:', videoUrl);
-              setVideoError(true);
-            }}
-            onLoadedData={() => {
-              console.log('Video loaded successfully:', videoUrl);
-              setVideoError(false);
-            }}
-          >
-            <source src={videoUrl} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        )}
+        {/* Fallback background image - shows only if video fails to load */}
+        <div 
+          className={`absolute inset-0 w-full h-full bg-cover bg-center ${videoError ? 'z-[3]' : 'z-0'}`}
+          style={{
+            backgroundImage: 'url(https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop)',
+            display: videoError ? 'block' : 'none'
+          }}
+        />
         
-        {/* Fallback background image - shows only if video fails to load or videoUrl is not set */}
-        {(!videoUrl || videoError) && (
-          <div 
-            className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
-            style={{
-              backgroundImage: 'url(https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop)'
-            }}
-          />
-        )}
+        {/* Video Background - Uploaded video from backend */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover z-[1]"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          style={{ objectFit: 'cover' }}
+          onError={(e) => {
+            // Hide video if it fails to load, show fallback image
+            console.error('Video failed to load:', videoUrl, e);
+            setVideoError(true);
+            e.target.style.display = 'none';
+          }}
+          onLoadedData={() => {
+            console.log('Video loaded successfully:', videoUrl);
+            setVideoError(false);
+          }}
+          onCanPlay={() => {
+            console.log('Video can play:', videoUrl);
+            setVideoError(false);
+          }}
+        >
+          <source src={videoUrl || '/uploads/videos/homepage-video.mp4'} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
         
         {/* Dark Overlay for Text Readability */}
         <div className="absolute inset-0 bg-black/50 z-[2]"></div>
