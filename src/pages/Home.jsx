@@ -51,9 +51,17 @@ const Home = () => {
     <div className="min-h-screen bg-white">
       <Header />
       
-      {/* Video Background Section */}
+      {/* Futuristic Video Background Section */}
       <section className="relative w-full h-screen overflow-hidden">
-        {/* Video Background */}
+        {/* Fallback background image - shows if video doesn't load */}
+        <div 
+          className="absolute inset-0 w-full h-full bg-cover bg-center"
+          style={{
+            backgroundImage: 'url(https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop)'
+          }}
+        />
+        
+        {/* Video Background - Futuristic professionals in action */}
         <video
           className="absolute inset-0 w-full h-full object-cover"
           autoPlay
@@ -61,18 +69,18 @@ const Home = () => {
           loop
           playsInline
           preload="auto"
+          style={{ objectFit: 'cover' }}
+          onError={(e) => {
+            // Hide video if it fails to load, fallback image will show
+            e.target.style.display = 'none';
+          }}
         >
-          <source src="https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_30fps.mp4" type="video/mp4" />
-          {/* Fallback image if video doesn't load */}
-          <img
-            src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop"
-            alt="Background"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+          <source src="/videos/future-small-business.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
         </video>
         
         {/* Dark Overlay for Text Readability */}
-        <div className="absolute inset-0 bg-black/50"></div>
+        <div className="absolute inset-0 bg-black/50 z-0"></div>
         
         {/* Overlay Text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-4 sm:px-6 lg:px-8">
@@ -83,7 +91,7 @@ const Home = () => {
             className="text-center max-w-4xl mx-auto"
           >
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium text-white mb-6 leading-tight tracking-tight">
-              We're Building Tomorrow of Small Businesses
+              Building Tomorrow of UK Small Businesses
             </h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -91,7 +99,7 @@ const Home = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-light leading-relaxed"
             >
-              Sam Studios – Modernizing & creating opportunities for small businesses & individuals.
+              Sam Studios is the automation unit of Tabalt Ltd.
             </motion.p>
           </motion.div>
         </div>
