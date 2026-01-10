@@ -8,16 +8,18 @@ import LiveChatBot from '../components/public/LiveChatBot';
 import { API_CONFIG } from '../config/api';
 
 const Home = () => {
-  const [videoUrl, setVideoUrl] = useState('/uploads/videos/homepage-video.mp4');
-  const [videoError, setVideoError] = useState(false);
+  const [videoUrl, setVideoUrl] = useState(null);
 
   useEffect(() => {
     // Construct video URL from backend
     // Backend serves uploads via express.static('uploads') at /uploads
     const apiUrl = API_CONFIG.API_URL;
-    let videoPath = '/uploads/videos/homepage-video.mp4';
+    let videoPath = '';
     
-    if (!apiUrl.startsWith('/') && !apiUrl.includes('localhost')) {
+    if (apiUrl.startsWith('/') || apiUrl.startsWith('http://localhost') || apiUrl.includes('localhost')) {
+      // Relative URL in development - use relative path (proxy will handle it)
+      videoPath = '/uploads/videos/homepage-video.mp4';
+    } else {
       // Production: Full URL - extract base URL (remove /api)
       let baseUrl = apiUrl.replace(/\/api\/?$/, '');
       // Ensure no trailing slash
@@ -25,9 +27,7 @@ const Home = () => {
       videoPath = `${baseUrl}/uploads/videos/homepage-video.mp4`;
     }
     
-    // Set video URL (always use the backend video path)
     setVideoUrl(videoPath);
-    setVideoError(false);
   }, []);
 
   const features = [
@@ -75,43 +75,46 @@ const Home = () => {
       <Header />
       
       {/* Futuristic Video Background Section */}
-      <section className="relative w-full h-screen overflow-hidden bg-black">
+      <section className="relative w-full h-screen overflow-hidden">
+        {/* Fallback background image - shows if video doesn't load */}
+        <div 
+          className="absolute inset-0 w-full h-full bg-cover bg-center"
+          style={{
+            backgroundImage: 'url(https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop)'
+          }}
+        />
+        
         {/* Video Background - Uploaded video from backend */}
-        <video
-          className="absolute inset-0 w-full h-full object-cover z-[1]"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          style={{ 
-            objectFit: 'cover',
-            width: '100%',
-            height: '100%',
-            minHeight: '100vh',
-            display: 'block'
-          }}
-          onError={(e) => {
-            console.error('Video failed to load:', videoUrl, e);
-            setVideoError(true);
-          }}
-          onLoadedData={() => {
-            console.log('Video loaded successfully:', videoUrl);
-            setVideoError(false);
-          }}
-          onCanPlay={() => {
-            console.log('Video can play:', videoUrl);
-            setVideoError(false);
-          }}
-        >
-          <source src={videoUrl} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
+        {videoUrl && (
+          <video
+            key={videoUrl}
+            className="absolute inset-0 w-full h-full object-cover z-[1]"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            style={{ objectFit: 'cover' }}
+            onError={(e) => {
+              // Hide video if it fails to load, fallback image will show
+              console.error('Video failed to load:', videoUrl);
+              e.target.style.display = 'none';
+            }}
+            onLoadedData={() => {
+              console.log('Video loaded successfully:', videoUrl);
+            }}
+          >
+            <source src={videoUrl} type="video/mp4" />
+            <source src={videoUrl.replace('.mp4', '.mov')} type="video/quicktime" />
+            <source src={videoUrl.replace('.mp4', '.webm')} type="video/webm" />
+            Your browser does not support the video tag.
+          </video>
+        )}
         
         {/* Dark Overlay for Text Readability */}
         <div className="absolute inset-0 bg-black/50 z-[2]"></div>
         
-        {/* Overlay Text and Buttons */}
+        {/* Overlay Text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -126,31 +129,10 @@ const Home = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-light leading-relaxed mb-8"
+              className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-light leading-relaxed"
             >
               Sam Studios is the automation unit of Tabalt Ltd.
             </motion.p>
-            
-            {/* Sign Up and Customer Login Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-            >
-              <Link
-                to="/customer/signup"
-                className="bg-gray-900 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap"
-              >
-                Sign Up
-              </Link>
-              <Link
-                to="/customer/login"
-                className="bg-gray-900 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap"
-              >
-                Customer Login
-              </Link>
-            </motion.div>
           </motion.div>
         </div>
       </section>

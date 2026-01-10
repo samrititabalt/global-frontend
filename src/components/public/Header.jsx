@@ -105,12 +105,12 @@ const Header = () => {
           : 'bg-transparent'
       }`}
     >
-      <nav className="w-full px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex items-center justify-between min-h-[110px] py-2">
+      <nav className="w-full px-4 sm:px-6 lg:px-8 py-3 pb-4">
+        <div className="flex items-center justify-between min-h-[120px]">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-start gap-3 group pt-1">
             {!logoError ? (
-              <div className="flex flex-col items-center justify-center">
+              <div className="flex flex-col items-center">
                 <img
                   src="/assets/tabalt-logo.png.jpg"
                   alt="Tabalt Logo"
