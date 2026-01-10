@@ -84,7 +84,13 @@ const Home = () => {
           loop
           playsInline
           preload="auto"
-          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+          style={{ 
+            objectFit: 'cover',
+            width: '100%',
+            height: '100%',
+            minHeight: '100vh',
+            display: 'block'
+          }}
           onError={(e) => {
             console.error('Video failed to load:', videoUrl, e);
             setVideoError(true);
