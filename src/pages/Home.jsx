@@ -8,19 +8,16 @@ import LiveChatBot from '../components/public/LiveChatBot';
 import { API_CONFIG } from '../config/api';
 
 const Home = () => {
-  const [videoUrl, setVideoUrl] = useState(null);
+  const [videoUrl, setVideoUrl] = useState('/uploads/videos/homepage-video.mp4');
   const [videoError, setVideoError] = useState(false);
 
   useEffect(() => {
     // Construct video URL from backend
     // Backend serves uploads via express.static('uploads') at /uploads
     const apiUrl = API_CONFIG.API_URL;
-    let videoPath = '';
+    let videoPath = '/uploads/videos/homepage-video.mp4';
     
-    if (apiUrl.startsWith('/') || apiUrl.startsWith('http://localhost') || apiUrl.includes('localhost')) {
-      // Relative URL in development - use relative path (proxy will handle it)
-      videoPath = '/uploads/videos/homepage-video.mp4';
-    } else {
+    if (!apiUrl.startsWith('/') && !apiUrl.includes('localhost')) {
       // Production: Full URL - extract base URL (remove /api)
       let baseUrl = apiUrl.replace(/\/api\/?$/, '');
       // Ensure no trailing slash
@@ -28,12 +25,8 @@ const Home = () => {
       videoPath = `${baseUrl}/uploads/videos/homepage-video.mp4`;
     }
     
-    console.log('Setting video URL:', videoPath);
-    console.log('API URL:', apiUrl);
-    
-    // Set video URL immediately
+    // Set video URL (always use the backend video path)
     setVideoUrl(videoPath);
-    // Reset error state when URL changes
     setVideoError(false);
   }, []);
 
@@ -83,15 +76,6 @@ const Home = () => {
       
       {/* Futuristic Video Background Section */}
       <section className="relative w-full h-screen overflow-hidden">
-        {/* Fallback background image - shows only if video fails to load */}
-        <div 
-          className={`absolute inset-0 w-full h-full bg-cover bg-center ${videoError ? 'z-[3]' : 'z-0'}`}
-          style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop)',
-            display: videoError ? 'block' : 'none'
-          }}
-        />
-        
         {/* Video Background - Uploaded video from backend */}
         <video
           className="absolute inset-0 w-full h-full object-cover z-[1]"
@@ -102,10 +86,8 @@ const Home = () => {
           preload="auto"
           style={{ objectFit: 'cover' }}
           onError={(e) => {
-            // Hide video if it fails to load, show fallback image
             console.error('Video failed to load:', videoUrl, e);
             setVideoError(true);
-            e.target.style.display = 'none';
           }}
           onLoadedData={() => {
             console.log('Video loaded successfully:', videoUrl);
@@ -116,7 +98,7 @@ const Home = () => {
             setVideoError(false);
           }}
         >
-          <source src={videoUrl || '/uploads/videos/homepage-video.mp4'} type="video/mp4" />
+          <source src={videoUrl} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
         
