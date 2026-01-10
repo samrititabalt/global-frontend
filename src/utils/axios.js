@@ -22,7 +22,10 @@ const api = axios.create({
   baseURL: API_CONFIG.API_URL,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  maxContentLength: 200 * 1024 * 1024, // 200MB max content length
+  maxBodyLength: 200 * 1024 * 1024, // 200MB max body length for form data
+  timeout: 300000 // 5 minutes timeout for large file uploads
 });
 
 // Add token to requests

@@ -47,10 +47,10 @@ const AdminDashboard = () => {
       return;
     }
 
-    // Validate file size (100MB max)
-    const maxSize = 100 * 1024 * 1024; // 100MB
+    // Validate file size (200MB max)
+    const maxSize = 200 * 1024 * 1024; // 200MB
     if (file.size > maxSize) {
-      setUploadError('Video file size must be less than 100MB');
+      setUploadError('Video file size must be less than 200MB');
       return;
     }
 
@@ -63,7 +63,12 @@ const AdminDashboard = () => {
       formData.append('video', file);
 
       const response = await api.post('/admin/homepage-video', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 
+          'Content-Type': 'multipart/form-data'
+        },
+        maxContentLength: 200 * 1024 * 1024, // 200MB
+        maxBodyLength: 200 * 1024 * 1024, // 200MB
+        timeout: 300000 // 5 minutes timeout for large uploads
       });
 
       setUploadSuccess(true);
@@ -578,7 +583,7 @@ const AdminDashboard = () => {
               )}
             </label>
             <p className="text-xs text-gray-500 mt-2">
-              Accepted formats: MP4, MOV, WEBM (Max 100MB)
+              Accepted formats: MP4, MOV, WEBM (Max 200MB)
             </p>
           </div>
         </div>
