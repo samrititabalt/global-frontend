@@ -28,7 +28,10 @@ const Home = () => {
       videoPath = `${baseUrl}/uploads/videos/homepage-video.mp4`;
     }
     
+    // Set video URL immediately
     setVideoUrl(videoPath);
+    // Reset error state when URL changes
+    setVideoError(false);
   }, []);
 
   const features = [
@@ -77,21 +80,11 @@ const Home = () => {
       
       {/* Futuristic Video Background Section */}
       <section className="relative w-full h-screen overflow-hidden">
-        {/* Fallback background image - shows only if video fails to load */}
-        {videoError && (
-          <div 
-            className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
-            style={{
-              backgroundImage: 'url(https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop)'
-            }}
-          />
-        )}
-        
-        {/* Video Background - Uploaded video from backend */}
-        {videoUrl && !videoError && (
+        {/* Video Background - Uploaded video from backend (always rendered when URL is available) */}
+        {videoUrl && (
           <video
             key={videoUrl}
-            className="absolute inset-0 w-full h-full object-cover z-[1]"
+            className={`absolute inset-0 w-full h-full object-cover z-[1] ${videoError ? 'hidden' : ''}`}
             autoPlay
             muted
             loop
@@ -102,7 +95,6 @@ const Home = () => {
               // Hide video if it fails to load, show fallback image
               console.error('Video failed to load:', videoUrl);
               setVideoError(true);
-              e.target.style.display = 'none';
             }}
             onLoadedData={() => {
               console.log('Video loaded successfully:', videoUrl);
@@ -112,6 +104,16 @@ const Home = () => {
             <source src={videoUrl} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
+        )}
+        
+        {/* Fallback background image - shows only if video fails to load or videoUrl is not set */}
+        {(!videoUrl || videoError) && (
+          <div 
+            className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
+            style={{
+              backgroundImage: 'url(https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop)'
+            }}
+          />
         )}
         
         {/* Dark Overlay for Text Readability */}
