@@ -9,6 +9,7 @@ import { API_CONFIG } from '../config/api';
 
 const Home = () => {
   const [videoUrl, setVideoUrl] = useState(null);
+  const [videoError, setVideoError] = useState(false);
 
   useEffect(() => {
     // Construct video URL from backend
@@ -76,16 +77,18 @@ const Home = () => {
       
       {/* Futuristic Video Background Section */}
       <section className="relative w-full h-screen overflow-hidden">
-        {/* Fallback background image - shows if video doesn't load */}
-        <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop)'
-          }}
-        />
+        {/* Fallback background image - shows only if video fails to load */}
+        {videoError && (
+          <div 
+            className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
+            style={{
+              backgroundImage: 'url(https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop)'
+            }}
+          />
+        )}
         
         {/* Video Background - Uploaded video from backend */}
-        {videoUrl && (
+        {videoUrl && !videoError && (
           <video
             key={videoUrl}
             className="absolute inset-0 w-full h-full object-cover z-[1]"
@@ -96,17 +99,17 @@ const Home = () => {
             preload="auto"
             style={{ objectFit: 'cover' }}
             onError={(e) => {
-              // Hide video if it fails to load, fallback image will show
+              // Hide video if it fails to load, show fallback image
               console.error('Video failed to load:', videoUrl);
+              setVideoError(true);
               e.target.style.display = 'none';
             }}
             onLoadedData={() => {
               console.log('Video loaded successfully:', videoUrl);
+              setVideoError(false);
             }}
           >
             <source src={videoUrl} type="video/mp4" />
-            <source src={videoUrl.replace('.mp4', '.mov')} type="video/quicktime" />
-            <source src={videoUrl.replace('.mp4', '.webm')} type="video/webm" />
             Your browser does not support the video tag.
           </video>
         )}
