@@ -42,13 +42,21 @@ const Header = () => {
     { name: 'Run Facebook Ads', path: '/solutions/facebook-ads', key: 'facebookAds' },
   ];
 
+  // Check if we're on the home page
+  const isHomePage = location.pathname === '/';
+
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
-      const viewportHeight = window.innerHeight;
       
-      // Show navigation when scrolled past the video hero section (100vh)
-      setShowNavigation(scrollY > viewportHeight * 0.9);
+      // Only apply scroll-based navigation hiding on home page
+      if (isHomePage) {
+        // Show navigation when scrolled a small amount (responsive and immediate)
+        setShowNavigation(scrollY > 50);
+      } else {
+        // On all other pages, always show navigation
+        setShowNavigation(true);
+      }
       
       // Update scrolled state for header background
       setIsScrolled(scrollY > 20);
@@ -57,7 +65,7 @@ const Header = () => {
     // Check initial scroll position
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isHomePage]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -97,33 +105,33 @@ const Header = () => {
           : 'bg-transparent'
       }`}
     >
-      <nav className="w-full px-4 sm:px-6 lg:px-8">
+      <nav className="w-full px-4 sm:px-6 lg:px-8 pt-2">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             {!logoError ? (
-              <div className="flex flex-col">
+              <div className="flex flex-col items-center">
                 <img
                   src="/assets/tabalt-logo.png.jpg"
                   alt="Tabalt Logo"
                   className="h-20 w-auto object-contain"
                   onError={() => setLogoError(true)}
                 />
-                <span className={`text-xs font-medium mt-1 transition-colors ${
-                  showNavigation ? 'text-gray-600' : 'text-white'
+                <span className={`text-xs font-medium mt-1 text-center transition-colors ${
+                  (isHomePage && !showNavigation) ? 'text-white' : 'text-gray-600'
                 }`}>
                   Sam Studios
                 </span>
               </div>
             ) : (
-              <div className="flex flex-col">
+              <div className="flex flex-col items-center">
                 <span className={`text-3xl font-bold group-hover:text-blue-600 transition-colors ${
-                  showNavigation ? 'text-gray-900' : 'text-white'
+                  (isHomePage && !showNavigation) ? 'text-white' : 'text-gray-900'
                 }`}>
                   Tabalt
                 </span>
-                <span className={`text-xs font-medium transition-colors ${
-                  showNavigation ? 'text-gray-600' : 'text-white'
+                <span className={`text-xs font-medium text-center transition-colors ${
+                  (isHomePage && !showNavigation) ? 'text-white' : 'text-gray-600'
                 }`}>
                   Sam Studios
                 </span>
@@ -133,7 +141,7 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <div className={`hidden md:flex items-center space-x-8 transition-opacity duration-300 ${
-            showNavigation ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            isHomePage ? (showNavigation ? 'opacity-100' : 'opacity-0 pointer-events-none') : 'opacity-100'
           }`}>
             {/* Home - Moved to the left */}
             <Link
