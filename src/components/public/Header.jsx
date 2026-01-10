@@ -105,19 +105,19 @@ const Header = () => {
           : 'bg-transparent'
       }`}
     >
-      <nav className="w-full px-4 sm:px-6 lg:px-8 pt-2">
-        <div className="flex items-center justify-between h-20">
+      <nav className="w-full px-4 sm:px-6 lg:px-8 py-3">
+        <div className="flex items-center justify-between min-h-[110px] py-2">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             {!logoError ? (
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center justify-center">
                 <img
                   src="/assets/tabalt-logo.png.jpg"
                   alt="Tabalt Logo"
                   className="h-20 w-auto object-contain"
                   onError={() => setLogoError(true)}
                 />
-                <span className={`text-xs font-medium mt-1 text-center transition-colors ${
+                <span className={`text-xs font-medium mt-2 text-center transition-colors ${
                   (isHomePage && !showNavigation) ? 'text-white' : 'text-gray-600'
                 }`}>
                   Sam Studios
@@ -130,7 +130,7 @@ const Header = () => {
                 }`}>
                   Tabalt
                 </span>
-                <span className={`text-xs font-medium text-center transition-colors ${
+                <span className={`text-xs font-medium mt-2 text-center transition-colors ${
                   (isHomePage && !showNavigation) ? 'text-white' : 'text-gray-600'
                 }`}>
                   Sam Studios
