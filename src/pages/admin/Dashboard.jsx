@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiMessageSquare, FiClock } from 'react-icons/fi';
-import { X, Copy, Check } from 'lucide-react';
+import { X, Copy, Check, Upload, Video, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '../../utils/axios';
 
 const AdminDashboard = () => {
@@ -12,11 +12,89 @@ const AdminDashboard = () => {
   const [detailData, setDetailData] = useState([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoInfo, setVideoInfo] = useState(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const videoInputRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     loadDashboard();
+    loadVideoInfo();
   }, []);
+
+  const loadVideoInfo = async () => {
+    try {
+      const response = await api.get('/admin/homepage-video');
+      setVideoInfo(response.data);
+    } catch (error) {
+      console.error('Error loading video info:', error);
+    }
+  };
+
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo'];
+    const allowedExtensions = ['.mp4', '.mov', '.webm', '.avi'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+      setUploadError('Please select a valid video file (mp4, mov, webm)');
+      return;
+    }
+
+    // Validate file size (100MB max)
+    const maxSize = 100 * 1024 * 1024; // 100MB
+    if (file.size > maxSize) {
+      setUploadError('Video file size must be less than 100MB');
+      return;
+    }
+
+    setVideoUploading(true);
+    setUploadError('');
+    setUploadSuccess(false);
+
+    try {
+      const formData = new FormData();
+      formData.append('video', file);
+
+      const response = await api.post('/admin/homepage-video', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      setUploadSuccess(true);
+      setUploadError('');
+      await loadVideoInfo();
+      
+      // Reset input
+      if (videoInputRef.current) {
+        videoInputRef.current.value = '';
+      }
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setUploadSuccess(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Video upload error:', error);
+      setUploadError(error.response?.data?.message || 'Failed to upload video. Please try again.');
+      setUploadSuccess(false);
+    } finally {
+      setVideoUploading(false);
+    }
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
 
   const loadDashboard = async () => {
     try {
@@ -432,6 +510,76 @@ const AdminDashboard = () => {
                 )}
               </button>
             </div>
+          </div>
+          <div className="bg-white/80 rounded-3xl shadow-lg border border-white/60 p-4 hover:shadow-xl transition backdrop-blur">
+            <div className="flex items-center gap-2 mb-2">
+              <Video className="w-5 h-5 text-purple-600" />
+              <h3 className="font-semibold text-gray-900">Homepage Video</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">Upload background video for homepage hero section</p>
+            
+            {videoInfo?.exists && (
+              <div className="mb-3 p-2 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-center gap-2 text-green-700 text-xs">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Video uploaded</span>
+                </div>
+                <div className="text-xs text-green-600 mt-1">
+                  Size: {formatFileSize(videoInfo.size)}
+                </div>
+              </div>
+            )}
+
+            {uploadSuccess && (
+              <div className="mb-3 p-2 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-center gap-2 text-green-700 text-xs">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Video uploaded successfully!</span>
+                </div>
+              </div>
+            )}
+
+            {uploadError && (
+              <div className="mb-3 p-2 bg-red-50 rounded-lg border border-red-200">
+                <div className="flex items-center gap-2 text-red-700 text-xs">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{uploadError}</span>
+                </div>
+              </div>
+            )}
+
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/mp4,video/quicktime,video/webm,video/x-msvideo"
+              onChange={handleVideoUpload}
+              className="hidden"
+              id="video-upload-input"
+              disabled={videoUploading}
+            />
+            <label
+              htmlFor="video-upload-input"
+              className={`flex items-center justify-center gap-2 text-xs px-3 py-2 rounded-lg font-medium transition cursor-pointer ${
+                videoUploading
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-purple-600 text-white hover:bg-purple-700'
+              }`}
+            >
+              {videoUploading ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-3 h-3" />
+                  {videoInfo?.exists ? 'Replace Video' : 'Upload Video'}
+                </>
+              )}
+            </label>
+            <p className="text-xs text-gray-500 mt-2">
+              Accepted formats: MP4, MOV, WEBM (Max 100MB)
+            </p>
           </div>
         </div>
 
