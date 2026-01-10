@@ -51,6 +51,52 @@ const Home = () => {
     <div className="min-h-screen bg-white">
       <Header />
       
+      {/* Video Background Section */}
+      <section className="relative w-full h-screen overflow-hidden">
+        {/* Video Background */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+        >
+          <source src="https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_30fps.mp4" type="video/mp4" />
+          {/* Fallback image if video doesn't load */}
+          <img
+            src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop"
+            alt="Background"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        </video>
+        
+        {/* Dark Overlay for Text Readability */}
+        <div className="absolute inset-0 bg-black/50"></div>
+        
+        {/* Overlay Text */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center max-w-4xl mx-auto"
+          >
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium text-white mb-6 leading-tight tracking-tight">
+              We're Building Tomorrow of Small Businesses
+            </h1>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-light leading-relaxed"
+            >
+              Sam Studios – Modernizing & creating opportunities for small businesses & individuals.
+            </motion.p>
+          </motion.div>
+        </div>
+      </section>
+      
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center pt-20 pb-16 overflow-hidden bg-gradient-to-b from-gray-50 to-white">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
