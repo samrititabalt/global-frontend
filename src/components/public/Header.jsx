@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showNavigation, setShowNavigation] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
   const [isMobileServicesOpen, setIsMobileServicesOpen] = useState(false);
@@ -43,9 +44,18 @@ const Header = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      const scrollY = window.scrollY;
+      const viewportHeight = window.innerHeight;
+      
+      // Show navigation when scrolled past the video hero section (100vh)
+      setShowNavigation(scrollY > viewportHeight * 0.9);
+      
+      // Update scrolled state for header background
+      setIsScrolled(scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
+    // Check initial scroll position
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -96,23 +106,49 @@ const Header = () => {
                 <img
                   src="/assets/tabalt-logo.png.jpg"
                   alt="Tabalt Logo"
-                  className="h-12 w-auto object-contain"
+                  className="h-20 w-auto object-contain"
                   onError={() => setLogoError(true)}
                 />
-                <span className="text-xs text-gray-600 font-medium mt-1">UK Outsourcing Partners</span>
+                <span className={`text-xs font-medium mt-1 transition-colors ${
+                  showNavigation ? 'text-gray-600' : 'text-white'
+                }`}>
+                  Sam Studios
+                </span>
               </div>
             ) : (
               <div className="flex flex-col">
-                <span className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                <span className={`text-3xl font-bold group-hover:text-blue-600 transition-colors ${
+                  showNavigation ? 'text-gray-900' : 'text-white'
+                }`}>
                   Tabalt
                 </span>
-                <span className="text-xs text-gray-600 font-medium">UK Outsourcing Partners</span>
+                <span className={`text-xs font-medium transition-colors ${
+                  showNavigation ? 'text-gray-600' : 'text-white'
+                }`}>
+                  Sam Studios
+                </span>
               </div>
             )}
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className={`hidden md:flex items-center space-x-8 transition-opacity duration-300 ${
+            showNavigation ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}>
+            {/* Home - Moved to the left */}
+            <Link
+              to="/"
+              className={`font-medium transition-colors text-sm px-4 py-2 rounded-lg hover:bg-gray-100 ${
+                isActive('/')
+                  ? 'text-blue-600'
+                  : isScrolled
+                  ? 'text-gray-700 hover:text-gray-900'
+                  : 'text-gray-700 hover:text-gray-900'
+              }`}
+            >
+              Home
+            </Link>
+            
             {navLinks.map((link) => (
               <Link
                 key={link.name}
@@ -176,7 +212,7 @@ const Header = () => {
               </AnimatePresence>
             </div>
 
-            {/* Solutions Dropdown */}
+            {/* Solutions Dropdown - Renamed to "Sam Studios" */}
             <div className="relative" ref={solutionsDropdownRef}>
               <button
                 onClick={() => setIsSolutionsDropdownOpen(!isSolutionsDropdownOpen)}
@@ -188,7 +224,7 @@ const Header = () => {
                     : 'text-gray-700 hover:text-gray-900'
                 }`}
               >
-                Solutions
+                Sam Studios
                 <ChevronDown 
                   className={`h-4 w-4 transition-transform duration-200 ${
                     isSolutionsDropdownOpen ? 'rotate-180' : ''
@@ -244,13 +280,7 @@ const Header = () => {
                 )}
               </AnimatePresence>
             </div>
-
-            <Link
-              to="/"
-              className="text-gray-700 hover:text-gray-900 font-medium transition-colors text-sm px-4 py-2 rounded-lg hover:bg-gray-100"
-            >
-              Home
-            </Link>
+            {/* Buttons - Always visible */}
             {isCustomer ? (
               <Link
                 to="/customer/dashboard"
@@ -367,7 +397,7 @@ const Header = () => {
                 </AnimatePresence>
               </div>
 
-              {/* Mobile Solutions Dropdown */}
+              {/* Mobile Solutions Dropdown - Renamed to "Sam Studios" */}
               <div>
                 <button
                   onClick={() => setIsMobileSolutionsOpen(!isMobileSolutionsOpen)}
@@ -377,7 +407,7 @@ const Header = () => {
                       : 'text-gray-700 hover:text-gray-900'
                   }`}
                 >
-                  Solutions
+                  Sam Studios
                   <ChevronDown 
                     className={`h-5 w-5 transition-transform duration-200 ${
                       isMobileSolutionsOpen ? 'rotate-180' : ''
