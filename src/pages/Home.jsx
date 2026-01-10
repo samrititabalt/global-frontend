@@ -75,7 +75,7 @@ const Home = () => {
       <Header />
       
       {/* Futuristic Video Background Section */}
-      <section className="relative w-full h-screen overflow-hidden">
+      <section className="relative w-full h-screen overflow-hidden bg-black">
         {/* Video Background - Uploaded video from backend */}
         <video
           className="absolute inset-0 w-full h-full object-cover z-[1]"
@@ -84,7 +84,7 @@ const Home = () => {
           loop
           playsInline
           preload="auto"
-          style={{ objectFit: 'cover' }}
+          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
           onError={(e) => {
             console.error('Video failed to load:', videoUrl, e);
             setVideoError(true);
@@ -105,7 +105,7 @@ const Home = () => {
         {/* Dark Overlay for Text Readability */}
         <div className="absolute inset-0 bg-black/50 z-[2]"></div>
         
-        {/* Overlay Text */}
+        {/* Overlay Text and Buttons */}
         <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -114,16 +114,37 @@ const Home = () => {
             className="text-center max-w-4xl mx-auto"
           >
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium text-white mb-6 leading-tight tracking-tight">
-              Building Tomorrow of UK Small Businesses
+              We're Building Tomorrow of Small Businesses
             </h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-light leading-relaxed"
+              className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-light leading-relaxed mb-8"
             >
-              Sam Studios is the automation unit of Tabalt Ltd.
+              Sam Studios – Modernizing & creating opportunities for small businesses & individuals.
             </motion.p>
+            
+            {/* Sign Up and Customer Login Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+            >
+              <Link
+                to="/customer/signup"
+                className="bg-gray-900 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap"
+              >
+                Sign Up
+              </Link>
+              <Link
+                to="/customer/login"
+                className="bg-gray-900 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap"
+              >
+                Customer Login
+              </Link>
+            </motion.div>
           </motion.div>
         </div>
       </section>
