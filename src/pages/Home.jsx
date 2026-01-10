@@ -114,7 +114,7 @@ const Home = () => {
             className="text-center max-w-4xl mx-auto"
           >
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium text-white mb-6 leading-tight tracking-tight">
-              We're Building Tomorrow of Small Businesses
+              Building Tomorrow of UK Small Businesses
             </h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -122,7 +122,7 @@ const Home = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-light leading-relaxed mb-8"
             >
-              Sam Studios – Modernizing & creating opportunities for small businesses & individuals.
+              Sam Studios is the automation unit of Tabalt Ltd.
             </motion.p>
             
             {/* Sign Up and Customer Login Buttons */}
