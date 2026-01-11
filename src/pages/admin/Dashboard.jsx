@@ -4,6 +4,10 @@ import Layout from '../../components/Layout';
 import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiMessageSquare, FiClock } from 'react-icons/fi';
 import { X, Copy, Check, Upload, Video, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '../../utils/axios';
+import CRMLeads from '../../components/admin/CRMLeads';
+import CRMCustomers from '../../components/admin/CRMCustomers';
+import CRMAgents from '../../components/admin/CRMAgents';
+import AgentManagement from '../../components/admin/AgentManagement';
 
 const AdminDashboard = () => {
   const [dashboard, setDashboard] = useState(null);
@@ -18,6 +22,7 @@ const AdminDashboard = () => {
   const [uploadError, setUploadError] = useState('');
   const videoInputRef = useRef(null);
   const navigate = useNavigate();
+  const [crmTab, setCrmTab] = useState('leads');
 
   useEffect(() => {
     loadDashboard();
@@ -649,6 +654,66 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* CRM Module */}
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 text-white rounded-3xl p-8 shadow-2xl">
+            <h2 className="text-3xl font-bold mb-2">CRM & Agent Management</h2>
+            <p className="text-blue-200">Manage leads, customers, agents, and agent schedules</p>
+          </div>
+
+          {/* CRM Tabs */}
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6">
+            <div className="flex gap-2 mb-6 border-b border-gray-200">
+              <button
+                onClick={() => setCrmTab('leads')}
+                className={`px-4 py-2 font-medium transition ${
+                  crmTab === 'leads'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Leads
+              </button>
+              <button
+                onClick={() => setCrmTab('customers')}
+                className={`px-4 py-2 font-medium transition ${
+                  crmTab === 'customers'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Customers
+              </button>
+              <button
+                onClick={() => setCrmTab('agents')}
+                className={`px-4 py-2 font-medium transition ${
+                  crmTab === 'agents'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Agents
+              </button>
+              <button
+                onClick={() => setCrmTab('management')}
+                className={`px-4 py-2 font-medium transition ${
+                  crmTab === 'management'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Agent Management
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            {crmTab === 'leads' && <CRMLeads />}
+            {crmTab === 'customers' && <CRMCustomers />}
+            {crmTab === 'agents' && <CRMAgents />}
+            {crmTab === 'management' && <AgentManagement />}
+          </div>
+        </div>
       </div>
     </Layout>
   );
