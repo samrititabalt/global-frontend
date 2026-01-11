@@ -30,12 +30,21 @@ const ExpenseMonitor = () => {
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
               Track and manage your expenses with intelligent monitoring and insights.
             </p>
-            <Link
-              to="/contact-us"
-              className="inline-flex items-center px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              Get Started
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/expense-monitor-pro"
+                className="inline-flex items-center justify-center px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                Expense Monitor Pro
+                <BarChart3 className="ml-2 h-5 w-5" />
+              </Link>
+              <Link
+                to="/contact-us"
+                className="inline-flex items-center justify-center px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg border-2 border-blue-600 hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                Get Started
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>

@@ -67,6 +67,7 @@ import SoftwareTechSupport from './pages/services/SoftwareTechSupport';
 // Solution Pages
 import SamsSmartReports from './pages/solutions/SamsSmartReports';
 import ExpenseMonitor from './pages/solutions/ExpenseMonitor';
+import ExpenseMonitorPro from './pages/solutions/ExpenseMonitorPro';
 import MergeSpreadsheets from './pages/solutions/MergeSpreadsheets';
 import MergeSpreadsheetsPro from './pages/solutions/MergeSpreadsheetsPro';
 import Forecasts from './pages/solutions/Forecasts';
@@ -111,6 +112,7 @@ function App() {
             {/* Solution Pages */}
             <Route path="/solutions/sams-smart-reports" element={<SamsSmartReports />} />
             <Route path="/solutions/expense-monitor" element={<ExpenseMonitor />} />
+            <Route path="/expense-monitor-pro" element={<ExpenseMonitorPro />} />
             <Route path="/solutions/merge-spreadsheets" element={<MergeSpreadsheets />} />
             <Route path="/merge-spreadsheets-pro" element={<MergeSpreadsheetsPro />} />
             <Route path="/solutions/forecasts" element={<Forecasts />} />
