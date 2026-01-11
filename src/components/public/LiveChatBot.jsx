@@ -326,7 +326,50 @@ const LiveChatBot = () => {
     }
   };
 
-  const handleClose = () => {
+  // Build chat transcript for email
+  const buildTranscriptForEmail = (allMessages) => {
+    return allMessages
+      .map(msg => {
+        const sender = msg.sender === 'user' ? 'Visitor' : 'Tabalt Support';
+        const time = msg.timestamp instanceof Date 
+          ? msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return `[${time}] ${sender}: ${msg.text}`;
+      })
+      .join('\n');
+  };
+
+  // Send chat transcript on close
+  const sendChatTranscriptOnClose = async () => {
+    try {
+      // Only send if there are messages (user typed something)
+      if (messages.length <= 1) {
+        return; // Only initial greeting, no actual conversation
+      }
+
+      const transcript = buildTranscriptForEmail(messages);
+      const pageUrl = typeof window !== 'undefined' ? window.location.href : null;
+      const timestamp = new Date().toISOString();
+
+      await api.post('/chatbot/send-chat-transcript', {
+        transcript,
+        pageUrl,
+        timestamp,
+        email: userEmail || null,
+        phone: userPhone || null,
+        name: userName || null,
+        company: userCompany || null,
+        consent: consentGiven || false
+      });
+    } catch (error) {
+      console.error('Error sending chat transcript:', error);
+      // Don't show error to user - fail silently
+    }
+  };
+
+  const handleClose = async () => {
+    // Send transcript email before closing
+    await sendChatTranscriptOnClose();
     setIsOpen(false);
     setIsMinimized(false);
   };
