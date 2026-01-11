@@ -73,8 +73,16 @@ const CustomerSignup = () => {
       });
 
       if (response.data.success) {
-        localStorage.setItem('token', response.data.token);
-        navigate('/customer/plans');
+        // Use AuthContext register to properly set user state
+        const result = await register({
+          token: response.data.token,
+          user: response.data.user
+        });
+        
+        if (result.success) {
+          // For spbajaj25@gmail.com, navigate to customer plans
+          navigate('/customer/plans');
+        }
       }
     } catch (err) {
       // Handle validation errors (array) or single error message

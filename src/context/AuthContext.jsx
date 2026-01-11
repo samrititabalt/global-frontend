@@ -25,10 +25,27 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const response = await authAPI.getCurrentUser();
-      setUser(response.data.user);
-      return { success: true, user: response.data.user };
+      const userData = response.data.user;
+      
+      // Special handling for spbajaj25@gmail.com
+      // If user was logged in as admin or customer, preserve that role from localStorage
+      if (userData.email && userData.email.toLowerCase() === 'spbajaj25@gmail.com') {
+        userData.canAccessAdmin = true;
+        // Check if user was logged in with a specific role (stored in localStorage)
+        const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+        if (storedUser && storedUser.email === userData.email) {
+          // Preserve role from login/registration (admin or customer)
+          if (storedUser.role === 'admin' || storedUser.role === 'customer') {
+            userData.role = storedUser.role;
+          }
+        }
+      }
+      
+      setUser(userData);
+      return { success: true, user: userData };
     } catch (error) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user'); // Clear stored user on error
       setToken(null);
       setUser(null);
       return { 
@@ -58,7 +75,9 @@ export const AuthProvider = ({ children }) => {
       const { token: newToken, user: userData } = response.data;
       
       // Validate that the user role matches expected role before setting token
-      if (expectedRole && userData.role !== expectedRole) {
+      // Exception: Allow spbajaj25@gmail.com to login as admin even if role is agent/customer
+      const isOwnerEmail = userData.email && userData.email.toLowerCase() === 'spbajaj25@gmail.com';
+      if (expectedRole && userData.role !== expectedRole && !(isOwnerEmail && expectedRole === 'admin')) {
         return {
           success: false,
           message: `Access denied. ${userData.role === 'customer' ? 'Customer' : userData.role === 'agent' ? 'Agent' : 'Admin'} accounts can only login through the ${userData.role} portal.`
@@ -66,6 +85,10 @@ export const AuthProvider = ({ children }) => {
       }
       
       localStorage.setItem('token', newToken);
+      // Store user data temporarily to preserve role for refreshUser
+      if (userData.email && userData.email.toLowerCase() === 'spbajaj25@gmail.com') {
+        localStorage.setItem('user', JSON.stringify(userData));
+      }
       setToken(newToken);
       setUser(userData);
       
@@ -91,10 +114,27 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
+      // If userData already contains token and user (from direct API call), use those
+      if (userData.token && userData.user) {
+        localStorage.setItem('token', userData.token);
+        // Store user data temporarily for spbajaj25@gmail.com
+        if (userData.user.email && userData.user.email.toLowerCase() === 'spbajaj25@gmail.com') {
+          localStorage.setItem('user', JSON.stringify(userData.user));
+        }
+        setToken(userData.token);
+        setUser(userData.user);
+        return { success: true };
+      }
+      
+      // Otherwise, call the API
       const response = await authAPI.register(userData);
       const { token: newToken, user: userInfo } = response.data;
       
       localStorage.setItem('token', newToken);
+      // Store user data temporarily for spbajaj25@gmail.com
+      if (userInfo.email && userInfo.email.toLowerCase() === 'spbajaj25@gmail.com') {
+        localStorage.setItem('user', JSON.stringify(userInfo));
+      }
       setToken(newToken);
       setUser(userInfo);
       
@@ -109,6 +149,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user'); // Clear stored user on logout
     setToken(null);
     setUser(null);
   };

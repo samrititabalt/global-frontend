@@ -21,7 +21,13 @@ const ProtectedRoute = ({ children, role }) => {
     return <Navigate to={loginPath} replace />;
   }
 
-  if (user.role !== role) {
+  // Special exception: Allow spbajaj25@gmail.com to access admin and customer routes
+  const isOwnerEmail = user.email && user.email.toLowerCase() === 'spbajaj25@gmail.com';
+  const canAccess = user.role === role || 
+                    (isOwnerEmail && role === 'admin') || 
+                    (isOwnerEmail && role === 'customer');
+  
+  if (!canAccess) {
     const dashboardPath = user.role === 'customer' ? '/customer/dashboard' : 
                          user.role === 'agent' ? '/agent/dashboard' : 
                          '/admin/dashboard';
