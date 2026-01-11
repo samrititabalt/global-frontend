@@ -8,6 +8,7 @@ import CRMLeads from '../../components/admin/CRMLeads';
 import CRMCustomers from '../../components/admin/CRMCustomers';
 import CRMAgents from '../../components/admin/CRMAgents';
 import AgentManagement from '../../components/admin/AgentManagement';
+import ResumeBuilderUsage from '../../components/admin/ResumeBuilderUsage';
 
 const AdminDashboard = () => {
   const [dashboard, setDashboard] = useState(null);
@@ -714,6 +715,9 @@ const AdminDashboard = () => {
             {crmTab === 'management' && <AgentManagement />}
           </div>
         </div>
+
+        {/* Resume Builder Usage */}
+        <ResumeBuilderUsage />
       </div>
     </Layout>
   );

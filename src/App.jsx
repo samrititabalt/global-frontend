@@ -72,6 +72,8 @@ import RiskFraud from './pages/solutions/RiskFraud';
 import Hiring from './pages/solutions/Hiring';
 import FacebookAdsQuickLaunch from './pages/solutions/FacebookAdsQuickLaunch';
 import SolutionPro from './pages/customer/SolutionPro';
+import ResumeBuilder from './pages/ResumeBuilder';
+import ResumeBuilderCreate from './pages/customer/ResumeBuilderCreate';
 import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 import TermsOfService from './pages/legal/TermsOfService';
 import DataDeletion from './pages/legal/DataDeletion';
@@ -112,6 +114,7 @@ function App() {
             <Route path="/solutions/risk-fraud" element={<RiskFraud />} />
             <Route path="/solutions/hiring" element={<Hiring />} />
             <Route path="/solutions/facebook-ads" element={<FacebookAdsQuickLaunch />} />
+            <Route path="/resume-builder" element={<ResumeBuilder />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/data-deletion" element={<DataDeletion />} />
@@ -174,6 +177,14 @@ function App() {
               element={
                 <ProtectedRoute role="customer">
                   <SolutionPro />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/resume-builder/create" 
+              element={
+                <ProtectedRoute role="customer">
+                  <ResumeBuilderCreate />
                 </ProtectedRoute>
               } 
             />

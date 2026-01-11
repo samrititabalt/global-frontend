@@ -40,6 +40,7 @@ const Header = () => {
     { name: 'Risk & Fraud', path: '/solutions/risk-fraud' },
     { name: 'Hiring', path: '/solutions/hiring' },
     { name: 'Run Facebook Ads', path: '/solutions/facebook-ads', key: 'facebookAds' },
+    { name: 'Resume Builder', path: '/resume-builder' },
   ];
 
   // Check if we're on the home page
