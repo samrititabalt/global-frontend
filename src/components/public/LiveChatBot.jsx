@@ -18,6 +18,9 @@ const LiveChatBot = () => {
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userPhone, setUserPhone] = useState('');
+  const [userName, setUserName] = useState('');
+  const [userCompany, setUserCompany] = useState('');
+  const [consentGiven, setConsentGiven] = useState(false);
   const messagesEndRef = useRef(null);
   const chatHistoryRef = useRef([]);
 
@@ -77,15 +80,100 @@ const LiveChatBot = () => {
     return digits.length >= 10 && digits.length <= 15;
   };
 
-  // Send contact info to agent
-  const sendContactInfo = async (email, phoneNumber) => {
+  // Extract name from text
+  const extractName = (text) => {
+    if (!text || typeof text !== 'string') return null;
+    const namePatterns = [
+      /(?:my name is|i'm|i am|call me|this is|name is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+      /^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)$/,
+    ];
+    for (const pattern of namePatterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        const name = match[1].trim();
+        if (name.length <= 50 && name.split(' ').length <= 5) {
+          return name;
+        }
+      }
+    }
+    return null;
+  };
+
+  // Extract company from text
+  const extractCompany = (text) => {
+    if (!text || typeof text !== 'string') return null;
+    const companyPatterns = [
+      /(?:company|firm|organization|organisation|i work for|i work at|from)\s+([A-Z][a-zA-Z0-9\s&]+)/i,
+      /(?:at|with)\s+([A-Z][a-zA-Z0-9\s&]+)/i,
+    ];
+    for (const pattern of companyPatterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        const company = match[1].trim();
+        const commonWords = ['the', 'a', 'an', 'and', 'or', 'for', 'with', 'at'];
+        if (company.length <= 100 && !commonWords.includes(company.toLowerCase())) {
+          return company;
+        }
+      }
+    }
+    return null;
+  };
+
+  // Get UTM parameters from URL
+  const getUTMParams = () => {
+    if (typeof window === 'undefined') return {};
+    const params = new URLSearchParams(window.location.search);
+    return {
+      source: params.get('utm_source') || null,
+      campaign: params.get('utm_campaign') || null,
+      medium: params.get('utm_medium') || null,
+      term: params.get('utm_term') || null,
+      content: params.get('utm_content') || null
+    };
+  };
+
+  // Build chat transcript
+  const buildTranscript = (allMessages) => {
+    return allMessages
+      .filter(msg => msg.id !== 1) // Exclude initial greeting
+      .map(msg => {
+        const sender = msg.sender === 'user' ? 'Visitor' : 'Tabalt Support';
+        const time = msg.timestamp instanceof Date 
+          ? msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return `[${time}] ${sender}: ${msg.text}`;
+      })
+      .join('\n');
+  };
+
+  // Send contact info to new chatbot lead endpoint
+  const sendContactInfo = async (email, phoneNumber, name, company, allMessages) => {
     try {
-      await api.post('/public/send-contact-info', {
+      // Build transcript
+      const transcript = buildTranscript(allMessages);
+      
+      // Get page URL and UTM params
+      const pageUrl = typeof window !== 'undefined' ? window.location.href : null;
+      const utm = getUTMParams();
+      
+      // Generate client request ID for idempotency
+      const clientRequestId = `chatbot-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      await api.post('/chatbot/lead', {
         email,
-        phoneNumber,
+        phone: phoneNumber,
+        name: name || null,
+        company: company || null,
+        transcript: transcript || null,
+        consent: consentGiven,
+        pageUrl,
+        utm,
+        clientRequestId,
+        timestamp: new Date().toISOString()
       });
     } catch (error) {
       console.error('Error sending contact info:', error);
+      // Don't fail the chat if lead creation fails
     }
   };
 
@@ -250,6 +338,9 @@ const LiveChatBot = () => {
     setOnboardingComplete(false);
     setUserEmail('');
     setUserPhone('');
+    setUserName('');
+    setUserCompany('');
+    setConsentGiven(false);
     setMessages([
       {
         id: 1,
