@@ -30,12 +30,21 @@ const MergeSpreadsheets = () => {
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
               Combine multiple spreadsheets effortlessly with intelligent data matching and deduplication.
             </p>
-            <Link
-              to="/contact-us"
-              className="inline-flex items-center px-8 py-4 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              Get Started
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/merge-spreadsheets-pro"
+                className="inline-flex items-center px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                Merge Spreadsheets Pro
+                <Zap className="ml-2 h-5 w-5" />
+              </Link>
+              <Link
+                to="/contact-us"
+                className="inline-flex items-center px-8 py-4 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                Get Started
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>
