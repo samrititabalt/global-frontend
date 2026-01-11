@@ -35,6 +35,7 @@ import AdminCustomers from './pages/admin/Customers';
 import AdminChats from './pages/admin/Chats';
 import FirstCallDeck from './pages/admin/FirstCallDeck';
 import TimesheetCalculator from './pages/admin/TimesheetCalculator';
+import RecentActivity from './pages/admin/RecentActivity';
 
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute';
@@ -291,6 +292,14 @@ function App() {
               element={
                 <ProtectedRoute role="admin">
                   <AdminChats />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/recent-activity" 
+              element={
+                <ProtectedRoute role="admin">
+                  <RecentActivity />
                 </ProtectedRoute>
               } 
             />

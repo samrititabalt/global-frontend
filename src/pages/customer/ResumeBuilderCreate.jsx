@@ -39,7 +39,13 @@ const ResumeBuilderCreate = () => {
   const loadUsage = async () => {
     try {
       const response = await api.get('/customer/profile');
-      setUsageRemaining(response.data.user?.resumeBuilderUsageRemaining || 10);
+      const remaining = response.data.user?.resumeBuilderUsageRemaining;
+      // Check if user is owner (unlimited usage)
+      if (response.data.user?.email?.toLowerCase() === 'spbajaj25@gmail.com') {
+        setUsageRemaining('unlimited');
+      } else {
+        setUsageRemaining(remaining || 10);
+      }
     } catch (error) {
       console.error('Error loading usage:', error);
     }
@@ -89,7 +95,7 @@ const ResumeBuilderCreate = () => {
       return;
     }
 
-    if (usageRemaining <= 0) {
+    if (usageRemaining !== 'unlimited' && usageRemaining <= 0) {
       setError('You have reached your usage limit. Please contact support.');
       return;
     }
@@ -112,7 +118,14 @@ const ResumeBuilderCreate = () => {
 
       setGeneratedResume(response.data.resume);
       setCurrentStep(6); // Preview step
-      setUsageRemaining(usageRemaining - 1);
+      // Update usage remaining (handle unlimited case)
+      if (response.data.usageRemaining === 'unlimited') {
+        setUsageRemaining('unlimited');
+      } else if (typeof usageRemaining === 'number') {
+        setUsageRemaining(usageRemaining - 1);
+      } else {
+        setUsageRemaining(response.data.usageRemaining || 10);
+      }
       
       // Delete uploaded image from backend
       if (profileImage) {
@@ -191,7 +204,9 @@ const ResumeBuilderCreate = () => {
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-3xl font-bold text-gray-900">Resume Builder</h1>
             <div className="text-sm text-gray-600">
-              Uses remaining: <span className="font-semibold text-blue-600">{usageRemaining}</span>
+              Uses remaining: <span className="font-semibold text-blue-600">
+                {usageRemaining === 'unlimited' ? 'Unlimited' : usageRemaining}
+              </span>
             </div>
           </div>
           
@@ -453,7 +468,7 @@ const ResumeBuilderCreate = () => {
                 </button>
                 <button
                   onClick={handleGenerate}
-                  disabled={generating || usageRemaining <= 0}
+                  disabled={generating || (usageRemaining !== 'unlimited' && usageRemaining <= 0)}
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {generating ? (

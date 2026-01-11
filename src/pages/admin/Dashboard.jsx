@@ -478,6 +478,13 @@ const AdminDashboard = () => {
             <p className="text-sm text-gray-600 mt-1">View all conversations</p>
           </Link>
           <Link
+            to="/admin/recent-activity"
+            className="bg-white/80 rounded-3xl shadow-lg border border-white/60 p-4 hover:shadow-xl transition backdrop-blur"
+          >
+            <h3 className="font-semibold text-gray-900">Recent Activity</h3>
+            <p className="text-sm text-gray-600 mt-1">View all site activities</p>
+          </Link>
+          <Link
             to="/admin/timesheet-calculator"
             className="bg-white/80 rounded-3xl shadow-lg border border-white/60 p-4 hover:shadow-xl transition backdrop-blur"
           >
