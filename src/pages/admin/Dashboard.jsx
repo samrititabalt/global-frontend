@@ -545,6 +545,33 @@ const AdminDashboard = () => {
                 <div className="text-xs text-green-600 mt-1">
                   Size: {formatFileSize(videoInfo.size)}
                 </div>
+                {videoInfo.lastUploaded && (
+                  <div className="text-xs text-green-600 mt-1">
+                    Uploaded: {new Date(videoInfo.lastUploaded).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {videoInfo && !videoInfo.exists && videoInfo.deleted && (
+              <div className="mb-3 p-2 bg-red-50 rounded-lg border border-red-200">
+                <div className="flex items-center gap-2 text-red-700 text-xs">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>Video deleted</span>
+                </div>
+                {videoInfo.deletionReason && (
+                  <div className="text-xs text-red-600 mt-1">
+                    Reason: {videoInfo.deletionReason}
+                  </div>
+                )}
+                {videoInfo.deletedAt && (
+                  <div className="text-xs text-red-600 mt-1">
+                    Deleted: {new Date(videoInfo.deletedAt).toLocaleDateString()}
+                  </div>
+                )}
+                <div className="text-xs text-red-600 mt-1 font-semibold">
+                  Please upload a new video to restore homepage video functionality.
+                </div>
               </div>
             )}
 

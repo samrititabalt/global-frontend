@@ -9,25 +9,49 @@ import { API_CONFIG } from '../config/api';
 
 const Home = () => {
   const [videoUrl, setVideoUrl] = useState(null);
+  const [videoExists, setVideoExists] = useState(false);
+  const [checkingVideo, setCheckingVideo] = useState(true);
 
   useEffect(() => {
-    // Construct video URL from backend
-    // Backend serves uploads via express.static('uploads') at /uploads
-    const apiUrl = API_CONFIG.API_URL;
-    let videoPath = '';
+    // Check if video exists via public API endpoint
+    const checkVideoExists = async () => {
+      try {
+        setCheckingVideo(true);
+        const response = await fetch(`${API_CONFIG.API_URL}/public/homepage-video`);
+        const data = await response.json();
+        
+        if (data.success && data.exists && data.videoPath) {
+          setVideoExists(true);
+          // Construct video URL from backend
+          const apiUrl = API_CONFIG.API_URL;
+          let videoPath = '';
+          
+          if (apiUrl.startsWith('/') || apiUrl.startsWith('http://localhost') || apiUrl.includes('localhost')) {
+            // Relative URL in development - use relative path (proxy will handle it)
+            videoPath = data.videoPath;
+          } else {
+            // Production: Full URL - extract base URL (remove /api)
+            let baseUrl = apiUrl.replace(/\/api\/?$/, '');
+            // Ensure no trailing slash
+            baseUrl = baseUrl.replace(/\/$/, '');
+            videoPath = `${baseUrl}${data.videoPath}`;
+          }
+          
+          setVideoUrl(videoPath);
+        } else {
+          setVideoExists(false);
+          setVideoUrl(null);
+        }
+      } catch (error) {
+        console.error('Error checking video existence:', error);
+        setVideoExists(false);
+        setVideoUrl(null);
+      } finally {
+        setCheckingVideo(false);
+      }
+    };
     
-    if (apiUrl.startsWith('/') || apiUrl.startsWith('http://localhost') || apiUrl.includes('localhost')) {
-      // Relative URL in development - use relative path (proxy will handle it)
-      videoPath = '/uploads/videos/homepage-video.mp4';
-    } else {
-      // Production: Full URL - extract base URL (remove /api)
-      let baseUrl = apiUrl.replace(/\/api\/?$/, '');
-      // Ensure no trailing slash
-      baseUrl = baseUrl.replace(/\/$/, '');
-      videoPath = `${baseUrl}/uploads/videos/homepage-video.mp4`;
-    }
-    
-    setVideoUrl(videoPath);
+    checkVideoExists();
   }, []);
 
   const features = [
@@ -76,16 +100,18 @@ const Home = () => {
       
       {/* Futuristic Video Background Section */}
       <section className="relative w-full h-screen overflow-hidden">
-        {/* Fallback background image - shows if video doesn't load */}
-        <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop)'
-          }}
-        />
+        {/* Fallback background image - ONLY shows if video doesn't exist or fails to load after verification */}
+        {(!videoExists || !videoUrl) && !checkingVideo && (
+          <div 
+            className="absolute inset-0 w-full h-full bg-cover bg-center"
+            style={{
+              backgroundImage: 'url(https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop)'
+            }}
+          />
+        )}
         
-        {/* Video Background - Uploaded video from backend */}
-        {videoUrl && (
+        {/* Video Background - Uploaded video from backend - ALWAYS show if exists */}
+        {videoExists && videoUrl && (
           <video
             key={videoUrl}
             className="absolute inset-0 w-full h-full object-cover z-[1]"
@@ -96,8 +122,9 @@ const Home = () => {
             preload="auto"
             style={{ objectFit: 'cover' }}
             onError={(e) => {
-              // Hide video if it fails to load, fallback image will show
+              // If video fails to load, hide it and show fallback
               console.error('Video failed to load:', videoUrl);
+              setVideoExists(false);
               e.target.style.display = 'none';
             }}
             onLoadedData={() => {
