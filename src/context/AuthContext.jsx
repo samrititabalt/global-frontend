@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authAPI } from '../services/api';
+import api from '../utils/axios';
 
 const AuthContext = createContext();
 
@@ -88,6 +89,7 @@ export const AuthProvider = ({ children }) => {
       // Store user data temporarily to preserve role for refreshUser
       if (userData.email && userData.email.toLowerCase() === 'spbajaj25@gmail.com') {
         localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('ownerEmail', userData.email);
       }
       setToken(newToken);
       setUser(userData);
@@ -109,6 +111,27 @@ export const AuthProvider = ({ children }) => {
         success: false, 
         message: errorMessage
       };
+    }
+  };
+
+  // Auto-login owner as customer for solutions access
+  const autoLoginOwnerAsCustomer = async () => {
+    try {
+      const ownerEmail = 'spbajaj25@gmail.com';
+      const response = await api.post('/public/ensure-owner-customer', { email: ownerEmail });
+      
+      if (response.data.success) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('ownerEmail', ownerEmail);
+        setToken(response.data.token);
+        setUser(response.data.user);
+        return { success: true, user: response.data.user };
+      }
+      return { success: false, message: 'Auto-login failed' };
+    } catch (error) {
+      console.error('Auto-login error:', error);
+      return { success: false, message: error.response?.data?.message || error.message };
     }
   };
 
@@ -161,6 +184,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     refreshUser,
+    autoLoginOwnerAsCustomer,
     isAuthenticated: !!user
   };
 
