@@ -1,14 +1,38 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { BarChart3, FileSpreadsheet, TrendingUp, Zap, CheckCircle, ArrowRight, Play } from 'lucide-react';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
 import { useAuth } from '../../context/AuthContext';
+import OwnerAutoLoginButton from '../../components/solutions/OwnerAutoLoginButton';
+import OwnerAutoLoginButton from '../../components/solutions/OwnerAutoLoginButton';
 
 const SamsSmartReports = () => {
-  const { isAuthenticated, user } = useAuth();
-  const isCustomer = isAuthenticated && user?.role === 'customer';
+  const { isAuthenticated, user, autoLoginOwnerAsCustomer, loading } = useAuth();
+  const ownerEmail = 'spbajaj25@gmail.com';
+  
+  // Auto-login owner as customer when they access solution pages
+  useEffect(() => {
+    const checkAndAutoLogin = async () => {
+      if (!loading && isAuthenticated && user?.email?.toLowerCase() === ownerEmail && user?.role !== 'customer') {
+        // Owner is logged in but not as customer - auto-login as customer
+        try {
+          await autoLoginOwnerAsCustomer();
+        } catch (error) {
+          console.error('Auto-login error:', error);
+        }
+      }
+    };
+    
+    checkAndAutoLogin();
+  }, [isAuthenticated, user, loading, ownerEmail, autoLoginOwnerAsCustomer]);
+  
+  // Check if user is customer OR owner email (which should have customer access)
+  const isCustomer = isAuthenticated && (
+    user?.role === 'customer' || 
+    user?.email?.toLowerCase() === ownerEmail
+  );
 
   const features = [
     { icon: FileSpreadsheet, title: 'Paste Excel Data', description: 'Simply paste your Excel-style data (rows and columns) directly into the tool' },
@@ -55,13 +79,12 @@ const SamsSmartReports = () => {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 ) : (
-                  <Link
-                    to="/customer/signup"
-                    className="inline-flex items-center justify-center px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                  >
-                    Try Free
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
+                  <OwnerAutoLoginButton 
+                    ownerEmail={ownerEmail}
+                    autoLoginOwnerAsCustomer={autoLoginOwnerAsCustomer}
+                    onSuccess={() => window.location.href = '/customer/solution-pro'}
+                    text="Try Free"
+                  />
                 )}
                 <Link
                   to="/contact-us"
@@ -546,13 +569,13 @@ const SamsSmartReports = () => {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               ) : (
-                <Link
-                  to="/customer/signup"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                >
-                  Get Started Free
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
+                <OwnerAutoLoginButton 
+                  ownerEmail={ownerEmail}
+                  autoLoginOwnerAsCustomer={autoLoginOwnerAsCustomer}
+                  onSuccess={() => window.location.href = '/customer/solution-pro'}
+                  text="Get Started Free"
+                  className="bg-white text-blue-600 hover:bg-gray-100"
+                />
               )}
               <Link
                 to="/contact-us"

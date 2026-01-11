@@ -32,6 +32,7 @@ export const AuthProvider = ({ children }) => {
       // If user was logged in as admin or customer, preserve that role from localStorage
       if (userData.email && userData.email.toLowerCase() === 'spbajaj25@gmail.com') {
         userData.canAccessAdmin = true;
+        userData.canAccessCustomer = true; // Owner can access all customer features
         // Check if user was logged in with a specific role (stored in localStorage)
         const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
         if (storedUser && storedUser.email === userData.email) {
@@ -39,6 +40,11 @@ export const AuthProvider = ({ children }) => {
           if (storedUser.role === 'admin' || storedUser.role === 'customer') {
             userData.role = storedUser.role;
           }
+        }
+        // If not stored but user is owner, allow customer access
+        if (!storedUser || !storedUser.role) {
+          // Allow owner to access customer features even if logged in as admin
+          userData.canAccessCustomer = true;
         }
       }
       
