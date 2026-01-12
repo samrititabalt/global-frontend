@@ -50,7 +50,7 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ background: 'transparent', marginTop: '-60px' }}>
       <Header />
       
       {/* 
@@ -65,8 +65,8 @@ const Home = () => {
       */}
       <HeroVideoSection />
       
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center pt-20 pb-16 overflow-hidden bg-gradient-to-b from-gray-50 to-white">
+      {/* Hero Section - Template background starts here after video */}
+      <section className="relative min-h-screen flex items-center pt-20 pb-16 overflow-hidden bg-white bg-gradient-to-b from-gray-50 to-white">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-20 right-0 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
           <div className="absolute top-40 left-0 w-96 h-96 bg-purple-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
