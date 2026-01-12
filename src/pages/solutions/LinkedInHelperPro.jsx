@@ -386,7 +386,7 @@ const LinkedInHelperPro = () => {
         )}
 
         {/* Message Extraction */}
-        {extensionInstalled && isLinkedInLoggedIn && (
+        {extensionInstalled && isLinkedInLoggedIn ? (
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -474,7 +474,7 @@ const LinkedInHelperPro = () => {
               </div>
             )}
 
-            {messages.length > 0 && (
+            {messages.length > 0 ? (
               <div className="mt-4">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-sm text-gray-600">
