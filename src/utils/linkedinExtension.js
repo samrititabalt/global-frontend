@@ -105,9 +105,11 @@ export function checkLinkedInSession() {
         if (EXTENSION_ID) {
           chrome.runtime.sendMessage(EXTENSION_ID, { action: 'CHECK_LINKEDIN_LOGIN' }, (response) => {
             if (chrome.runtime.lastError) {
+              console.warn('[LinkedIn Helper] Extension messaging error:', chrome.runtime.lastError.message);
               // Extension not installed or not responding, fall back to window.postMessage
               tryWindowPostMessage(resolve, reject);
             } else if (response) {
+              console.log('[LinkedIn Helper] Extension response:', response);
               // Success - map response to expected format
               resolve({
                 isLoggedIn: response.loggedIn || false,
@@ -115,6 +117,7 @@ export function checkLinkedInSession() {
                 error: response.error || null
               });
             } else {
+              console.warn('[LinkedIn Helper] No response from extension');
               tryWindowPostMessage(resolve, reject);
             }
           });
