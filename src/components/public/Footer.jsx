@@ -39,16 +39,16 @@ const Footer = () => {
             </div>
           </div>
 
-          <div>
+          <div className="flex flex-col items-center">
             {services.map((service) => (
               <React.Fragment key={service}>
                 <Link
                   to="/ask-sam"
-                  className="text-white font-semibold mb-4 block hover:text-white transition-colors"
+                  className="text-white font-semibold mb-4 block hover:text-white transition-colors text-center"
                 >
                   {service}
                 </Link>
-                <Link to="/" className="block mb-4">
+                <Link to="/" className="block mb-4 flex justify-center">
                   {!logoError ? (
                     <img
                       src="/assets/tabalt-logo.png.jpg"
@@ -63,6 +63,20 @@ const Footer = () => {
                     </span>
                   )}
                 </Link>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-4">
+                  <Link
+                    to="/agent/login"
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                  >
+                    Agent Login
+                  </Link>
+                  <Link
+                    to="/admin/login"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  >
+                    Admin Login
+                  </Link>
+                </div>
               </React.Fragment>
             ))}
           </div>
@@ -110,30 +124,16 @@ const Footer = () => {
             <div className="text-sm text-gray-400">
               © {new Date().getFullYear()} Tabalt Ltd. All rights reserved.
             </div>
-            <div className="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-4">
-              <Link
-                to="/agent/login"
-                className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-              >
-                Agent Login
+            <div className="flex flex-wrap justify-center md:justify-end space-x-6 text-sm">
+              <Link to="/terms-of-service" className="hover:text-white transition-colors">
+                Terms of Service
               </Link>
-              <Link
-                to="/admin/login"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              >
-                Admin Login
+              <Link to="/privacy-policy" className="hover:text-white transition-colors">
+                Privacy Policy
               </Link>
-              <div className="flex flex-wrap justify-center md:justify-end space-x-6 text-sm">
-                <Link to="/terms-of-service" className="hover:text-white transition-colors">
-                  Terms of Service
-                </Link>
-                <Link to="/privacy-policy" className="hover:text-white transition-colors">
-                  Privacy Policy
-                </Link>
-                <Link to="/data-deletion" className="hover:text-white transition-colors">
-                  Data Deletion
-                </Link>
-              </div>
+              <Link to="/data-deletion" className="hover:text-white transition-colors">
+                Data Deletion
+              </Link>
             </div>
           </div>
         </div>
