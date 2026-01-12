@@ -147,6 +147,14 @@ const LinkedInHelperPro = () => {
     window.open('https://www.linkedin.com/messaging/', '_blank');
   };
 
+  const handleVerifyLogin = () => {
+    window.open('https://www.linkedin.com/messaging/', '_blank');
+  };
+
+  const handleConfirmLogin = () => {
+    checkLinkedInLogin();
+  };
+
   const extractMessages = async () => {
     // Guard: Check extension and session
     if (!extensionInstalled || typeof window === 'undefined') {
