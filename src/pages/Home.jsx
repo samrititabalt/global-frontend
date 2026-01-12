@@ -50,7 +50,7 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white relative -mt-[120px]">
+    <div className="min-h-screen bg-white">
       <Header />
       
       {/* 

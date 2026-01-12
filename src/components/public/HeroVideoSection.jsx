@@ -107,8 +107,8 @@ const HeroVideoSection = () => {
       {/* Dark Overlay for Text Readability */}
       <div className="absolute inset-0 bg-black/50 z-[2]"></div>
       
-      {/* Overlay Text - Moved down to make room for centered logo */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-4 sm:px-6 lg:px-8 pt-32">
+      {/* Overlay Text */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
