@@ -1,9 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
-import { FiMessageSquare, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { FiMessageSquare, FiClock, FiCheckCircle, X } from 'react-icons/fi';
+import { 
+  Code, 
+  Stethoscope, 
+  Headphones, 
+  FileText, 
+  ShoppingCart, 
+  Briefcase, 
+  GraduationCap, 
+  Home, 
+  Palette, 
+  Zap, 
+  Globe, 
+  Settings,
+  Sparkles,
+  ChevronRight
+} from 'lucide-react';
 import { customerAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../utils/axios';
 
 const CustomerDashboard = () => {
   const [services, setServices] = useState([]);
@@ -11,9 +28,68 @@ const CustomerDashboard = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [selectedSubService, setSelectedSubService] = useState('');
   const [loading, setLoading] = useState(true);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedServiceForDetail, setSelectedServiceForDetail] = useState(null);
+  const [customRequestModalOpen, setCustomRequestModalOpen] = useState(false);
+  const [customRequest, setCustomRequest] = useState('');
+  const [submittingCustomRequest, setSubmittingCustomRequest] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
   const availableMinutes = Number(user?.tokenBalance ?? 0);
+
+  // Icon mapping for services
+  const getServiceIcon = (serviceName) => {
+    const name = serviceName.toLowerCase();
+    if (name.includes('it') || name.includes('tech') || name.includes('software') || name.includes('development')) {
+      return <Code className="w-8 h-8" />;
+    } else if (name.includes('health') || name.includes('medical') || name.includes('care')) {
+      return <Stethoscope className="w-8 h-8" />;
+    } else if (name.includes('support') || name.includes('customer') || name.includes('service')) {
+      return <Headphones className="w-8 h-8" />;
+    } else if (name.includes('document') || name.includes('report') || name.includes('data')) {
+      return <FileText className="w-8 h-8" />;
+    } else if (name.includes('ecommerce') || name.includes('retail') || name.includes('shopping')) {
+      return <ShoppingCart className="w-8 h-8" />;
+    } else if (name.includes('business') || name.includes('consulting') || name.includes('management')) {
+      return <Briefcase className="w-8 h-8" />;
+    } else if (name.includes('education') || name.includes('training') || name.includes('learning')) {
+      return <GraduationCap className="w-8 h-8" />;
+    } else if (name.includes('real estate') || name.includes('property') || name.includes('housing')) {
+      return <Home className="w-8 h-8" />;
+    } else if (name.includes('design') || name.includes('creative') || name.includes('art')) {
+      return <Palette className="w-8 h-8" />;
+    } else if (name.includes('marketing') || name.includes('advertising') || name.includes('social')) {
+      return <Zap className="w-8 h-8" />;
+    } else if (name.includes('travel') || name.includes('tourism') || name.includes('international')) {
+      return <Globe className="w-8 h-8" />;
+    } else {
+      return <Settings className="w-8 h-8" />;
+    }
+  };
+
+  // Color mapping for service cards
+  const getServiceColor = (index) => {
+    const colors = [
+      { bg: 'bg-gradient-to-br from-blue-500 to-blue-600', icon: 'text-white', text: 'text-blue-900' },
+      { bg: 'bg-gradient-to-br from-purple-500 to-purple-600', icon: 'text-white', text: 'text-purple-900' },
+      { bg: 'bg-gradient-to-br from-pink-500 to-pink-600', icon: 'text-white', text: 'text-pink-900' },
+      { bg: 'bg-gradient-to-br from-green-500 to-green-600', icon: 'text-white', text: 'text-green-900' },
+      { bg: 'bg-gradient-to-br from-orange-500 to-orange-600', icon: 'text-white', text: 'text-orange-900' },
+      { bg: 'bg-gradient-to-br from-indigo-500 to-indigo-600', icon: 'text-white', text: 'text-indigo-900' },
+      { bg: 'bg-gradient-to-br from-teal-500 to-teal-600', icon: 'text-white', text: 'text-teal-900' },
+      { bg: 'bg-gradient-to-br from-red-500 to-red-600', icon: 'text-white', text: 'text-red-900' },
+    ];
+    return colors[index % colors.length];
+  };
+
+  // Generate short caption from description
+  const getShortCaption = (description) => {
+    if (!description) return 'Professional service tailored to your needs';
+    // Take first sentence or first 80 characters
+    const firstSentence = description.split('.')[0];
+    if (firstSentence.length <= 80) return firstSentence;
+    return description.substring(0, 77) + '...';
+  };
 
   useEffect(() => {
     loadData();
@@ -63,6 +139,45 @@ const CustomerDashboard = () => {
       } else {
         alert(error.response?.data?.message || 'Failed to request service. Please try again later.');
       }
+    }
+  };
+
+  const handleOpenDetail = (service, e) => {
+    e.stopPropagation();
+    setSelectedServiceForDetail(service);
+    setDetailModalOpen(true);
+  };
+
+  const handleSubmitCustomRequest = async () => {
+    if (!customRequest.trim()) {
+      alert('Please enter your custom service request');
+      return;
+    }
+
+    setSubmittingCustomRequest(true);
+    try {
+      // Send custom request to admin
+      const response = await api.post('/customer/custom-service-request', {
+        requestDetails: customRequest,
+        customerName: user?.name || 'Unknown',
+        customerEmail: user?.email || 'Unknown',
+        plan: user?.currentPlan || 'No plan',
+        tokenBalance: availableMinutes,
+        timestamp: new Date().toISOString()
+      });
+
+      if (response.data.success) {
+        alert('Your custom service request has been submitted! An admin will review it shortly.');
+        setCustomRequest('');
+        setCustomRequestModalOpen(false);
+      } else {
+        alert(response.data.message || 'Failed to submit request. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting custom request:', error);
+      alert(error.response?.data?.message || 'Failed to submit request. Please try again.');
+    } finally {
+      setSubmittingCustomRequest(false);
     }
   };
 
@@ -136,18 +251,57 @@ const CustomerDashboard = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Request a Service</h2>
               
               {!selectedService ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {services.map((service) => (
-                    <button
-                      key={service._id}
-                      onClick={() => handleServiceSelect(service)}
-                      className="p-6 border-2 border-gray-200 rounded-xl hover:border-blue-500/60 hover:bg-blue-50/30 transition-all text-left group"
-                    >
-                      <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-primary-800 transition-colors">{service.name}</h3>
-                      <p className="text-sm text-gray-600">{service.description}</p>
-                    </button>
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    {services.map((service, index) => {
+                      const colorScheme = getServiceColor(index);
+                      const IconComponent = getServiceIcon(service.name);
+                      return (
+                        <div
+                          key={service._id}
+                          className="group relative overflow-hidden rounded-2xl border-2 border-gray-200 hover:border-gray-300 transition-all duration-300 hover:shadow-xl bg-white"
+                        >
+                          <div className={`${colorScheme.bg} p-4 flex items-center justify-between`}>
+                            <div className={`${colorScheme.icon} flex items-center gap-3`}>
+                              {IconComponent}
+                              <h3 className="font-bold text-lg text-white">{service.name}</h3>
+                            </div>
+                          </div>
+                          <div className="p-5">
+                            <p className="text-sm text-gray-600 mb-4 min-h-[40px]">
+                              {getShortCaption(service.description)}
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleServiceSelect(service)}
+                                className="flex-1 bg-gray-900 text-white py-2.5 px-4 rounded-lg font-semibold hover:bg-gray-800 transition-all text-sm flex items-center justify-center gap-2"
+                              >
+                                Select
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => handleOpenDetail(service, e)}
+                                className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all text-sm"
+                              >
+                                Detail
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Custom Request Button */}
+                  <button
+                    onClick={() => setCustomRequestModalOpen(true)}
+                    className="w-full p-6 rounded-2xl bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white font-bold text-lg hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-3 group"
+                  >
+                    <Sparkles className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                    Can't Find Your Service? Create Your Own
+                    <Sparkles className="w-6 h-6 group-hover:-rotate-12 transition-transform" />
+                  </button>
+                </>
               ) : (
                 <div>
                   <div className="mb-6">
@@ -199,7 +353,7 @@ const CustomerDashboard = () => {
           </div>
 
           {/* Chat History */}
-            <div className="bg-white/80 rounded-3xl shadow-xl border border-white/60 p-8 backdrop-blur">
+          <div className="bg-white/80 rounded-3xl shadow-xl border border-white/60 p-8 backdrop-blur">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Chat History</h2>
             <div className="space-y-3">
               {chatSessions.length === 0 ? (
@@ -227,9 +381,118 @@ const CustomerDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Detail Modal */}
+      {detailModalOpen && selectedServiceForDetail && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className={`${getServiceColor(services.findIndex(s => s._id === selectedServiceForDetail._id)).bg} p-6 text-white`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="bg-white/20 p-3 rounded-xl">
+                    {getServiceIcon(selectedServiceForDetail.name)}
+                  </div>
+                  <h2 className="text-2xl font-bold">{selectedServiceForDetail.name}</h2>
+                </div>
+                <button
+                  onClick={() => setDetailModalOpen(false)}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Description</h3>
+                <p className="text-gray-700 leading-relaxed">{selectedServiceForDetail.description || 'No description available.'}</p>
+              </div>
+              {selectedServiceForDetail.subServices && selectedServiceForDetail.subServices.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Available Sub-Services</h3>
+                  <div className="space-y-2">
+                    {selectedServiceForDetail.subServices.map((subService, index) => (
+                      <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <h4 className="font-semibold text-gray-900">{subService.name}</h4>
+                        {subService.description && (
+                          <p className="text-sm text-gray-600 mt-1">{subService.description}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => {
+                    setDetailModalOpen(false);
+                    handleServiceSelect(selectedServiceForDetail);
+                  }}
+                  className="flex-1 bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all"
+                >
+                  Select This Service
+                </button>
+                <button
+                  onClick={() => setDetailModalOpen(false)}
+                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Request Modal */}
+      {customRequestModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full">
+            <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 p-6 text-white rounded-t-3xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-6 h-6" />
+                  <h2 className="text-2xl font-bold">Create Your Own Service</h2>
+                </div>
+                <button
+                  onClick={() => setCustomRequestModalOpen(false)}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-600 mb-4">
+                Can't find what you're looking for? Tell us about your custom service request and we'll get back to you!
+              </p>
+              <textarea
+                value={customRequest}
+                onChange={(e) => setCustomRequest(e.target.value)}
+                placeholder="Describe your custom service request in detail..."
+                className="w-full p-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 min-h-[150px] resize-y"
+              />
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={handleSubmitCustomRequest}
+                  disabled={submittingCustomRequest || !customRequest.trim()}
+                  className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submittingCustomRequest ? 'Submitting...' : 'Submit Request'}
+                </button>
+                <button
+                  onClick={() => setCustomRequestModalOpen(false)}
+                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };
 
 export default CustomerDashboard;
-
