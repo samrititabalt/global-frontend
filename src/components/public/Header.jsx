@@ -20,6 +20,8 @@ const Header = () => {
   
   // Check if user is a customer
   const isCustomer = isAuthenticated && user?.role === 'customer';
+  // Check if user is admin or customer (for Sam Studios visibility)
+  const isAdminOrCustomer = isAuthenticated && (user?.role === 'admin' || user?.role === 'customer');
 
   const services = [
     { name: 'UK Accounting, Taxation & Reporting', path: '/services/uk-accounting-taxation-reporting' },
@@ -190,7 +192,8 @@ const Header = () => {
               </AnimatePresence>
             </div>
 
-            {/* Solutions Dropdown - Renamed to "Sam Studios" */}
+            {/* Solutions Dropdown - Renamed to "Sam Studios" - Only visible to Admin and Customer */}
+            {isAdminOrCustomer && (
             <div className="relative" ref={solutionsDropdownRef}>
               <button
                 onClick={() => setIsSolutionsDropdownOpen(!isSolutionsDropdownOpen)}
@@ -256,6 +259,7 @@ const Header = () => {
                 )}
               </AnimatePresence>
             </div>
+            )}
             {/* Buttons - Always visible */}
             {isCustomer ? (
               <Link
@@ -373,7 +377,8 @@ const Header = () => {
                 </AnimatePresence>
               </div>
 
-              {/* Mobile Solutions Dropdown - Renamed to "Sam Studios" */}
+              {/* Mobile Solutions Dropdown - Renamed to "Sam Studios" - Only visible to Admin and Customer */}
+              {isAdminOrCustomer && (
               <div>
                 <button
                   onClick={() => setIsMobileSolutionsOpen(!isMobileSolutionsOpen)}
@@ -444,6 +449,7 @@ const Header = () => {
                   )}
                 </AnimatePresence>
               </div>
+              )}
 
               <Link
                 to="/"
