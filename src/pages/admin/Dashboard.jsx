@@ -68,13 +68,18 @@ const AdminDashboard = () => {
       const formData = new FormData();
       formData.append('video', file);
 
+      // Don't set Content-Type header - let axios set it automatically for FormData
+      // This ensures the boundary is set correctly
       const response = await api.post('/admin/homepage-video', formData, {
-        headers: { 
-          'Content-Type': 'multipart/form-data'
-        },
         maxContentLength: 200 * 1024 * 1024, // 200MB
         maxBodyLength: 200 * 1024 * 1024, // 200MB
-        timeout: 300000 // 5 minutes timeout for large uploads
+        timeout: 300000, // 5 minutes timeout for large uploads
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            console.log(`Upload progress: ${percentCompleted}%`);
+          }
+        }
       });
 
       setUploadSuccess(true);
@@ -92,10 +97,39 @@ const AdminDashboard = () => {
       }, 3000);
     } catch (error) {
       console.error('Video upload error:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          error.message || 
-                          'Failed to upload video. Please try again.';
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          baseURL: error.config?.baseURL
+        }
+      });
+      
+      let errorMessage = 'Failed to upload video. Please try again.';
+      
+      // Handle different types of errors
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        errorMessage = 'Upload timeout. The video file may be too large or the connection is slow. Please try again or use a smaller file.';
+      } else if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        errorMessage = 'Network error. Please check your internet connection and ensure the backend server is running.';
+      } else if (error.response?.status === 413) {
+        errorMessage = 'File too large. Maximum size is 200MB.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Authentication required. Please log in again.';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Permission denied. You do not have access to upload videos.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       setUploadError(errorMessage);
       setUploadSuccess(false);
       
