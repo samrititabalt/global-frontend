@@ -823,10 +823,209 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        {/* Custom Service Requests */}
+        <CustomServiceRequests />
+
         {/* Resume Builder Usage */}
         <ResumeBuilderUsage />
       </div>
     </Layout>
+  );
+};
+
+// Custom Service Requests Component
+const CustomServiceRequests = () => {
+  const [requests, setRequests] = useState([]);
+  const [agents, setAgents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [assigningAgent, setAssigningAgent] = useState(null);
+  const [selectedAgent, setSelectedAgent] = useState({});
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const [requestsRes, agentsRes] = await Promise.all([
+        api.get('/admin/custom-service-requests'),
+        api.get('/admin/agents')
+      ]);
+      setRequests(requestsRes.data.requests || []);
+      setAgents(agentsRes.data.agents || []);
+    } catch (error) {
+      console.error('Error loading custom service requests:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAssignAgent = async (requestId) => {
+    const agentId = selectedAgent[requestId];
+    if (!agentId) {
+      alert('Please select an agent');
+      return;
+    }
+
+    setAssigningAgent(requestId);
+    try {
+      const response = await api.put(`/admin/custom-service-requests/${requestId}`, {
+        assignedAgent: agentId
+      });
+
+      if (response.data.success) {
+        alert('Request assigned to agent successfully!');
+        loadData();
+        setSelectedAgent({ ...selectedAgent, [requestId]: '' });
+      } else {
+        alert(response.data.message || 'Failed to assign agent');
+      }
+    } catch (error) {
+      console.error('Error assigning agent:', error);
+      alert(error.response?.data?.message || 'Failed to assign agent. Please try again.');
+    } finally {
+      setAssigningAgent(null);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'New – Custom Request':
+        return 'bg-blue-100 text-blue-800';
+      case 'Assigned':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-8">
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-200 border-t-primary-800"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-gradient-to-r from-indigo-900 via-purple-900 to-pink-900 text-white rounded-3xl p-8 shadow-2xl">
+        <h2 className="text-3xl font-bold mb-2">Custom Service Requests</h2>
+        <p className="text-purple-200">Review and assign custom service requests to agents</p>
+      </div>
+
+      <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6">
+        {requests.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <p className="text-lg">No custom service requests yet</p>
+            <p className="text-sm mt-2">Requests will appear here when customers submit them</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <div className="space-y-4">
+              {requests.map((request) => (
+                <div
+                  key={request._id}
+                  className="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-300 transition-all bg-gray-50"
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-900 mb-1">{request.customerName}</h3>
+                          <p className="text-sm text-gray-600">{request.customerEmail}</p>
+                        </div>
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${getStatusColor(request.status)}`}>
+                          {request.status}
+                        </span>
+                      </div>
+                      
+                      <div className="mb-4">
+                        <p className="text-sm font-semibold text-gray-700 mb-1">Request Details:</p>
+                        <p className="text-gray-600 text-sm leading-relaxed bg-white p-3 rounded-lg border border-gray-200">
+                          {request.requestDetails}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                        <div>
+                          <span className="font-semibold text-gray-700">Plan:</span>
+                          <span className="text-gray-600 ml-2">{request.plan}</span>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700">Minutes:</span>
+                          <span className="text-gray-600 ml-2">{request.tokenBalance || 0} min</span>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700">Date:</span>
+                          <span className="text-gray-600 ml-2">{formatDate(request.createdAt)}</span>
+                        </div>
+                      </div>
+
+                      {request.assignedAgent && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-sm">
+                            <span className="font-semibold text-gray-700">Assigned to:</span>
+                            <span className="text-gray-600 ml-2">{request.assignedAgent.name}</span>
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {request.status === 'New – Custom Request' && (
+                      <div className="lg:w-64 flex flex-col gap-3">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Assign to Agent
+                          </label>
+                          <select
+                            value={selectedAgent[request._id] || ''}
+                            onChange={(e) => setSelectedAgent({ ...selectedAgent, [request._id]: e.target.value })}
+                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
+                          >
+                            <option value="">Select an agent...</option>
+                            {agents.filter(agent => agent.isActive !== false).map((agent) => (
+                              <option key={agent._id} value={agent._id}>
+                                {agent.name} {agent.serviceCategory?.name ? `(${agent.serviceCategory.name})` : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <button
+                          onClick={() => handleAssignAgent(request._id)}
+                          disabled={!selectedAgent[request._id] || assigningAgent === request._id}
+                          className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        >
+                          {assigningAgent === request._id ? 'Assigning...' : 'Assign'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

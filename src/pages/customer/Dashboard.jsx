@@ -156,9 +156,8 @@ const CustomerDashboard = () => {
         requestDetails: customRequest,
         customerName: user?.name || 'Unknown',
         customerEmail: user?.email || 'Unknown',
-        plan: user?.currentPlan || 'No plan',
-        tokenBalance: availableMinutes,
-        timestamp: new Date().toISOString()
+        plan: user?.currentPlan ? user.currentPlan.toString() : 'No plan',
+        tokenBalance: availableMinutes
       });
 
       if (response.data.success) {

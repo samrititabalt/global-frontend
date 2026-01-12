@@ -110,16 +110,25 @@ const AgentDashboard = () => {
       }
     };
 
+    // Listen for custom service request assignments
+    const handleCustomRequestAssigned = (data) => {
+      alert(`You have been assigned a custom service request from ${data.customerName}. Please check your notifications.`);
+      // Optionally reload dashboard or show notification
+      loadDashboard();
+    };
+
     socket.on('newPendingRequest', handleNewPendingRequest);
     socket.on('requestAccepted', handleRequestAccepted);
     socket.on('agentStatusUpdate', handleAgentStatusUpdate);
     socket.on('agentOnline', handleAgentOnline);
+    socket.on('customRequestAssigned', handleCustomRequestAssigned);
 
     return () => {
       socket.off('newPendingRequest', handleNewPendingRequest);
       socket.off('requestAccepted', handleRequestAccepted);
       socket.off('agentStatusUpdate', handleAgentStatusUpdate);
       socket.off('agentOnline', handleAgentOnline);
+      socket.off('customRequestAssigned', handleCustomRequestAssigned);
     };
   }, [socket, isConnected, user]);
 
