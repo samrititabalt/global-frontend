@@ -107,22 +107,22 @@ const HeroVideoSection = () => {
       {/* Dark Overlay for Text Readability */}
       <div className="absolute inset-0 bg-black/50 z-[2]"></div>
       
-      {/* Overlay Text */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-4 sm:px-6 lg:px-8">
+      {/* Overlay Text - Moved down to make room for centered logo */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-4 sm:px-6 lg:px-8 pt-32">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           className="text-center max-w-4xl mx-auto"
         >
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium text-white mb-6 leading-tight tracking-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium text-white mb-6 leading-tight tracking-tight drop-shadow-lg">
             Building Tomorrow of UK Small Businesses
           </h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-light leading-relaxed"
+            className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-light leading-relaxed drop-shadow-lg"
           >
             Sam Studios is the automation unit of Tabalt Ltd.
           </motion.p>
