@@ -84,13 +84,25 @@ import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 import TermsOfService from './pages/legal/TermsOfService';
 import DataDeletion from './pages/legal/DataDeletion';
 
+// Admin Components
+import { EditModeProvider } from './components/admin/EditModeToggle';
+import EditModeToggle from './components/admin/EditModeToggle';
+import AdminIndicator from './components/admin/AdminIndicator';
+
 function App() {
   return (
     <AuthProvider>
-      <SocketProvider>
-        <Router>
-          <div className="pt-[60px]">
-            <Routes>
+      <EditModeProvider>
+        <SocketProvider>
+          <Router>
+            {/* Admin Edit Mode Toggle - Fixed position top right */}
+            <EditModeToggle />
+            
+            {/* Admin Indicator - Fixed position bottom right */}
+            <AdminIndicator />
+            
+            <div className="pt-[60px]">
+              <Routes>
             {/* Public Routes */}
             {/* public routes  */}
             <Route path="/" element={<Home />} />
@@ -334,6 +346,7 @@ function App() {
           </div>
         </Router>
       </SocketProvider>
+      </EditModeProvider>
     </AuthProvider>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useEditMode } from './EditModeToggle';
 import { Edit2, Save, X } from 'lucide-react';
 import api from '../../utils/axios';
 import { useLocation } from 'react-router-dom';
@@ -25,6 +26,7 @@ const EditableContent = ({
   ...props 
 }) => {
   const { user, isAuthenticated } = useAuth();
+  const { isEditMode } = useEditMode();
   const location = useLocation();
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(children || '');
@@ -122,8 +124,8 @@ const EditableContent = ({
     }
   };
 
-  // Don't show edit controls for non-admin users
-  if (!isAdmin) {
+  // Don't show edit controls for non-admin users or when not in edit mode
+  if (!isAdmin || !isEditMode) {
     const Tag = tag;
     return <Tag className={className} {...props}>{content}</Tag>;
   }
@@ -195,15 +197,15 @@ const EditableContent = ({
       className={`editable-content ${className}`}
       style={{ 
         position: 'relative',
-        cursor: isAdmin ? 'pointer' : 'default',
+        cursor: isAdmin && isEditMode ? 'pointer' : 'default',
       }}
       onMouseEnter={(e) => {
-        if (isAdmin) {
+        if (isAdmin && isEditMode) {
           e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
         }
       }}
       onMouseLeave={(e) => {
-        if (isAdmin) {
+        if (isAdmin && isEditMode) {
           e.currentTarget.style.backgroundColor = 'transparent';
         }
       }}
@@ -211,7 +213,7 @@ const EditableContent = ({
       <Tag className={className} {...props}>
         {content}
       </Tag>
-      {isAdmin && (
+      {isAdmin && isEditMode && (
         <button
           onClick={handleEdit}
           className="edit-button"

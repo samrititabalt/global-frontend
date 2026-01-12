@@ -73,6 +73,19 @@ export const AuthProvider = ({ children }) => {
     };
 
     checkAuth();
+    
+    // Also refresh user on window focus to ensure auth state is current
+    const handleFocus = () => {
+      if (token) {
+        refreshUser();
+      }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
