@@ -92,8 +92,17 @@ const AdminDashboard = () => {
       }, 3000);
     } catch (error) {
       console.error('Video upload error:', error);
-      setUploadError(error.response?.data?.message || 'Failed to upload video. Please try again.');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Failed to upload video. Please try again.';
+      setUploadError(errorMessage);
       setUploadSuccess(false);
+      
+      // Log detailed error for debugging
+      if (error.response?.data?.error === 'CLOUDINARY_CONFIG_ERROR') {
+        console.error('Cloudinary credentials not configured. Check backend .env file.');
+      }
     } finally {
       setVideoUploading(false);
     }
