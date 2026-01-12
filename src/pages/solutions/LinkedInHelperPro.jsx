@@ -121,10 +121,20 @@ const LinkedInHelperPro = () => {
       setLinkedInUserName(userName);
       
       if (!isLoggedIn) {
-        const errorMsg = sessionInfo?.error || 'Not logged into LinkedIn. Please open LinkedIn in a new tab and log in, then try again.';
-        setExtractionError(errorMsg);
+        // Check if the error says user is logged in but name not found
+        if (sessionInfo?.error && sessionInfo.error.includes('appears to be logged in')) {
+          // User is logged in, just couldn't extract name
+          setIsLinkedInLoggedIn(true);
+          setExtractionError('Logged in but could not detect name. Please try refreshing LinkedIn page.');
+        } else {
+          const errorMsg = sessionInfo?.error || 'Not logged into LinkedIn. Please open LinkedIn in a new tab and log in, then try again.';
+          setExtractionError(errorMsg);
+        }
       } else if (userName) {
         setExtractionError(''); // Clear any previous errors
+      } else {
+        // Logged in but no name - clear error
+        setExtractionError('');
       }
     } catch (error) {
       console.warn('[LinkedIn Helper] Error checking LinkedIn login:', error);
