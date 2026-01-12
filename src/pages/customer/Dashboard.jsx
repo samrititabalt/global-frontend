@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
-import { FiMessageSquare, FiClock, FiCheckCircle, X } from 'react-icons/fi';
+import { FiMessageSquare, FiClock, FiCheckCircle } from 'react-icons/fi';
 import { 
   Code, 
   Stethoscope, 
@@ -16,7 +16,8 @@ import {
   Globe, 
   Settings,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  X
 } from 'lucide-react';
 import { customerAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
