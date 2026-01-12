@@ -68,7 +68,7 @@ const EditableContent = ({
 
     try {
       // Get current page path
-      const pagePath = location.pathname === '/' ? 'home' : location.pathname.replace(/^\//, '');
+      const pagePath = location.pathname === '/' ? 'home' : location.pathname.replace(/^\//, '').replace(/\//g, '-');
       
       // Get existing content for this page
       const existingResponse = await api.get(`/page-content/${pagePath}`);

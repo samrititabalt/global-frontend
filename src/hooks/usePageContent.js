@@ -17,7 +17,7 @@ export const usePageContent = () => {
       setLoading(true);
       setError(null);
       
-      const pagePath = location.pathname === '/' ? 'home' : location.pathname.replace(/^\//, '');
+      const pagePath = location.pathname === '/' ? 'home' : location.pathname.replace(/^\//, '').replace(/\//g, '-');
       const response = await api.get(`/page-content/${pagePath}`);
       
       if (response.data.success) {
