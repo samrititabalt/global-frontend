@@ -100,7 +100,7 @@ export function checkLinkedInSession() {
       if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
         // IMPORTANT: Update this with your actual extension ID after installation
         // Find it at chrome://extensions/ → LinkedIn Helper Pro → ID
-        const EXTENSION_ID = null; // Set to your extension ID, e.g., 'abcdefghijklmnopqrstuvwxyz123456'
+        const EXTENSION_ID = 'fgljfdpecjppbihebakilihmddiabamc'; // Set to your extension ID, e.g., 'abcdefghijklmnopqrstuvwxyz123456'
         
         if (EXTENSION_ID) {
           chrome.runtime.sendMessage(EXTENSION_ID, { action: 'CHECK_LINKEDIN_LOGIN' }, (response) => {
