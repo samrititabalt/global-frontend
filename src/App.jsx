@@ -89,7 +89,7 @@ function App() {
     <AuthProvider>
       <SocketProvider>
         <Router>
-          <div className="pt-[120px]">
+          <div className="pt-[60px]">
             <Routes>
             {/* Public Routes */}
             {/* public routes  */}

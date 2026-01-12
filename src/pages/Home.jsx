@@ -50,7 +50,7 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen" style={{ marginTop: '-120px', position: 'relative', zIndex: 1 }}>
+    <div className="min-h-screen">
       <Header />
       
       {/* 

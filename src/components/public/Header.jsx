@@ -47,27 +47,11 @@ const Header = () => {
   // Check if we're on the home page
   const isHomePage = location.pathname === '/';
 
+  // Always show navigation and header - no scroll-based hiding
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      
-      // Only apply scroll-based navigation hiding on home page
-      if (isHomePage) {
-        // Show navigation when scrolled a small amount (responsive and immediate)
-        setShowNavigation(scrollY > 50);
-        // Update scrolled state for header background - show white background when scrolled
-        setIsScrolled(scrollY > 20);
-      } else {
-        // On all other pages, always show navigation and white background
-        setShowNavigation(true);
-        setIsScrolled(true);
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    // Check initial scroll position
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isHomePage]);
+    setShowNavigation(true);
+    setIsScrolled(true);
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -101,16 +85,12 @@ const Header = () => {
 
   return (
     <>
-      {/* Regular Header - Completely hidden on homepage until scroll */}
+      {/* Regular Header - Always visible, compact size */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isHomePage && !showNavigation
-            ? 'opacity-0 pointer-events-none h-0 overflow-hidden'
-            : 'opacity-100 pointer-events-auto bg-white shadow-md backdrop-blur-md bg-white/95'
-        }`}
+        className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md backdrop-blur-md bg-white/95"
       >
-        <nav className="w-full px-4 sm:px-6 lg:px-8 py-3 pb-4">
-          <div className="flex items-center justify-between min-h-[120px]">
+        <nav className="w-full px-4 sm:px-6 lg:px-8 py-2">
+          <div className="flex items-center justify-between min-h-[60px]">
             {/* Logo */}
             <Link to="/" className="flex items-start gap-3 group pt-1">
             {!logoError ? (
@@ -118,19 +98,19 @@ const Header = () => {
                 <img
                   src="/assets/tabalt-logo.png.jpg"
                   alt="Tabalt Logo"
-                  className="h-20 w-auto object-contain"
+                  className="h-10 w-auto object-contain"
                   onError={() => setLogoError(true)}
                 />
-                <span className="text-xs font-medium mt-2 text-center text-gray-600">
+                <span className="text-[10px] font-medium mt-0.5 text-center text-gray-600">
                   Sam Studios
                 </span>
               </div>
             ) : (
               <div className="flex flex-col items-center">
-                <span className="text-3xl font-bold group-hover:text-blue-600 transition-colors text-gray-900">
+                <span className="text-xl font-bold group-hover:text-blue-600 transition-colors text-gray-900">
                   Tabalt
                 </span>
-                <span className="text-xs font-medium mt-2 text-center text-gray-600">
+                <span className="text-[10px] font-medium mt-0.5 text-center text-gray-600">
                   Sam Studios
                 </span>
               </div>
