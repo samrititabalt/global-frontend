@@ -192,21 +192,40 @@ const EditableContent = ({
     );
   }
 
+  // Handle click on the content itself when in edit mode
+  const handleContentClick = (e) => {
+    if (isAdmin && isEditMode && !isEditing) {
+      // Don't trigger if clicking the edit button
+      if (!e.target.closest('.edit-button')) {
+        handleEdit();
+      }
+    }
+  };
+
   return (
     <span 
       className={`editable-content ${className}`}
       style={{ 
         position: 'relative',
         cursor: isAdmin && isEditMode ? 'pointer' : 'default',
+        userSelect: isAdmin && isEditMode ? 'none' : 'auto',
+        outline: isAdmin && isEditMode ? '2px dashed rgba(59, 130, 246, 0.3)' : 'none',
+        outlineOffset: isAdmin && isEditMode ? '2px' : '0',
+        borderRadius: isAdmin && isEditMode ? '4px' : '0',
+        padding: isAdmin && isEditMode ? '2px' : '0',
+        display: 'inline-block',
       }}
+      onClick={handleContentClick}
       onMouseEnter={(e) => {
         if (isAdmin && isEditMode) {
           e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+          e.currentTarget.style.outlineColor = 'rgba(59, 130, 246, 0.5)';
         }
       }}
       onMouseLeave={(e) => {
         if (isAdmin && isEditMode) {
           e.currentTarget.style.backgroundColor = 'transparent';
+          e.currentTarget.style.outlineColor = 'rgba(59, 130, 246, 0.3)';
         }
       }}
     >
@@ -215,36 +234,42 @@ const EditableContent = ({
       </Tag>
       {isAdmin && isEditMode && (
         <button
-          onClick={handleEdit}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleEdit();
+          }}
           className="edit-button"
           style={{
             position: 'absolute',
-            top: '-8px',
-            right: '-8px',
+            top: '-10px',
+            right: '-10px',
             backgroundColor: '#3b82f6',
             color: 'white',
-            border: 'none',
+            border: '2px solid white',
             borderRadius: '50%',
-            width: '24px',
-            height: '24px',
+            width: '28px',
+            height: '28px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            opacity: 0,
-            transition: 'opacity 0.2s',
-            zIndex: 10,
+            opacity: 1,
+            transition: 'all 0.2s',
+            zIndex: 1000,
             fontSize: '12px',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = '1';
+            e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.backgroundColor = '#2563eb';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = '0';
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.backgroundColor = '#3b82f6';
           }}
           title="Click to edit"
         >
-          <Edit2 size={12} />
+          <Edit2 size={14} />
         </button>
       )}
     </span>
