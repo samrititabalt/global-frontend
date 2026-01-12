@@ -53,7 +53,16 @@ const Home = () => {
     <div className="min-h-screen bg-white">
       <Header />
       
-      {/* Hero Video Section - ISOLATED COMPONENT - DO NOT MODIFY */}
+      {/* 
+        ============================================
+        CRITICAL: HERO VIDEO SECTION
+        ============================================
+        DO NOT REPLACE <HeroVideoSection /> WITH INLINE VIDEO CODE
+        DO NOT MODIFY OR DELETE THIS COMPONENT IMPORT
+        The video is stored in Cloudinary and fetched via API
+        See: global-frontend/src/components/public/HeroVideoSection.jsx
+        ============================================
+      */}
       <HeroVideoSection />
       
       {/* Hero Section */}

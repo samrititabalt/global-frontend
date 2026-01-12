@@ -25,15 +25,35 @@ const HeroVideoSection = () => {
         const response = await fetch(`${API_CONFIG.API_URL}/public/homepage-video`);
         const data = await response.json();
         
-        if (data.success && data.exists && data.videoUrl) {
+        console.log('[HeroVideoSection] API response:', data);
+        
+        // Check for videoUrl (Cloudinary) or videoPath (local fallback)
+        const videoSource = data.videoUrl || data.videoPath;
+        
+        if (data.success && data.exists && videoSource) {
           setVideoExists(true);
-          setVideoUrl(data.videoUrl);
+          // If it's a relative path, construct full URL
+          if (videoSource.startsWith('/')) {
+            const apiUrl = API_CONFIG.API_URL;
+            let baseUrl = '';
+            if (apiUrl.startsWith('/') || apiUrl.startsWith('http://localhost') || apiUrl.includes('localhost')) {
+              baseUrl = '';
+            } else {
+              baseUrl = apiUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
+            }
+            setVideoUrl(`${baseUrl}${videoSource}`);
+          } else {
+            // Cloudinary URL or full URL
+            setVideoUrl(videoSource);
+          }
+          console.log('[HeroVideoSection] Video URL set:', videoSource);
         } else {
+          console.warn('[HeroVideoSection] No video found. Response:', data);
           setVideoExists(false);
           setVideoUrl(null);
         }
       } catch (error) {
-        console.error('Error checking video existence:', error);
+        console.error('[HeroVideoSection] Error checking video existence:', error);
         setVideoExists(false);
         setVideoUrl(null);
       } finally {
