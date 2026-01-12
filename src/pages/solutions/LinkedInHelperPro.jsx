@@ -11,15 +11,30 @@ import {
   Clock,
   Eye,
   EyeOff,
-  RefreshCw
+  RefreshCw,
+  Download,
+  Search,
+  Building2,
+  Filter
 } from 'lucide-react';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
+import {
+  isExtensionInstalled,
+  checkLinkedInSession,
+  extractConversations,
+  getLinkedInUserName,
+  applyFilters
+} from '../../utils/linkedinExtension';
 
 const LinkedInHelperPro = () => {
+  const [extensionInstalled, setExtensionInstalled] = useState(false);
+  const [checkingExtension, setCheckingExtension] = useState(true);
   const [isLinkedInLoggedIn, setIsLinkedInLoggedIn] = useState(false);
-  const [checkingLogin, setCheckingLogin] = useState(true);
+  const [checkingLogin, setCheckingLogin] = useState(false);
+  const [linkedInUserName, setLinkedInUserName] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [filteredMessages, setFilteredMessages] = useState([]);
   const [selectedMessages, setSelectedMessages] = useState(new Set());
   const [replyTemplate, setReplyTemplate] = useState('');
   const [customRecipients, setCustomRecipients] = useState('');
@@ -28,51 +43,88 @@ const LinkedInHelperPro = () => {
   const [previewMode, setPreviewMode] = useState(false);
   const [previewMessages, setPreviewMessages] = useState([]);
   const [extractionError, setExtractionError] = useState('');
+  const [batchSize, setBatchSize] = useState(50);
+  const [filters, setFilters] = useState({
+    companyName: '',
+    keyword: ''
+  });
   const iframeRef = useRef(null);
 
-  // Check if user is logged into LinkedIn
+  // Check for extension installation on mount
   useEffect(() => {
-    checkLinkedInLogin();
+    checkExtensionInstallation();
   }, []);
 
-  const checkLinkedInLogin = async () => {
-    setCheckingLogin(true);
+  // Check LinkedIn session when extension is detected
+  useEffect(() => {
+    if (extensionInstalled) {
+      checkLinkedInLogin();
+    }
+  }, [extensionInstalled]);
+
+  // Apply filters when messages or filters change
+  useEffect(() => {
+    if (messages.length > 0) {
+      const filtered = applyFilters(messages, filters);
+      setFilteredMessages(filtered);
+    } else {
+      setFilteredMessages([]);
+    }
+  }, [messages, filters]);
+
+  const checkExtensionInstallation = async () => {
+    setCheckingExtension(true);
     try {
-      // Try to access LinkedIn inbox to check if logged in
-      // This is a client-side check - we'll try to read from the active session
-      const linkedInInboxUrl = 'https://www.linkedin.com/messaging/';
+      const installed = await isExtensionInstalled();
+      setExtensionInstalled(installed);
+    } catch (error) {
+      console.error('Error checking extension:', error);
+      setExtensionInstalled(false);
+    } finally {
+      setCheckingExtension(false);
+    }
+  };
+
+  const checkLinkedInLogin = async () => {
+    if (!extensionInstalled) return;
+
+    setCheckingLogin(true);
+    setExtractionError('');
+    try {
+      const sessionInfo = await checkLinkedInSession();
+      setIsLinkedInLoggedIn(sessionInfo.isLoggedIn || false);
+      setLinkedInUserName(sessionInfo.userName || null);
       
-      // Check if we can access LinkedIn (this is a simplified check)
-      // In a real implementation, you'd need to use LinkedIn's API or check session cookies
-      // For now, we'll show a message asking user to ensure they're logged in
-      
-      // Try to detect if user has LinkedIn session
-      // Note: Due to CORS and security, we can't directly check LinkedIn login status
-      // User must manually confirm or we check via iframe (with limitations)
-      
-      // For this implementation, we'll provide a manual check button
-      // In production, you'd integrate with LinkedIn API or use browser extension
-      setIsLinkedInLoggedIn(false); // Default to false, user must verify
-      setCheckingLogin(false);
+      if (sessionInfo.isLoggedIn && sessionInfo.userName) {
+        const userNameInfo = await getLinkedInUserName();
+        if (userNameInfo.userName) {
+          setLinkedInUserName(userNameInfo.userName);
+        }
+      }
     } catch (error) {
       console.error('Error checking LinkedIn login:', error);
+      setExtractionError('Failed to check LinkedIn session. Please ensure the extension is installed and you are logged into LinkedIn.');
       setIsLinkedInLoggedIn(false);
+      setLinkedInUserName(null);
+    } finally {
       setCheckingLogin(false);
     }
   };
 
-  const handleVerifyLogin = () => {
-    // Open LinkedIn in new tab for user to verify
-    window.open('https://www.linkedin.com/messaging/', '_blank');
-    // After user confirms, they can click "I'm Logged In" button
+  const handleRefreshSession = () => {
+    checkLinkedInLogin();
   };
 
-  const handleConfirmLogin = () => {
-    setIsLinkedInLoggedIn(true);
-    setCheckingLogin(false);
+  const handleOpenLinkedIn = () => {
+    window.open('https://www.linkedin.com/messaging/', '_blank');
   };
 
   const extractMessages = async () => {
+    if (!extensionInstalled) {
+      setExtractionError('LinkedIn Helper extension is not installed. Please install it first.');
+      return;
+    }
+
     if (!isLinkedInLoggedIn) {
       setExtractionError('Please ensure you are logged into LinkedIn first.');
       return;
@@ -80,62 +132,29 @@ const LinkedInHelperPro = () => {
 
     setIsExtracting(true);
     setExtractionError('');
+    setMessages([]);
+    setSelectedMessages(new Set());
 
     try {
-      // In a real implementation, this would:
-      // 1. Use LinkedIn API to fetch messages
-      // 2. Or use a browser extension to read from the active session
-      // 3. Or use iframe with proper permissions (limited by CORS)
+      const result = await extractConversations(batchSize);
       
-      // For this demo, we'll show a message explaining the limitation
-      // and provide instructions for the user
-      
-      // Simulated extraction (replace with actual LinkedIn API call)
-      setTimeout(() => {
-        // Example extracted messages structure
-        const extractedMessages = [
-          {
-            id: 1,
-            senderFullName: 'John Smith',
-            senderFirstName: 'John',
-            lastMessage: 'Hi, I saw your profile and would like to connect.',
-            timestamp: new Date(Date.now() - 86400000).toISOString(),
-            conversationId: 'conv_1'
-          },
-          {
-            id: 2,
-            senderFullName: 'Sarah Johnson',
-            senderFirstName: 'Sarah',
-            lastMessage: 'Thanks for connecting! Would love to chat about opportunities.',
-            timestamp: new Date(Date.now() - 172800000).toISOString(),
-            conversationId: 'conv_2'
-          },
-          {
-            id: 3,
-            senderFullName: 'Michael Brown',
-            senderFirstName: 'Michael',
-            lastMessage: 'Hello, are you available for a quick call this week?',
-            timestamp: new Date(Date.now() - 259200000).toISOString(),
-            conversationId: 'conv_3'
-          }
-        ];
-
-        setMessages(extractedMessages);
-        setIsExtracting(false);
-      }, 2000);
-
-      // In production, replace with:
-      // const response = await fetch('/api/linkedin/extract-messages', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ sessionToken: linkedInSessionToken })
-      // });
-      // const data = await response.json();
-      // setMessages(data.messages);
-
+      if (result.success && result.conversations) {
+        // Add unique IDs to conversations
+        const messagesWithIds = result.conversations.map((conv, index) => ({
+          ...conv,
+          id: `conv_${index}_${Date.now()}`,
+          conversationId: `conv_${index}`
+        }));
+        
+        setMessages(messagesWithIds);
+        setExtractionError('');
+      } else {
+        setExtractionError(result.error || 'Failed to extract conversations. LinkedIn UI may have changed.');
+      }
     } catch (error) {
       console.error('Error extracting messages:', error);
-      setExtractionError('Failed to extract messages. Please ensure you are logged into LinkedIn and try again.');
+      setExtractionError(error.message || 'Failed to extract messages. Please ensure you are logged into LinkedIn and try again.');
+    } finally {
       setIsExtracting(false);
     }
   };
@@ -151,11 +170,19 @@ const LinkedInHelperPro = () => {
   };
 
   const selectAllMessages = () => {
-    if (selectedMessages.size === messages.length) {
+    const messagesToSelect = filteredMessages.length > 0 ? filteredMessages : messages;
+    if (selectedMessages.size === messagesToSelect.length) {
       setSelectedMessages(new Set());
     } else {
-      setSelectedMessages(new Set(messages.map(m => m.id)));
+      setSelectedMessages(new Set(messagesToSelect.map(m => m.id)));
     }
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
   };
 
   const generatePreview = () => {
@@ -164,7 +191,8 @@ const LinkedInHelperPro = () => {
       return;
     }
 
-    const selected = messages.filter(m => selectedMessages.has(m.id));
+    const messagesToUse = filteredMessages.length > 0 ? filteredMessages : messages;
+    const selected = messagesToUse.filter(m => selectedMessages.has(m.id));
     if (selected.length === 0) {
       setExtractionError('Please select at least one conversation to reply to.');
       return;
@@ -172,8 +200,8 @@ const LinkedInHelperPro = () => {
 
     const previews = selected.map(msg => {
       let personalizedMessage = replyTemplate
-        .replace(/{first_name}/g, msg.senderFirstName)
-        .replace(/{full_name}/g, msg.senderFullName);
+        .replace(/{first_name}/g, msg.senderFirstName || 'there')
+        .replace(/{full_name}/g, msg.senderFullName || 'there');
       
       return {
         ...msg,
@@ -183,6 +211,7 @@ const LinkedInHelperPro = () => {
 
     setPreviewMessages(previews);
     setPreviewMode(true);
+    setExtractionError('');
   };
 
   const sendBulkReplies = async () => {
@@ -325,47 +354,114 @@ const LinkedInHelperPro = () => {
         )}
 
         {/* Message Extraction */}
-        {isLinkedInLoggedIn && (
+        {extensionInstalled && isLinkedInLoggedIn && (
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <MessageSquare className="text-blue-600" size={24} />
                 Inbox Messages
               </h2>
-              <button
-                onClick={extractMessages}
-                disabled={isExtracting}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isExtracting ? (
-                  <>
-                    <Loader className="w-4 h-4 animate-spin" />
-                    Extracting...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="w-4 h-4" />
-                    Extract Messages
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-3">
+                <select
+                  value={batchSize}
+                  onChange={(e) => setBatchSize(Number(e.target.value))}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  disabled={isExtracting}
+                >
+                  <option value={50}>50 conversations</option>
+                  <option value={100}>100 conversations</option>
+                  <option value={150}>150 conversations</option>
+                </select>
+                <button
+                  onClick={extractMessages}
+                  disabled={isExtracting}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isExtracting ? (
+                    <>
+                      <Loader className="w-4 h-4 animate-spin" />
+                      Extracting...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4" />
+                      Extract Messages
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
+
+            {/* Filters */}
+            {messages.length > 0 && (
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Filter className="w-4 h-4 text-gray-600" />
+                  <h3 className="font-semibold text-gray-900">Filters</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Company Name
+                    </label>
+                    <div className="relative">
+                      <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={filters.companyName}
+                        onChange={(e) => handleFilterChange('companyName', e.target.value)}
+                        placeholder="Filter by company..."
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Keyword (Message Content)
+                    </label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={filters.keyword}
+                        onChange={(e) => handleFilterChange('keyword', e.target.value)}
+                        placeholder="Search in messages..."
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+                {(filters.companyName || filters.keyword) && (
+                  <button
+                    onClick={() => setFilters({ companyName: '', keyword: '' })}
+                    className="mt-3 text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    Clear Filters
+                  </button>
+                )}
+              </div>
+            )}
 
             {messages.length > 0 && (
               <div className="mt-4">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-sm text-gray-600">
-                    {messages.length} message{messages.length !== 1 ? 's' : ''} found
+                    {filteredMessages.length > 0 ? filteredMessages.length : messages.length} message{(filteredMessages.length > 0 ? filteredMessages.length : messages.length) !== 1 ? 's' : ''} found
+                    {filteredMessages.length !== messages.length && (
+                      <span className="text-gray-500 ml-2">
+                        (filtered from {messages.length} total)
+                      </span>
+                    )}
                   </span>
                   <button
                     onClick={selectAllMessages}
                     className="text-sm text-blue-600 hover:text-blue-700"
                   >
-                    {selectedMessages.size === messages.length ? 'Deselect All' : 'Select All'}
+                    {selectedMessages.size === (filteredMessages.length > 0 ? filteredMessages.length : messages.length) ? 'Deselect All' : 'Select All'}
                   </button>
                 </div>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {messages.map((msg) => (
+                  {(filteredMessages.length > 0 ? filteredMessages : messages).map((msg) => (
                     <div
                       key={msg.id}
                       className={`p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -385,9 +481,17 @@ const LinkedInHelperPro = () => {
                             )}
                           </div>
                           <p className="text-sm text-gray-600 mb-2">{msg.lastMessage}</p>
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <Clock className="w-3 h-3" />
-                            <span>{new Date(msg.timestamp).toLocaleString()}</span>
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            {msg.companyName && (
+                              <div className="flex items-center gap-1">
+                                <Building2 className="w-3 h-3" />
+                                <span>{msg.companyName}</span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span>{new Date(msg.timestamp).toLocaleString()}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -400,7 +504,7 @@ const LinkedInHelperPro = () => {
         )}
 
         {/* Reply Template */}
-        {isLinkedInLoggedIn && messages.length > 0 && (
+        {extensionInstalled && isLinkedInLoggedIn && messages.length > 0 && (
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Send className="text-blue-600" size={24} />
