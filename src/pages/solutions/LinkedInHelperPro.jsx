@@ -102,8 +102,8 @@ const LinkedInHelperPro = () => {
   };
 
   const checkLinkedInLogin = async () => {
-    // Guard: Only run if extension is installed and in browser
-    if (!extensionInstalled || typeof window === 'undefined') {
+    // Guard: Only run in browser
+    if (typeof window === 'undefined') {
       setIsLinkedInLoggedIn(false);
       setLinkedInUserName(null);
       setCheckingLogin(false);
@@ -114,24 +114,21 @@ const LinkedInHelperPro = () => {
     setExtractionError('');
     try {
       const sessionInfo = await checkLinkedInSession();
-      setIsLinkedInLoggedIn(sessionInfo?.isLoggedIn || false);
-      setLinkedInUserName(sessionInfo?.userName || null);
+      const isLoggedIn = sessionInfo?.isLoggedIn || false;
+      const userName = sessionInfo?.userName || null;
       
-      // Try to get user name if session is active
-      if (sessionInfo?.isLoggedIn) {
-        try {
-          const userNameInfo = await getLinkedInUserName();
-          if (userNameInfo?.userName) {
-            setLinkedInUserName(userNameInfo.userName);
-          }
-        } catch (nameError) {
-          // Non-critical, continue with session info
-          console.warn('[LinkedIn Helper] Could not get user name:', nameError);
-        }
+      setIsLinkedInLoggedIn(isLoggedIn);
+      setLinkedInUserName(userName);
+      
+      if (!isLoggedIn) {
+        const errorMsg = sessionInfo?.error || 'Not logged into LinkedIn. Please open LinkedIn in a new tab and log in, then try again.';
+        setExtractionError(errorMsg);
+      } else if (userName) {
+        setExtractionError(''); // Clear any previous errors
       }
     } catch (error) {
       console.warn('[LinkedIn Helper] Error checking LinkedIn login:', error);
-      setExtractionError('Failed to check LinkedIn session. Please ensure the extension is installed and you are logged into LinkedIn.');
+      setExtractionError(error.message || 'Failed to check LinkedIn session. Please ensure the extension is installed and LinkedIn is open in a tab.');
       setIsLinkedInLoggedIn(false);
       setLinkedInUserName(null);
     } finally {
@@ -361,18 +358,40 @@ const LinkedInHelperPro = () => {
                     </button>
                     <button
                       onClick={handleConfirmLogin}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                      disabled={checkingLogin}
+                      className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm ${
+                        checkingLogin ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                     >
-                      I'm Logged In
+                      {checkingLogin ? (
+                        <span className="flex items-center gap-2">
+                          <Loader className="w-4 h-4 animate-spin" />
+                          Checking...
+                        </span>
+                      ) : (
+                        "I'm Logged In"
+                      )}
                     </button>
                   </div>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <span className="text-green-800 font-medium">LinkedIn session detected. You're ready to proceed.</span>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <span className="text-green-800 font-medium">
+                  {linkedInUserName 
+                    ? `Logged in as ${linkedInUserName}`
+                    : 'LinkedIn session detected. You\'re ready to proceed.'}
+                </span>
+              </div>
+              <button
+                onClick={handleRefreshSession}
+                className="text-sm text-green-700 hover:text-green-900 underline"
+              >
+                Refresh Status
+              </button>
             </div>
           )}
         </div>
