@@ -50,16 +50,25 @@ const LinkedInHelperPro = () => {
   });
   const iframeRef = useRef(null);
 
-  // Check for extension installation on mount
+  // Check for extension installation on mount (client-side only)
   useEffect(() => {
-    checkExtensionInstallation();
+    // Only run in browser environment
+    if (typeof window === 'undefined') return;
+    
+    // Small delay to ensure page is fully mounted
+    const timer = setTimeout(() => {
+      checkExtensionInstallation();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Check LinkedIn session when extension is detected
   useEffect(() => {
-    if (extensionInstalled) {
-      checkLinkedInLogin();
-    }
+    // Only run in browser and if extension is installed
+    if (typeof window === 'undefined' || !extensionInstalled) return;
+    
+    checkLinkedInLogin();
   }, [extensionInstalled]);
 
   // Apply filters when messages or filters change
@@ -73,12 +82,19 @@ const LinkedInHelperPro = () => {
   }, [messages, filters]);
 
   const checkExtensionInstallation = async () => {
+    // Guard: Only run in browser
+    if (typeof window === 'undefined') {
+      setExtensionInstalled(false);
+      setCheckingExtension(false);
+      return;
+    }
+
     setCheckingExtension(true);
     try {
       const installed = await isExtensionInstalled();
-      setExtensionInstalled(installed);
+      setExtensionInstalled(installed || false); // Ensure boolean
     } catch (error) {
-      console.error('Error checking extension:', error);
+      console.warn('[LinkedIn Helper] Error checking extension:', error);
       setExtensionInstalled(false);
     } finally {
       setCheckingExtension(false);
@@ -86,23 +102,35 @@ const LinkedInHelperPro = () => {
   };
 
   const checkLinkedInLogin = async () => {
-    if (!extensionInstalled) return;
+    // Guard: Only run if extension is installed and in browser
+    if (!extensionInstalled || typeof window === 'undefined') {
+      setIsLinkedInLoggedIn(false);
+      setLinkedInUserName(null);
+      setCheckingLogin(false);
+      return;
+    }
 
     setCheckingLogin(true);
     setExtractionError('');
     try {
       const sessionInfo = await checkLinkedInSession();
-      setIsLinkedInLoggedIn(sessionInfo.isLoggedIn || false);
-      setLinkedInUserName(sessionInfo.userName || null);
+      setIsLinkedInLoggedIn(sessionInfo?.isLoggedIn || false);
+      setLinkedInUserName(sessionInfo?.userName || null);
       
-      if (sessionInfo.isLoggedIn && sessionInfo.userName) {
-        const userNameInfo = await getLinkedInUserName();
-        if (userNameInfo.userName) {
-          setLinkedInUserName(userNameInfo.userName);
+      // Try to get user name if session is active
+      if (sessionInfo?.isLoggedIn) {
+        try {
+          const userNameInfo = await getLinkedInUserName();
+          if (userNameInfo?.userName) {
+            setLinkedInUserName(userNameInfo.userName);
+          }
+        } catch (nameError) {
+          // Non-critical, continue with session info
+          console.warn('[LinkedIn Helper] Could not get user name:', nameError);
         }
       }
     } catch (error) {
-      console.error('Error checking LinkedIn login:', error);
+      console.warn('[LinkedIn Helper] Error checking LinkedIn login:', error);
       setExtractionError('Failed to check LinkedIn session. Please ensure the extension is installed and you are logged into LinkedIn.');
       setIsLinkedInLoggedIn(false);
       setLinkedInUserName(null);
@@ -120,7 +148,8 @@ const LinkedInHelperPro = () => {
   };
 
   const extractMessages = async () => {
-    if (!extensionInstalled) {
+    // Guard: Check extension and session
+    if (!extensionInstalled || typeof window === 'undefined') {
       setExtractionError('LinkedIn Helper extension is not installed. Please install it first.');
       return;
     }
@@ -138,7 +167,7 @@ const LinkedInHelperPro = () => {
     try {
       const result = await extractConversations(batchSize);
       
-      if (result.success && result.conversations) {
+      if (result && result.success && result.conversations && Array.isArray(result.conversations)) {
         // Add unique IDs to conversations
         const messagesWithIds = result.conversations.map((conv, index) => ({
           ...conv,
@@ -149,11 +178,14 @@ const LinkedInHelperPro = () => {
         setMessages(messagesWithIds);
         setExtractionError('');
       } else {
-        setExtractionError(result.error || 'Failed to extract conversations. LinkedIn UI may have changed.');
+        const errorMsg = result?.error || 'Failed to extract conversations. LinkedIn UI may have changed or extension is not responding.';
+        setExtractionError(errorMsg);
+        setMessages([]);
       }
     } catch (error) {
-      console.error('Error extracting messages:', error);
-      setExtractionError(error.message || 'Failed to extract messages. Please ensure you are logged into LinkedIn and try again.');
+      console.error('[LinkedIn Helper] Error extracting messages:', error);
+      setExtractionError(error?.message || 'Failed to extract messages. Please ensure you are logged into LinkedIn and try again.');
+      setMessages([]);
     } finally {
       setIsExtracting(false);
     }
@@ -499,9 +531,17 @@ const LinkedInHelperPro = () => {
                   ))}
                 </div>
               </div>
+            ) : (
+              <div className="mt-4 p-8 text-center bg-gray-50 rounded-lg border border-gray-200">
+                <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 mb-2 font-medium">No messages extracted yet.</p>
+                <p className="text-sm text-gray-500">
+                  Click "Extract Messages" above to load conversations from your LinkedIn inbox.
+                </p>
+              </div>
             )}
           </div>
-        )}
+        ) : null}
 
         {/* Reply Template */}
         {extensionInstalled && isLinkedInLoggedIn && messages.length > 0 && (
