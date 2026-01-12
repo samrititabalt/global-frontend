@@ -130,10 +130,8 @@ const LinkedInHelperPro = () => {
           const errorMsg = sessionInfo?.error || 'Not logged into LinkedIn. Please open LinkedIn in a new tab and log in, then try again.';
           setExtractionError(errorMsg);
         }
-      } else if (userName) {
-        setExtractionError(''); // Clear any previous errors
       } else {
-        // Logged in but no name - clear error
+        // User is logged in - clear any errors
         setExtractionError('');
       }
     } catch (error) {
@@ -151,7 +149,7 @@ const LinkedInHelperPro = () => {
   };
 
   const handleOpenLinkedIn = () => {
-    window.open('https://www.linkedin.com/messaging/', '_blank');
+    window.open('https://www.linkedin.com/feed/', '_blank');
   };
 
   const handleVerifyLogin = () => {
