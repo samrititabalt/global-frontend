@@ -44,6 +44,12 @@ body > #root > div > section:first-of-type[class*="pt-"] {
   padding-top: inherit; /* Use page-specific padding if set */
 }
 
+/* Exception: Home page video section - no padding */
+body > #root > div > div > section[class*="h-screen"][class*="overflow-hidden"] {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
