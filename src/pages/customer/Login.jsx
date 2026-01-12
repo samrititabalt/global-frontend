@@ -27,7 +27,9 @@ const CustomerLogin = () => {
       // OAuth success - token is in URL
       localStorage.setItem('token', token);
       refreshUser().then(() => {
-        navigate('/customer/plans');
+        // Check for redirect parameter, otherwise go to dashboard
+        const redirect = searchParams.get('redirect');
+        navigate(redirect || '/customer/dashboard');
       });
     }
   }, [searchParams, navigate, refreshUser]);
@@ -40,7 +42,9 @@ const CustomerLogin = () => {
     const result = await login(email, password, 'customer');
     
     if (result.success) {
-      navigate('/customer/plans');
+      // Check for redirect parameter, otherwise go to dashboard
+      const redirect = searchParams.get('redirect');
+      navigate(redirect || '/customer/dashboard');
     } else {
       setError(result.message);
     }
