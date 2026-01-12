@@ -103,8 +103,8 @@ const Header = () => {
     <>
       {/* Centered Logo on Homepage (only when not scrolled) */}
       {isHomePage && !showNavigation && (
-        <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300">
-          <Link to="/" className="flex flex-col items-center gap-2 group">
+        <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-[60] transition-all duration-300 pointer-events-none">
+          <Link to="/" className="flex flex-col items-center gap-2 group pointer-events-auto">
             {!logoError ? (
               <div className="flex flex-col items-center">
                 <img
@@ -131,20 +131,30 @@ const Header = () => {
         </div>
       )}
 
-      {/* Regular Header (visible when scrolled or on other pages) */}
+      {/* Regular Header (reduced size on homepage when not scrolled) */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isHomePage && !showNavigation
-            ? 'opacity-0 pointer-events-none h-0 overflow-hidden'
-            : 'opacity-100 pointer-events-auto bg-white shadow-md backdrop-blur-md bg-white/95'
+            ? 'bg-white/20 backdrop-blur-sm'
+            : 'bg-white shadow-md backdrop-blur-md bg-white/95'
         }`}
       >
-        <nav className="w-full px-4 sm:px-6 lg:px-8 py-3 pb-4">
-          <div className="flex items-center justify-between min-h-[120px]">
+        <nav className={`w-full px-4 sm:px-6 lg:px-8 transition-all duration-300 ${
+          isHomePage && !showNavigation
+            ? 'py-1'
+            : 'py-3 pb-4'
+        }`}>
+          <div className={`flex items-center justify-between transition-all duration-300 ${
+            isHomePage && !showNavigation
+              ? 'min-h-[24px]'
+              : 'min-h-[120px]'
+          }`}>
             {/* Logo */}
             <Link to="/" className="flex items-start gap-3 group pt-1">
             {!logoError ? (
-              <div className="flex flex-col items-center">
+              <div className={`flex flex-col items-center transition-all duration-300 ${
+                isHomePage && !showNavigation ? 'scale-[0.2] origin-top-left' : 'scale-100'
+              }`}>
                 <img
                   src="/assets/tabalt-logo.png.jpg"
                   alt="Tabalt Logo"
@@ -158,7 +168,9 @@ const Header = () => {
                 </span>
               </div>
             ) : (
-              <div className="flex flex-col items-center">
+              <div className={`flex flex-col items-center transition-all duration-300 ${
+                isHomePage && !showNavigation ? 'scale-[0.2] origin-top-left' : 'scale-100'
+              }`}>
                 <span className={`text-3xl font-bold group-hover:text-blue-600 transition-colors ${
                   (isHomePage && !showNavigation) ? 'text-white' : 'text-gray-900'
                 }`}>
@@ -174,8 +186,10 @@ const Header = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className={`hidden md:flex items-center space-x-8 transition-opacity duration-300 ${
-            isHomePage ? (showNavigation ? 'opacity-100' : 'opacity-0 pointer-events-none') : 'opacity-100'
+          <div className={`hidden md:flex items-center space-x-8 transition-all duration-300 ${
+            isHomePage && !showNavigation 
+              ? 'opacity-0 pointer-events-none scale-0' 
+              : 'opacity-100 scale-100'
           }`}>
             {/* Home - Moved to the left */}
             <Link
@@ -350,10 +364,10 @@ const Header = () => {
 
           {/* Mobile Menu Button */}
           <button
-            className={`md:hidden p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors ${
-              (isHomePage && !showNavigation)
-                ? 'text-white hover:text-gray-200'
-                : 'text-gray-700 hover:text-gray-900'
+            className={`md:hidden p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-all duration-300 ${
+              isHomePage && !showNavigation
+                ? 'opacity-0 pointer-events-none scale-0 text-white'
+                : 'opacity-100 pointer-events-auto scale-100 text-gray-700 hover:text-gray-900'
             }`}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
