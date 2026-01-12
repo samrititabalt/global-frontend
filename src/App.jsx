@@ -71,6 +71,8 @@ import ExpenseMonitorPro from './pages/solutions/ExpenseMonitorPro';
 import MergeSpreadsheets from './pages/solutions/MergeSpreadsheets';
 import MergeSpreadsheetsPro from './pages/solutions/MergeSpreadsheetsPro';
 import Forecasts from './pages/solutions/Forecasts';
+import LinkedInHelper from './pages/solutions/LinkedInHelper';
+import LinkedInHelperPro from './pages/solutions/LinkedInHelperPro';
 import RiskFraud from './pages/solutions/RiskFraud';
 import Hiring from './pages/solutions/Hiring';
 import FacebookAdsQuickLaunch from './pages/solutions/FacebookAdsQuickLaunch';
@@ -120,6 +122,8 @@ function App() {
             <Route path="/solutions/hiring" element={<Hiring />} />
             <Route path="/solutions/facebook-ads" element={<FacebookAdsQuickLaunch />} />
             <Route path="/resume-builder" element={<ResumeBuilder />} />
+            <Route path="/solutions/linkedin-helper" element={<LinkedInHelper />} />
+            <Route path="/linkedin-helper-pro" element={<LinkedInHelperPro />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/data-deletion" element={<DataDeletion />} />
