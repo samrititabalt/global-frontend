@@ -153,7 +153,7 @@ const LinkedInHelperPro = () => {
   };
 
   const handleVerifyLogin = () => {
-    window.open('https://www.linkedin.com/messaging/', '_blank');
+    window.open('https://www.linkedin.com/feed/', '_blank');
   };
 
   const handleConfirmLogin = () => {
