@@ -25,6 +25,25 @@ body {
   min-height: 100vh;
 }
 
+/* Global padding for fixed header - ensures content is never hidden behind header */
+/* Header height is approximately 120px (min-h-[120px]), using 128px (pt-32) for safe spacing */
+body {
+  padding-top: 0; /* Reset any default padding */
+}
+
+/* Apply padding-top to all pages that include the Header component */
+/* This ensures content is always visible below the fixed header */
+main,
+section:first-of-type,
+.min-h-screen:first-child {
+  padding-top: 128px; /* 32 * 4px = 128px, accounts for header height */
+}
+
+/* Exception: Home page hero section should handle its own spacing */
+body > #root > div > section:first-of-type[class*="pt-"] {
+  padding-top: inherit; /* Use page-specific padding if set */
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;

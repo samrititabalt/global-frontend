@@ -88,7 +88,8 @@ function App() {
     <AuthProvider>
       <SocketProvider>
         <Router>
-          <Routes>
+          <div className="pt-[120px]">
+            <Routes>
             {/* Public Routes */}
             {/* public routes  */}
             <Route path="/" element={<Home />} />
@@ -328,7 +329,8 @@ function App() {
               } 
             />
 
-          </Routes>
+            </Routes>
+          </div>
         </Router>
       </SocketProvider>
     </AuthProvider>
