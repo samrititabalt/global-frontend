@@ -6,8 +6,15 @@ import Header from '../components/public/Header';
 import Footer from '../components/public/Footer';
 import LiveChatBot from '../components/public/LiveChatBot';
 import HeroVideoSection from '../components/public/HeroVideoSection';
+import EditableContent from '../components/admin/EditableContent';
+import { usePageContent, getBlockContent } from '../hooks/usePageContent';
 
 const Home = () => {
+  const { content: pageContent } = usePageContent();
+  
+  // Get editable content for hero section
+  const heroHeading = getBlockContent(pageContent, 'home-hero-heading') || 'Transform Your Business Operations';
+  const heroDescription = getBlockContent(pageContent, 'home-hero-description') || 'Get a complete operations organization, not just individual agents. Every team includes trainers, QA analysts, and managers.';
 
   const features = [
     {
@@ -80,27 +87,35 @@ const Home = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <motion.h1
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight tracking-tight"
               >
-                Premier Outsourcing.
-                <br />
-                <span className="text-blue-600">Scale without losing</span>
-                <br />
-                your brand's voice.
-              </motion.h1>
+                <EditableContent
+                  blockId="home-main-heading"
+                  blockType="heading"
+                  tag="h1"
+                  className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight tracking-tight"
+                >
+                  {getBlockContent(pageContent, 'home-main-heading') || 'Premier Outsourcing.\nScale without losing\nyour brand\'s voice.'}
+                </EditableContent>
+              </motion.div>
 
-              <motion.p
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                className="text-xl text-gray-600 mb-8 max-w-2xl leading-relaxed"
               >
-                Premium outsourcing services that help UK businesses & individuals scale without losing their identity.
-              </motion.p>
+                <EditableContent
+                  blockId="home-main-description"
+                  blockType="paragraph"
+                  tag="p"
+                  className="text-xl text-gray-600 mb-8 max-w-2xl leading-relaxed"
+                >
+                  {getBlockContent(pageContent, 'home-main-description') || 'Premium outsourcing services that help UK businesses & individuals scale without losing their identity.'}
+                </EditableContent>
+              </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -171,12 +186,22 @@ const Home = () => {
       <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Why Choose Us
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              The secret to our success is our people. Our dedicated team of professionals is at the heart of everything we do.
-            </p>
+            <EditableContent
+              blockId="home-features-heading"
+              blockType="heading"
+              tag="h2"
+              className="text-4xl md:text-5xl font-bold text-gray-900 mb-4"
+            >
+              {getBlockContent(pageContent, 'home-features-heading') || 'Why Choose Us'}
+            </EditableContent>
+            <EditableContent
+              blockId="home-features-description"
+              blockType="paragraph"
+              tag="p"
+              className="text-xl text-gray-600 max-w-3xl mx-auto"
+            >
+              {getBlockContent(pageContent, 'home-features-description') || 'The secret to our success is our people. Our dedicated team of professionals is at the heart of everything we do.'}
+            </EditableContent>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

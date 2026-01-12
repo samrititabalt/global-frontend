@@ -11,11 +11,18 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { API_CONFIG } from '../../config/api';
+import EditableContent from '../admin/EditableContent';
+import { usePageContent, getBlockContent } from '../../hooks/usePageContent';
 
 const HeroVideoSection = () => {
   const [videoUrl, setVideoUrl] = useState(null);
   const [videoExists, setVideoExists] = useState(false);
   const [checkingVideo, setCheckingVideo] = useState(true);
+  const { content: pageContent } = usePageContent();
+  
+  // Get editable content for hero text
+  const heroTitle = getBlockContent(pageContent, 'hero-title') || 'Building Tomorrow of UK Small Businesses';
+  const heroSubtitle = getBlockContent(pageContent, 'hero-subtitle') || 'Sam Studios is the automation unit of Tabalt Ltd.';
 
   useEffect(() => {
     // Check if video exists via public API endpoint
@@ -115,17 +122,28 @@ const HeroVideoSection = () => {
           transition={{ duration: 0.8 }}
           className="text-center max-w-4xl mx-auto"
         >
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium text-white mb-6 leading-tight tracking-tight drop-shadow-lg">
-            Building Tomorrow of UK Small Businesses
-          </h1>
-          <motion.p
+          <EditableContent
+            blockId="hero-title"
+            blockType="heading"
+            tag="h1"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium text-white mb-6 leading-tight tracking-tight drop-shadow-lg"
+          >
+            {heroTitle}
+          </EditableContent>
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-light leading-relaxed drop-shadow-lg"
           >
-            Sam Studios is the automation unit of Tabalt Ltd.
-          </motion.p>
+            <EditableContent
+              blockId="hero-subtitle"
+              blockType="paragraph"
+              tag="p"
+              className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-light leading-relaxed drop-shadow-lg"
+            >
+              {heroSubtitle}
+            </EditableContent>
+          </motion.div>
         </motion.div>
       </div>
     </section>
