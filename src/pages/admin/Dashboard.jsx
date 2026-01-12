@@ -40,8 +40,17 @@ const AdminDashboard = () => {
   };
 
   const handleVideoUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files?.[0];
+    if (!file) {
+      console.log('No file selected');
+      return;
+    }
+    
+    console.log('File selected:', {
+      name: file.name,
+      size: file.size,
+      type: file.type
+    });
 
     // Validate file type
     const allowedTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo'];
@@ -67,6 +76,13 @@ const AdminDashboard = () => {
     try {
       const formData = new FormData();
       formData.append('video', file);
+      
+      console.log('FormData created:', {
+        hasFile: formData.has('video'),
+        fileSize: file.size,
+        fileName: file.name,
+        fileType: file.type
+      });
 
       // Don't set Content-Type header - let axios set it automatically for FormData
       // This ensures the boundary is set correctly
