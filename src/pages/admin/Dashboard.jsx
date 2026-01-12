@@ -62,11 +62,22 @@ const AdminDashboard = () => {
       return;
     }
 
-    // Validate file size (200MB max)
-    const maxSize = 200 * 1024 * 1024; // 200MB
+    // Validate file size
+    // Cloudinary free plan: 10-20MB limit
+    // Cloudinary paid plans: up to 2GB with chunked uploads
+    // We'll allow up to 100MB and let Cloudinary handle the error if it's too large
+    const maxSize = 200 * 1024 * 1024; // 200MB (our backend limit)
+    const cloudinaryFreeLimit = 20 * 1024 * 1024; // 20MB (Cloudinary free tier)
+    
     if (file.size > maxSize) {
       setUploadError('Video file size must be less than 200MB');
       return;
+    }
+    
+    // Warn if file is over Cloudinary free tier limit
+    if (file.size > cloudinaryFreeLimit) {
+      const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+      console.warn(`Video file is ${sizeMB}MB. Cloudinary free accounts support up to 20MB. Paid accounts support up to 2GB.`);
     }
 
     setVideoUploading(true);
@@ -132,8 +143,8 @@ const AdminDashboard = () => {
         errorMessage = 'Upload timeout. The video file may be too large or the connection is slow. Please try again or use a smaller file.';
       } else if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
         errorMessage = 'Network error. Please check your internet connection and ensure the backend server is running.';
-      } else if (error.response?.status === 413) {
-        errorMessage = 'File too large. Maximum size is 200MB.';
+      } else if (error.response?.status === 413 || error.response?.data?.error === 'FILE_TOO_LARGE') {
+        errorMessage = error.response?.data?.message || 'File too large. Cloudinary free accounts support up to 100MB. Please compress your video or upgrade your Cloudinary plan.';
       } else if (error.response?.status === 401) {
         errorMessage = 'Authentication required. Please log in again.';
       } else if (error.response?.status === 403) {
@@ -594,6 +605,9 @@ const AdminDashboard = () => {
               <h3 className="font-semibold text-gray-900">Homepage Video</h3>
             </div>
             <p className="text-sm text-gray-600 mb-3">Upload background video for homepage hero section</p>
+            <div className="text-xs text-amber-600 mb-3 bg-amber-50 p-2 rounded border border-amber-200">
+              ⚠️ Note: Cloudinary free accounts support videos up to 20MB. For larger videos (up to 2GB), upgrade your Cloudinary plan or compress your video.
+            </div>
             
             {videoInfo?.exists && (
               <div className="mb-3 p-2 bg-green-50 rounded-lg border border-green-200">

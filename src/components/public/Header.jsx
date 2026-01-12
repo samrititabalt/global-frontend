@@ -55,13 +55,13 @@ const Header = () => {
       if (isHomePage) {
         // Show navigation when scrolled a small amount (responsive and immediate)
         setShowNavigation(scrollY > 50);
+        // Update scrolled state for header background - show white background when scrolled
+        setIsScrolled(scrollY > 20);
       } else {
-        // On all other pages, always show navigation
+        // On all other pages, always show navigation and white background
         setShowNavigation(true);
+        setIsScrolled(true);
       }
-      
-      // Update scrolled state for header background
-      setIsScrolled(scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
     // Check initial scroll position
@@ -102,9 +102,11 @@ const Header = () => {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
+        isScrolled || (isHomePage && showNavigation)
           ? 'bg-white shadow-md backdrop-blur-md bg-white/95'
-          : 'bg-transparent'
+          : isHomePage
+          ? 'bg-transparent'
+          : 'bg-white shadow-md'
       }`}
     >
       <nav className="w-full px-4 sm:px-6 lg:px-8 py-3 pb-4">
@@ -148,12 +150,12 @@ const Header = () => {
             {/* Home - Moved to the left */}
             <Link
               to="/"
-              className={`font-medium transition-colors text-sm px-4 py-2 rounded-lg hover:bg-gray-100 ${
+              className={`font-medium transition-colors text-sm px-4 py-2 rounded-lg ${
                 isActive('/')
                   ? 'text-blue-600'
-                  : isScrolled
-                  ? 'text-gray-700 hover:text-gray-900'
-                  : 'text-gray-700 hover:text-gray-900'
+                  : (isHomePage && !showNavigation)
+                  ? 'text-white hover:text-gray-200 hover:bg-white/10'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
               Home
@@ -166,8 +168,8 @@ const Header = () => {
                 className={`text-sm font-medium transition-colors ${
                   isActive(link.path)
                     ? 'text-blue-600'
-                    : isScrolled
-                    ? 'text-gray-700 hover:text-gray-900'
+                    : (isHomePage && !showNavigation)
+                    ? 'text-white hover:text-gray-200'
                     : 'text-gray-700 hover:text-gray-900'
                 }`}
               >
@@ -182,8 +184,8 @@ const Header = () => {
                 className={`flex items-center gap-1 text-sm font-medium transition-colors ${
                   services.some(s => isActive(s.path))
                     ? 'text-blue-600'
-                    : isScrolled
-                    ? 'text-gray-700 hover:text-gray-900'
+                    : (isHomePage && !showNavigation)
+                    ? 'text-white hover:text-gray-200'
                     : 'text-gray-700 hover:text-gray-900'
                 }`}
               >
@@ -229,8 +231,8 @@ const Header = () => {
                 className={`flex items-center gap-1 text-sm font-medium transition-colors ${
                   solutions.some(s => isActive(s.path))
                     ? 'text-blue-600'
-                    : isScrolled
-                    ? 'text-gray-700 hover:text-gray-900'
+                    : (isHomePage && !showNavigation)
+                    ? 'text-white hover:text-gray-200'
                     : 'text-gray-700 hover:text-gray-900'
                 }`}
               >
@@ -318,7 +320,11 @@ const Header = () => {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2 text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
+            className={`md:hidden p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors ${
+              (isHomePage && !showNavigation)
+                ? 'text-white hover:text-gray-200'
+                : 'text-gray-700 hover:text-gray-900'
+            }`}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
             aria-expanded={isMobileMenuOpen}
