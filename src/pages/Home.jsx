@@ -248,7 +248,7 @@ const Home = () => {
               Ready to scale your business?
             </h2>
             <p className="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed max-w-3xl mx-auto">
-              Choose an outsourcing solution that boosts your efficiency, fuels company growth with top-notch performance, and scales your business with high conversion rates. All at lower costs.
+              Choose an automation solution that boosts your efficiency, fuels company growth with top-notch performance, and scales your business with high conversion rates. All at lower costs.
             </p>
             <p className="text-lg text-gray-400 mb-10">
               Quality results at a better value — 80% ROI increase and save 50% compared to in-house teams.
