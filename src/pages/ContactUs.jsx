@@ -3,8 +3,12 @@ import { motion } from 'framer-motion';
 import Header from '../components/public/Header';
 import Footer from '../components/public/Footer';
 import ContactUsContent from '../components/contact/ContactUs';
+import EditableContent from '../components/admin/EditableContent';
+import { usePageContent, getBlockContent } from '../hooks/usePageContent';
 
 const ContactUs = () => {
+  const { content: pageContent } = usePageContent();
+  
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -23,12 +27,22 @@ const ContactUs = () => {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
-              Get in <span className="text-blue-600">Touch</span>
-            </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
-            </p>
+            <EditableContent
+              blockId="contact-us-hero-title"
+              blockType="heading"
+              tag="h1"
+              className="text-5xl md:text-6xl font-bold text-gray-900 mb-4"
+            >
+              {getBlockContent(pageContent, 'contact-us-hero-title') || 'Get in Touch'}
+            </EditableContent>
+            <EditableContent
+              blockId="contact-us-hero-description"
+              blockType="paragraph"
+              tag="p"
+              className="text-xl text-gray-600 max-w-3xl mx-auto"
+            >
+              {getBlockContent(pageContent, 'contact-us-hero-description') || 'Have questions? We\'d love to hear from you. Send us a message and we\'ll respond as soon as possible.'}
+            </EditableContent>
           </motion.div>
         </div>
       </section>

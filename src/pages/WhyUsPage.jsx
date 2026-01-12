@@ -17,8 +17,11 @@ import {
 } from 'lucide-react';
 import Header from '../components/public/Header';
 import Footer from '../components/public/Footer';
+import EditableContent from '../components/admin/EditableContent';
+import { usePageContent, getBlockContent } from '../hooks/usePageContent';
 
 const WhyUsPage = () => {
+  const { content: pageContent } = usePageContent();
   const differentiators = [
     {
       icon: Users,
@@ -144,26 +147,44 @@ const WhyUsPage = () => {
                 transition={{ duration: 0.6, delay: 0.1 }}
                 className="inline-block px-4 py-2 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold mb-6"
               >
-                Why Choose Ask Sam
+                <EditableContent
+                  blockId="why-us-badge"
+                  blockType="text"
+                  tag="span"
+                >
+                  {getBlockContent(pageContent, 'why-us-badge') || 'Why Choose Ask Sam'}
+                </EditableContent>
               </motion.div>
               
-              <motion.h1
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight"
               >
-                One Assistant. Every Task. Any Industry
-              </motion.h1>
+                <EditableContent
+                  blockId="why-us-hero-title"
+                  blockType="heading"
+                  tag="h1"
+                  className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight"
+                >
+                  {getBlockContent(pageContent, 'why-us-hero-title') || 'One Assistant. Every Task. Any Industry'}
+                </EditableContent>
+              </motion.div>
 
-              <motion.p
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
-                className="text-xl text-gray-600 mb-8 leading-relaxed"
               >
-                From spreadsheets to suitcases, invoices to itineraries — Ask Sam handles it all. We provide executive assistant services across business functions like sales, finance, customer support, and administration, while also managing personal tasks such as shopping, travel, and holiday planning. Just ask.
-              </motion.p>
+                <EditableContent
+                  blockId="why-us-hero-description"
+                  blockType="paragraph"
+                  tag="p"
+                  className="text-xl text-gray-600 mb-8 leading-relaxed"
+                >
+                  {getBlockContent(pageContent, 'why-us-hero-description') || 'From spreadsheets to suitcases, invoices to itineraries — Ask Sam handles it all. We provide executive assistant services across business functions like sales, finance, customer support, and administration, while also managing personal tasks such as shopping, travel, and holiday planning. Just ask.'}
+                </EditableContent>
+              </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -238,13 +259,22 @@ const WhyUsPage = () => {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              What Makes Us <span className="text-blue-600">Different</span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              We don't just provide agents—we deliver complete operations organizations 
-              designed to scale with your business.
-            </p>
+            <EditableContent
+              blockId="why-us-different-title"
+              blockType="heading"
+              tag="h2"
+              className="text-4xl md:text-5xl font-bold text-gray-900 mb-4"
+            >
+              {getBlockContent(pageContent, 'why-us-different-title') || 'What Makes Us Different'}
+            </EditableContent>
+            <EditableContent
+              blockId="why-us-different-description"
+              blockType="paragraph"
+              tag="p"
+              className="text-xl text-gray-600 max-w-3xl mx-auto"
+            >
+              {getBlockContent(pageContent, 'why-us-different-description') || 'We don\'t just provide agents—we deliver complete operations organizations designed to scale with your business.'}
+            </EditableContent>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -282,12 +312,22 @@ const WhyUsPage = () => {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Why Companies Choose <span className="text-blue-600">Ask Sam</span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Discover the advantages that set us apart and drive exceptional results for our clients.
-            </p>
+            <EditableContent
+              blockId="why-us-benefits-title"
+              blockType="heading"
+              tag="h2"
+              className="text-4xl md:text-5xl font-bold text-gray-900 mb-4"
+            >
+              {getBlockContent(pageContent, 'why-us-benefits-title') || 'Why Companies Choose Ask Sam'}
+            </EditableContent>
+            <EditableContent
+              blockId="why-us-benefits-description"
+              blockType="paragraph"
+              tag="p"
+              className="text-xl text-gray-600 max-w-3xl mx-auto"
+            >
+              {getBlockContent(pageContent, 'why-us-benefits-description') || 'Discover the advantages that set us apart and drive exceptional results for our clients.'}
+            </EditableContent>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -324,12 +364,22 @@ const WhyUsPage = () => {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              How It <span className="text-blue-600">Works</span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              A simple, streamlined process to get you operational fast.
-            </p>
+            <EditableContent
+              blockId="why-us-process-title"
+              blockType="heading"
+              tag="h2"
+              className="text-4xl md:text-5xl font-bold text-gray-900 mb-4"
+            >
+              {getBlockContent(pageContent, 'why-us-process-title') || 'How It Works'}
+            </EditableContent>
+            <EditableContent
+              blockId="why-us-process-description"
+              blockType="paragraph"
+              tag="p"
+              className="text-xl text-gray-600 max-w-3xl mx-auto"
+            >
+              {getBlockContent(pageContent, 'why-us-process-description') || 'A simple, streamlined process to get you operational fast.'}
+            </EditableContent>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -368,12 +418,22 @@ const WhyUsPage = () => {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              Trusted by <span className="text-blue-400">Industry Leaders</span>
-            </h2>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              See what our clients say about working with Ask Sam.
-            </p>
+            <EditableContent
+              blockId="why-us-testimonials-title"
+              blockType="heading"
+              tag="h2"
+              className="text-4xl md:text-5xl font-bold mb-4"
+            >
+              {getBlockContent(pageContent, 'why-us-testimonials-title') || 'Trusted by Industry Leaders'}
+            </EditableContent>
+            <EditableContent
+              blockId="why-us-testimonials-description"
+              blockType="paragraph"
+              tag="p"
+              className="text-xl text-gray-300 max-w-3xl mx-auto"
+            >
+              {getBlockContent(pageContent, 'why-us-testimonials-description') || 'See what our clients say about working with Ask Sam.'}
+            </EditableContent>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -413,13 +473,22 @@ const WhyUsPage = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Ready to Scale Your Business?
-            </h2>
-            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Join 100+ companies that trust Ask Sam to deliver exceptional results. 
-              Let's discuss how we can help transform your operations.
-            </p>
+            <EditableContent
+              blockId="why-us-cta-title"
+              blockType="heading"
+              tag="h2"
+              className="text-4xl md:text-5xl font-bold text-gray-900 mb-6"
+            >
+              {getBlockContent(pageContent, 'why-us-cta-title') || 'Ready to Scale Your Business?'}
+            </EditableContent>
+            <EditableContent
+              blockId="why-us-cta-description"
+              blockType="paragraph"
+              tag="p"
+              className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto"
+            >
+              {getBlockContent(pageContent, 'why-us-cta-description') || 'Join 100+ companies that trust Ask Sam to deliver exceptional results. Let\'s discuss how we can help transform your operations.'}
+            </EditableContent>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/contact-us"

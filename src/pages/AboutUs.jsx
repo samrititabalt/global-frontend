@@ -3,8 +3,12 @@ import { motion } from 'framer-motion';
 import Header from '../components/public/Header';
 import Footer from '../components/public/Footer';
 import AboutUsContent from '../components/contact/AboutUs';
+import EditableContent from '../components/admin/EditableContent';
+import { usePageContent, getBlockContent } from '../hooks/usePageContent';
 
 const AboutUs = () => {
+  const { content: pageContent } = usePageContent();
+  
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -23,12 +27,22 @@ const AboutUs = () => {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
-              About <span className="text-blue-600">Tabalt</span>
-            </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Learn about our journey, values, and commitment to excellence in professional services.
-            </p>
+            <EditableContent
+              blockId="about-us-hero-title"
+              blockType="heading"
+              tag="h1"
+              className="text-5xl md:text-6xl font-bold text-gray-900 mb-4"
+            >
+              {getBlockContent(pageContent, 'about-us-hero-title') || 'About Tabalt'}
+            </EditableContent>
+            <EditableContent
+              blockId="about-us-hero-description"
+              blockType="paragraph"
+              tag="p"
+              className="text-xl text-gray-600 max-w-3xl mx-auto"
+            >
+              {getBlockContent(pageContent, 'about-us-hero-description') || 'Learn about our journey, values, and commitment to excellence in professional services.'}
+            </EditableContent>
           </motion.div>
         </div>
       </section>
