@@ -68,19 +68,13 @@ const CustomerDashboard = () => {
     }
   };
 
-  // Color mapping for service cards
+  // Color mapping for service cards - consistent blue for all services
   const getServiceColor = (index) => {
-    const colors = [
-      { bg: 'bg-gradient-to-br from-blue-500 to-blue-600', icon: 'text-white', text: 'text-blue-900' },
-      { bg: 'bg-gradient-to-br from-purple-500 to-purple-600', icon: 'text-white', text: 'text-purple-900' },
-      { bg: 'bg-gradient-to-br from-pink-500 to-pink-600', icon: 'text-white', text: 'text-pink-900' },
-      { bg: 'bg-gradient-to-br from-green-500 to-green-600', icon: 'text-white', text: 'text-green-900' },
-      { bg: 'bg-gradient-to-br from-orange-500 to-orange-600', icon: 'text-white', text: 'text-orange-900' },
-      { bg: 'bg-gradient-to-br from-indigo-500 to-indigo-600', icon: 'text-white', text: 'text-indigo-900' },
-      { bg: 'bg-gradient-to-br from-teal-500 to-teal-600', icon: 'text-white', text: 'text-teal-900' },
-      { bg: 'bg-gradient-to-br from-red-500 to-red-600', icon: 'text-white', text: 'text-red-900' },
-    ];
-    return colors[index % colors.length];
+    return { 
+      bg: 'bg-gradient-to-br from-blue-500 to-blue-600', 
+      icon: 'text-white', 
+      text: 'text-blue-900' 
+    };
   };
 
   // Generate short caption from description
