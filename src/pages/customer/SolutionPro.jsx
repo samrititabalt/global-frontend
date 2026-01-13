@@ -1669,7 +1669,96 @@ const SolutionPro = () => {
       name: getEditedLabel(config.id, 'category', item.name, item.name),
     }));
 
-    // Calculate chart dimensions for scrollbars
+    // For table charts, use different rendering (no chart container wrapper)
+    if (config.chartType === 'table') {
+      const xCols = Array.isArray(config.xAxis.columns) ? config.xAxis.columns : (config.xAxis.column ? [config.xAxis.column] : []);
+      const yCols = Array.isArray(config.yAxis.columns) ? config.yAxis.columns : (config.yAxis.column ? [config.yAxis.column] : []);
+      const allColumns = [...xCols, ...yCols];
+      
+      if (allColumns.length === 0) {
+        return (
+          <div className="h-64 flex items-center justify-center text-gray-400">
+            <div className="text-center">
+              <FileSpreadsheet className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Add fields to X or Y axis to generate table</p>
+            </div>
+          </div>
+        );
+      }
+
+      // Get filtered raw data for table (not aggregated chart data)
+      const filteredData = applyFilters(chartData, config.filters || []);
+      
+      // Remove duplicate columns - ensure each column appears only once
+      const uniqueColumns = Array.from(new Set(allColumns));
+      
+      // Handle date hierarchies for date columns
+      const getCellValue = (row, col) => {
+        const colInfo = getColumnInfo(col);
+        const rawValue = row[col];
+        
+        if (colInfo.isDate && rawValue) {
+          const parsedDate = parseDate(rawValue);
+          if (parsedDate) {
+            const hierarchy = dateHierarchies[col] || 'month';
+            return getDateHierarchy(parsedDate, hierarchy);
+          }
+        }
+        
+        return rawValue !== null && rawValue !== undefined ? String(rawValue) : '';
+      };
+
+      return (
+        <div id={`chart-${config.id}`} className="chart-container w-full h-full">
+          <div className="w-full h-full overflow-x-auto overflow-y-auto" style={{ maxHeight: '500px' }}>
+            <table className="min-w-full border-collapse bg-white">
+              <thead className="bg-gray-100 sticky top-0 z-10 shadow-sm">
+                <tr>
+                  {uniqueColumns.map((col, idx) => (
+                    <th
+                      key={`header-${idx}-${col}`}
+                      className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-300 whitespace-nowrap min-w-[120px]"
+                    >
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredData.length === 0 ? (
+                  <tr>
+                    <td colSpan={uniqueColumns.length} className="px-4 py-8 text-center text-sm text-gray-500">
+                      No data available after filtering
+                    </td>
+                  </tr>
+                ) : (
+                  filteredData.map((row, rowIdx) => (
+                    <tr
+                      key={`row-${rowIdx}`}
+                      className={`${rowIdx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'} transition-colors`}
+                    >
+                      {uniqueColumns.map((col, colIdx) => {
+                        const cellValue = getCellValue(row, col);
+                        return (
+                          <td
+                            key={`cell-${rowIdx}-${colIdx}-${col}`}
+                            className="px-4 py-3 text-sm text-gray-700 border-b border-gray-200 whitespace-nowrap align-top"
+                          >
+                            {cellValue}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    // Calculate chart dimensions for scrollbars (for non-table charts)
     const labelOptions = xAxisLabelOptions[config.id] || { reduceFont: false, horizontalScroll: false, skipLabels: 0 };
     const needsHorizontalScroll = (data.length > 20 && (config.chartType === 'bar' || config.chartType === 'line' || config.chartType === 'area')) || labelOptions.horizontalScroll;
     const chartWidth = needsHorizontalScroll ? Math.max(800, data.length * 40) : '100%';
@@ -1695,65 +1784,7 @@ const SolutionPro = () => {
           }}
         >
           <div style={{ minWidth: needsHorizontalScroll ? chartWidth : '100%', height: '100%' }}>
-            {config.chartType === 'table' ? (
-              <div className="w-full overflow-auto max-h-96">
-                {(() => {
-                  const xCols = Array.isArray(config.xAxis.columns) ? config.xAxis.columns : (config.xAxis.column ? [config.xAxis.column] : []);
-                  const yCols = Array.isArray(config.yAxis.columns) ? config.yAxis.columns : (config.yAxis.column ? [config.yAxis.column] : []);
-                  const allColumns = [...xCols, ...yCols];
-                  
-                  if (allColumns.length === 0) {
-                    return (
-                      <div className="h-64 flex items-center justify-center text-gray-400">
-                        <div className="text-center">
-                          <FileSpreadsheet className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">Add fields to X or Y axis to generate table</p>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <table className="min-w-full border-collapse bg-white">
-                      <thead className="bg-gray-100 sticky top-0">
-                        <tr>
-                          {allColumns.map((col, idx) => (
-                            <th
-                              key={idx}
-                              className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-300"
-                            >
-                              {col}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {dataWithEditedLabels.map((row, rowIdx) => (
-                          <tr
-                            key={rowIdx}
-                            className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
-                          >
-                            {allColumns.map((col, colIdx) => {
-                              const cellValue = xCols.includes(col) 
-                                ? row.name 
-                                : (row[col] !== undefined ? row[col] : row.value);
-                              return (
-                                <td
-                                  key={colIdx}
-                                  className="px-4 py-3 text-sm text-gray-700 border-b border-gray-200"
-                                >
-                                  {cellValue}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  );
-                })()}
-              </div>
-            ) : config.chartType === 'heatmap' ? (
+            {config.chartType === 'heatmap' ? (
               <div className="w-full h-full">
                 {(() => {
                   const xCols = Array.isArray(config.xAxis.columns) ? config.xAxis.columns : (config.xAxis.column ? [config.xAxis.column] : []);
@@ -2362,8 +2393,8 @@ const SolutionPro = () => {
             )}
           </div>
           
-          {/* Chart Title - Below Chart, Centered */}
-          {config.showTitle && (
+          {/* Chart Title - Below Chart, Centered (NOT for table charts) */}
+          {config.showTitle && config.chartType !== 'table' && (
             <div className="mt-4 text-center">
               {isEditingTitle ? (
                 <input
