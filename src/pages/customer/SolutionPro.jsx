@@ -265,19 +265,32 @@ const SolutionPro = () => {
     return dataRows;
   };
 
-  // Enhanced date parsing with multiple formats
+  // Enhanced date parsing with strict format matching (prevents numeric fields from being misclassified as dates)
   const parseDate = (value) => {
     if (!value) return null;
     const str = String(value).trim();
     if (!str) return null;
 
-    // Try standard Date.parse first
-    const standardDate = new Date(str);
-    if (!isNaN(standardDate.getTime()) && standardDate.toString() !== 'Invalid Date') {
-      return standardDate;
+    // Reject pure numeric strings (e.g., "12345", "1234567890") - these are not dates
+    // Only accept if it looks like a date format (has separators like /, -, or spaces)
+    const looksLikeNumericOnly = /^[\d.]+$/.test(str);
+    if (looksLikeNumericOnly && str.length < 8) {
+      // Short numeric strings are definitely not dates
+      return null;
+    }
+    
+    // Reject if it's a valid number but doesn't have date-like structure
+    const numValue = parseFloat(str);
+    if (!isNaN(numValue) && isFinite(numValue)) {
+      // Check if it has date separators - if not, it's just a number
+      const hasDateSeparators = /[-/]/.test(str) || /\s/.test(str);
+      if (!hasDateSeparators && str.length <= 10) {
+        // Pure numeric without separators - likely not a date
+        return null;
+      }
     }
 
-    // Try date-fns formats
+    // Try date-fns formats (strict format matching only)
     const dateFormats = [
       'yyyy-MM-dd',
       'MM/dd/yyyy',
@@ -290,34 +303,73 @@ const SolutionPro = () => {
       'dd-MM-yyyy HH:mm',
       'yyyy/MM/dd HH:mm:ss',
       'dd/MM/yyyy HH:mm:ss',
+      'yyyy-MM-dd HH:mm:ss',
     ];
 
     for (const format of dateFormats) {
       try {
         const parsed = parse(str, format, new Date());
         if (isValid(parsed)) {
-          return parsed;
+          // Additional validation: ensure parsed date is reasonable
+          const year = parsed.getFullYear();
+          if (year >= 1900 && year <= 2100) {
+            return parsed;
+          }
         }
       } catch (e) {
         // Continue to next format
       }
     }
 
+    // Only try standard Date.parse as last resort if it looks date-like
+    if (/[-/\s]/.test(str)) {
+      const standardDate = new Date(str);
+      if (!isNaN(standardDate.getTime()) && standardDate.toString() !== 'Invalid Date') {
+        const year = standardDate.getFullYear();
+        // Reject if year is unreasonable (likely a mis-parsed number)
+        if (year >= 1900 && year <= 2100) {
+          return standardDate;
+        }
+      }
+    }
+
     return null;
   };
 
-  // Detect column types with improved date detection
+  // Detect column types with strict date detection (prevents numeric misclassification)
   const getColumnInfo = (columnName) => {
     if (!chartData.length || !columnName) return { type: 'text', isDate: false, isNumeric: false, parsedDates: [] };
     
     const values = chartData.map(row => row[columnName]).filter(v => v !== null && v !== undefined && v !== '');
     if (values.length === 0) return { type: 'text', isDate: false, isNumeric: false, parsedDates: [] };
 
-    // Check if date with improved parsing
+    // FIRST: Check if numeric (priority check to prevent misclassification)
+    const numericValues = values.filter(v => {
+      if (typeof v === 'number') return true;
+      const str = String(v).trim();
+      const num = parseFloat(str);
+      // Must be a valid number AND not look like a date string
+      return !isNaN(num) && isFinite(num) && !/[-/\s]/.test(str);
+    });
+    const numericRatio = numericValues.length / values.length;
+    const isNumeric = numericRatio > 0.8;
+
+    // SECOND: Check if date (only if not clearly numeric)
+    // Use stricter criteria: require more date-like patterns
     let dateCount = 0;
     const parsedDates = [];
     
-    values.slice(0, 20).forEach(val => {
+    // Sample more values for better accuracy
+    const sampleSize = Math.min(values.length, 30);
+    const samples = values.slice(0, sampleSize);
+    
+    samples.forEach(val => {
+      const str = String(val).trim();
+      // Skip if it's clearly a number without date separators
+      if (/^[\d.]+$/.test(str) && str.length < 8) {
+        return; // Skip pure numeric strings
+      }
+      
       const parsed = parseDate(val);
       if (parsed) {
         dateCount++;
@@ -325,23 +377,25 @@ const SolutionPro = () => {
       }
     });
 
-    const isDate = dateCount / Math.min(values.length, 20) > 0.7;
-    
-    // Check if numeric (but not if it's a date)
-    let isNumeric = false;
-    if (!isDate) {
-      const numericCount = values.filter(v => {
-        if (typeof v === 'number') return true;
-        const num = parseFloat(v);
-        return !isNaN(num) && isFinite(num);
-      }).length;
-      isNumeric = numericCount / values.length > 0.8;
+    // Stricter threshold: require at least 80% of samples to be valid dates
+    // AND ensure we have at least 5 date samples (prevents small datasets from misclassifying)
+    const dateRatio = dateCount / sampleSize;
+    const isDate = dateRatio > 0.8 && dateCount >= 3 && !isNumeric;
+
+    // Determine final type
+    let type;
+    if (isDate) {
+      type = 'date';
+    } else if (isNumeric) {
+      type = 'numeric';
+    } else {
+      type = 'text';
     }
 
     return {
-      type: isDate ? 'date' : (isNumeric ? 'numeric' : 'text'),
-      isDate,
-      isNumeric,
+      type,
+      isDate: !!isDate,
+      isNumeric: !!isNumeric,
       parsedDates: parsedDates.slice(0, 10), // Store sample parsed dates for hierarchy generation
     };
   };
@@ -865,13 +919,18 @@ const SolutionPro = () => {
     if (!draggedField) return;
 
     const columnInfo = getColumnInfo(draggedField);
-    let role = fieldRoles[draggedField] || (columnInfo.isNumeric ? 'measure' : 'dimension');
-    const mode = fieldModes[draggedField] || (role === 'dimension' ? 'discrete' : 'continuous');
-
-    // Initialize role and mode if not set
-    if (!fieldRoles[draggedField]) {
+    // Improved role assignment: numeric = measure, date/text = dimension
+    // Use user override if exists, otherwise auto-detect
+    let role = fieldRoles[draggedField];
+    if (!role) {
+      // Auto-assign based on type: numeric fields are measures, others are dimensions
+      role = columnInfo.isNumeric ? 'measure' : 'dimension';
+      // Initialize the role in state
       setFieldRoles(prev => ({ ...prev, [draggedField]: role }));
     }
+    
+    // Mode assignment: discrete for dimensions, continuous for measures
+    const mode = fieldModes[draggedField] || (role === 'dimension' ? 'discrete' : 'continuous');
     if (!fieldModes[draggedField]) {
       setFieldModes(prev => ({ ...prev, [draggedField]: mode }));
     }
