@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, LineChart, AreaChart, Palette, Eye, EyeOff, ChevronRight, ChevronLeft, Image as ImageIcon } from 'lucide-react';
+import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, LineChart, AreaChart, Palette, Eye, EyeOff, ChevronRight, ChevronLeft, Image as ImageIcon, MessageCircle, Send, Minimize2, Maximize2 } from 'lucide-react';
 import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart as RechartsLineChart, Line, AreaChart as RechartsAreaChart, Area, LabelList, Text } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -19,12 +19,14 @@ const SolutionPro = () => {
   });
   const [chartData, setChartData] = useState([]);
   const [annotations, setAnnotations] = useState({});
-  const [showInstructions, setShowInstructions] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [activeCell, setActiveCell] = useState({ row: 0, col: 0 });
   const [selectedCells, setSelectedCells] = useState([]); // Array of {row, col}
   const [copiedCells, setCopiedCells] = useState(null); // {data: [[...]], startRow, startCol}
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartCell, setDragStartCell] = useState(null);
+  const [isDraggingFill, setIsDraggingFill] = useState(false);
+  const [fillStartCell, setFillStartCell] = useState(null);
   const [pptSlides, setPptSlides] = useState([]);
   const [showPptBuilder, setShowPptBuilder] = useState(false);
   const [dashboardCharts, setDashboardCharts] = useState([]); // Charts arranged on dashboard canvas
@@ -73,8 +75,13 @@ const SolutionPro = () => {
   const [draggingElement, setDraggingElement] = useState(null); // { slideId, elementId, type: 'image' | 'icon', offsetX, offsetY }
   const [resizingElement, setResizingElement] = useState(null); // { slideId, elementId, type, startWidth, startHeight, startX, startY }
   const [xAxisLabelOptions, setXAxisLabelOptions] = useState({}); // { chartId: { reduceFont: boolean, horizontalScroll: boolean, skipLabels: number } }
+  const [showChatbot, setShowChatbot] = useState(false);
+  const [chatbotMessages, setChatbotMessages] = useState([]);
+  const [chatbotInput, setChatbotInput] = useState('');
+  const [chatbotLoading, setChatbotLoading] = useState(false);
   const gridRef = useRef(null);
   const dashboardRef = useRef(null);
+  const chatbotRef = useRef(null);
   const CHART_TYPES = [
     { value: 'bar', label: 'Bar Chart', icon: BarChart3 },
     { value: 'pie', label: 'Pie Chart', icon: PieChart },
@@ -830,7 +837,22 @@ const SolutionPro = () => {
   };
 
   const handleCellMouseEnter = (rowIndex, colIndex) => {
-    if (isDragging && dragStartCell) {
+    if (isDraggingFill && fillStartCell) {
+      // Visual feedback for drag fill
+      const cells = [];
+      const startRow = Math.min(fillStartCell.row, rowIndex);
+      const endRow = Math.max(fillStartCell.row, rowIndex);
+      const startCol = Math.min(fillStartCell.col, colIndex);
+      const endCol = Math.max(fillStartCell.col, colIndex);
+      for (let r = startRow; r <= endRow; r++) {
+        for (let c = startCol; c <= endCol; c++) {
+          if (r !== fillStartCell.row || c !== fillStartCell.col) {
+            cells.push({ row: r, col: c });
+          }
+        }
+      }
+      setSelectedCells([{ row: fillStartCell.row, col: fillStartCell.col }, ...cells]);
+    } else if (isDragging && dragStartCell) {
       const startRow = Math.min(dragStartCell.row, rowIndex);
       const endRow = Math.max(dragStartCell.row, rowIndex);
       const startCol = Math.min(dragStartCell.col, colIndex);
@@ -846,6 +868,16 @@ const SolutionPro = () => {
   };
 
   const handleCellMouseUp = () => {
+    if (isDraggingFill && fillStartCell && selectedCells.length > 1) {
+      // Get the last selected cell (the target)
+      const targetCell = selectedCells[selectedCells.length - 1];
+      if (targetCell.row !== fillStartCell.row || targetCell.col !== fillStartCell.col) {
+        handleDragFill(fillStartCell.row, fillStartCell.col, targetCell.row, targetCell.col);
+      }
+      setIsDraggingFill(false);
+      setFillStartCell(null);
+      setSelectedCells([{ row: fillStartCell.row, col: fillStartCell.col }]);
+    }
     setIsDragging(false);
     setDragStartCell(null);
   };
@@ -961,7 +993,34 @@ const SolutionPro = () => {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+      // Arrow key navigation (only when not typing in input)
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        const activeInput = document.activeElement;
+        if (activeInput && activeInput.classList.contains('grid-cell') && !activeInput.value) {
+          e.preventDefault();
+          let newRow = activeCell.row;
+          let newCol = activeCell.col;
+          
+          if (e.key === 'ArrowUp' && newRow > 0) {
+            newRow--;
+          } else if (e.key === 'ArrowDown' && newRow < 999) {
+            newRow++;
+          } else if (e.key === 'ArrowLeft' && newCol > 0) {
+            newCol--;
+          } else if (e.key === 'ArrowRight' && newCol < 19) {
+            newCol++;
+          }
+          
+          setActiveCell({ row: newRow, col: newCol });
+          setSelectedCells([{ row: newRow, col: newCol }]);
+          
+          // Focus the new cell
+          const nextCell = document.getElementById(`cell-${newRow}-${newCol}`);
+          if (nextCell) {
+            nextCell.focus();
+          }
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
         handleCopy(e);
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
         if (copiedCells && activeCell.row !== -1) {
@@ -1830,12 +1889,21 @@ const SolutionPro = () => {
       <div className="pt-20 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Solution Pro</h1>
-            <p className="text-gray-600">Transform your data into professional dashboards</p>
+          <div className="mb-8 flex items-start justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Sam's Smart Reports Pro</h1>
+              <p className="text-gray-600">Transform your data into professional dashboards</p>
+            </div>
+            <button
+              onClick={() => setShowInstructions(!showInstructions)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+            >
+              <Info className="h-4 w-4" />
+              How to use the tool
+            </button>
           </div>
 
-          {/* Instructions Panel */}
+          {/* Instructions Panel - Collapsible */}
           {showInstructions && (
             <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-6 relative">
               <button
@@ -1932,11 +2000,14 @@ const SolutionPro = () => {
                               onPaste={handlePaste}
                             />
                             {rowIndex === activeCell.row && colIndex === activeCell.col && (
-                              <div className="absolute bottom-0 right-0 w-2 h-2 bg-blue-600 cursor-nwse-resize" 
-                                   onMouseDown={(e) => {
-                                     e.stopPropagation();
-                                     // Drag fill handle
-                                   }}
+                              <div 
+                                className="absolute bottom-0 right-0 w-3 h-3 bg-blue-600 cursor-nwse-resize rounded-sm hover:bg-blue-700 transition-colors" 
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  setIsDraggingFill(true);
+                                  setFillStartCell({ row: rowIndex, col: colIndex });
+                                }}
+                                title="Drag to fill cells"
                               />
                             )}
                           </td>
@@ -1948,6 +2019,89 @@ const SolutionPro = () => {
               </table>
             </div>
           </div>
+
+          {/* Chart Placeholder - Below Data Input */}
+          {availableColumns.length > 0 && (
+            <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Chart Preview</h3>
+              <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 min-h-[400px] p-6">
+                {/* Chart Axis Placeholders */}
+                <div className="flex flex-col h-full">
+                  {/* Y-Axis Placeholder (Left) */}
+                  <div className="flex items-start gap-4 flex-1">
+                    <div
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, chartConfigs[currentChartIndex].id, 'yAxis')}
+                      className={`w-32 p-4 rounded-lg border-2 border-dashed transition-colors flex flex-col items-center justify-center min-h-[200px] ${
+                        draggedField ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-100'
+                      }`}
+                    >
+                      <div className="text-xs font-semibold text-gray-600 mb-2">Y-Axis</div>
+                      {chartConfigs[currentChartIndex].yAxis.column ? (
+                        <div className="bg-white px-3 py-2 rounded border border-gray-200 text-sm font-medium text-gray-700">
+                          {chartConfigs[currentChartIndex].yAxis.column}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-400 text-center">Drop measure here</div>
+                      )}
+                    </div>
+
+                    {/* Chart Area */}
+                    <div className="flex-1 flex flex-col">
+                      {/* X-Axis Placeholder (Bottom) */}
+                      <div className="flex-1 flex items-end mb-4">
+                        <div
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, chartConfigs[currentChartIndex].id, 'xAxis')}
+                          className={`w-full p-4 rounded-lg border-2 border-dashed transition-colors flex flex-col items-center justify-center min-h-[60px] ${
+                            draggedField ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-100'
+                          }`}
+                        >
+                          <div className="text-xs font-semibold text-gray-600 mb-2">X-Axis</div>
+                          {chartConfigs[currentChartIndex].xAxis.column ? (
+                            <div className="bg-white px-3 py-2 rounded border border-gray-200 text-sm font-medium text-gray-700">
+                              {chartConfigs[currentChartIndex].xAxis.column}
+                            </div>
+                          ) : (
+                            <div className="text-xs text-gray-400">Drop dimension here</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Chart Preview Area */}
+                      <div className="flex-1 bg-white rounded border border-gray-200 p-4 flex items-center justify-center min-h-[300px]">
+                        {chartConfigs[currentChartIndex].xAxis.column && chartConfigs[currentChartIndex].yAxis.column ? (
+                          <div className="w-full h-full">
+                            {renderChart(chartConfigs[currentChartIndex])}
+                          </div>
+                        ) : (
+                          <div className="text-center text-gray-400">
+                            <BarChart3 className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                            <p className="text-sm">Drag fields to X and Y axes to generate chart</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Z-Axis Placeholder (Right - Optional) */}
+                    <div
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => {
+                        // Handle Z-axis drop if needed for 3D charts
+                        e.preventDefault();
+                      }}
+                      className={`w-32 p-4 rounded-lg border-2 border-dashed transition-colors flex flex-col items-center justify-center min-h-[200px] ${
+                        draggedField ? 'border-purple-400 bg-purple-50' : 'border-gray-200 bg-gray-50 opacity-50'
+                      }`}
+                    >
+                      <div className="text-xs font-semibold text-gray-500 mb-2">Z-Axis (Optional)</div>
+                      <div className="text-xs text-gray-400 text-center">For 3D charts</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Dashboard */}
           <div ref={dashboardRef} className="bg-white rounded-lg shadow-lg p-6">
@@ -3901,6 +4055,158 @@ const SolutionPro = () => {
             Clear Sorting
           </button>
         </div>
+      )}
+
+      {/* Chatbot Integration */}
+      {showChatbot && (
+        <div 
+          ref={chatbotRef}
+          className="fixed bottom-4 right-4 w-96 h-[600px] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col z-50"
+        >
+          <div className="bg-blue-600 text-white p-4 rounded-t-lg flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              <h3 className="font-semibold">Chart Builder Assistant</h3>
+            </div>
+            <button
+              onClick={() => setShowChatbot(false)}
+              className="text-white hover:text-gray-200"
+            >
+              <Minimize2 className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {chatbotMessages.length === 0 && (
+              <div className="text-sm text-gray-600">
+                <p className="font-semibold mb-2">Hi! I'm your Chart Builder Assistant.</p>
+                <p className="mb-2">I can help you with:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  <li>Building charts from your data</li>
+                  <li>Modifying chart labels and formatting</li>
+                  <li>Formatting the Dashboard Canvas</li>
+                  <li>Using the PPT Builder</li>
+                  <li>Step-by-step guidance</li>
+                </ul>
+                <p className="mt-3 text-xs text-gray-500">I can see your Data Input table and help you create the perfect visualizations!</p>
+              </div>
+            )}
+            {chatbotMessages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    msg.sender === 'user'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                </div>
+              </div>
+            ))}
+            {chatbotLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-100 rounded-lg p-3">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="border-t border-gray-200 p-4">
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!chatbotInput.trim() || chatbotLoading) return;
+
+                const userMessage = chatbotInput.trim();
+                setChatbotInput('');
+                setChatbotMessages(prev => [...prev, { sender: 'user', text: userMessage }]);
+                setChatbotLoading(true);
+
+                try {
+                  // Get current data table state
+                  const tableData = {
+                    columns: availableColumns,
+                    sampleData: gridData.slice(0, 10).map((row) => {
+                      const rowData = {};
+                      availableColumns.forEach((col, colIdx) => {
+                        rowData[col] = row[colIdx] || '';
+                      });
+                      return rowData;
+                    }),
+                    currentChart: chartConfigs[currentChartIndex],
+                    fieldRoles,
+                    fieldModes
+                  };
+
+                  // Call chatbot API
+                  const response = await fetch('/api/public/chatbot-message', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      message: `I'm working with Sam's Smart Reports Pro. Here's my current data table: ${JSON.stringify(tableData)}. My question: ${userMessage}`,
+                      chatHistory: chatbotMessages.map(m => ({
+                        sender: m.sender === 'user' ? 'user' : 'bot',
+                        text: m.text
+                      }))
+                    })
+                  });
+
+                  const data = await response.json();
+                  if (data.success) {
+                    setChatbotMessages(prev => [...prev, { sender: 'bot', text: data.message }]);
+                  } else {
+                    setChatbotMessages(prev => [...prev, { sender: 'bot', text: 'Sorry, I encountered an error. Please try again.' }]);
+                  }
+                } catch (error) {
+                  console.error('Chatbot error:', error);
+                  setChatbotMessages(prev => [...prev, { sender: 'bot', text: 'Sorry, I encountered an error. Please try again.' }]);
+                } finally {
+                  setChatbotLoading(false);
+                  if (chatbotRef.current) {
+                    chatbotRef.current.scrollTop = chatbotRef.current.scrollHeight;
+                  }
+                }
+              }}
+              className="flex gap-2"
+            >
+              <input
+                type="text"
+                value={chatbotInput}
+                onChange={(e) => setChatbotInput(e.target.value)}
+                placeholder="Ask me anything about building charts..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={chatbotLoading}
+              />
+              <button
+                type="submit"
+                disabled={chatbotLoading || !chatbotInput.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Chatbot Toggle Button */}
+      {!showChatbot && (
+        <button
+          onClick={() => setShowChatbot(true)}
+          className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors z-50"
+          title="Open Chart Builder Assistant"
+        >
+          <MessageCircle className="h-6 w-6" />
+        </button>
       )}
 
       <Footer />
