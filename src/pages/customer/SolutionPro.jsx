@@ -5133,10 +5133,33 @@ const SolutionPro = () => {
                     Download PPT as PDF
                   </button>
                   <button
-                    onClick={() => {
-                      const link = `${window.location.origin}/ppt/${Date.now()}`;
-                      navigator.clipboard.writeText(link);
-                      alert('Shareable link copied to clipboard: ' + link);
+                    onClick={async () => {
+                      try {
+                        // Get current chart data
+                        const shareData = {
+                          chartData,
+                          chartConfigs,
+                          gridData,
+                          fieldRoles,
+                          fieldModes,
+                          dateHierarchies,
+                          availableColumns,
+                        };
+
+                        // Save to backend and get share ID
+                        const response = await api.post('/public/share-chart', shareData);
+                        
+                        if (response.data.success) {
+                          const shareUrl = `${window.location.origin}/share/chart/${response.data.shareId}`;
+                          await navigator.clipboard.writeText(shareUrl);
+                          alert('Shareable link copied to clipboard!\n\n' + shareUrl);
+                        } else {
+                          alert('Failed to generate share link. Please try again.');
+                        }
+                      } catch (error) {
+                        console.error('Error sharing chart:', error);
+                        alert('Failed to generate share link. Please make sure you are logged in and try again.');
+                      }
                     }}
                     className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold"
                   >

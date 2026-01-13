@@ -79,6 +79,7 @@ import Hiring from './pages/solutions/Hiring';
 import FacebookAdsQuickLaunch from './pages/solutions/FacebookAdsQuickLaunch';
 import SolutionPro from './pages/customer/SolutionPro';
 import ResumeBuilder from './pages/ResumeBuilder';
+import SharedChartView from './pages/public/SharedChartView';
 import ResumeBuilderCreate from './pages/customer/ResumeBuilderCreate';
 import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 import TermsOfService from './pages/legal/TermsOfService';
@@ -141,6 +142,9 @@ function App() {
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/data-deletion" element={<DataDeletion />} />
+            
+            {/* Shared Chart View - Public */}
+            <Route path="/share/chart/:shareId" element={<SharedChartView />} />
 
             {/* Customer Routes */}
             <Route path="/customer/login" element={<CustomerLogin />} />
