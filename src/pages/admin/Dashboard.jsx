@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiMessageSquare, FiClock } from 'react-icons/fi';
-import { X, Copy, Check, Upload, Video, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, Copy, Check, Upload, Video, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
 import api from '../../utils/axios';
 import CRMLeads from '../../components/admin/CRMLeads';
 import CRMCustomers from '../../components/admin/CRMCustomers';
@@ -371,6 +371,22 @@ const AdminDashboard = () => {
 
       case 'pendingTransactions':
       case 'transactions':
+        const handleDeleteTransaction = async (transactionId, e) => {
+          e.stopPropagation();
+          if (!window.confirm('Are you sure you want to delete this transaction? This action cannot be undone.')) {
+            return;
+          }
+
+          try {
+            await api.delete(`/admin/transactions/${transactionId}`);
+            alert('Transaction deleted successfully');
+            handleStatClick(selectedStat);
+          } catch (error) {
+            console.error('Error deleting transaction:', error);
+            alert(error.response?.data?.message || 'Failed to delete transaction. Please try again.');
+          }
+        };
+
         return (
           <div className="overflow-y-auto max-h-96">
             <table className="min-w-full divide-y divide-gray-200">
@@ -380,11 +396,12 @@ const AdminDashboard = () => {
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {detailData.map((transaction) => (
-                  <tr key={transaction._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedStat(null); navigate('/admin/transactions'); }}>
+                  <tr key={transaction._id} className="hover:bg-gray-50">
                     <td className="px-4 py-2 text-sm text-gray-900">{transaction.customer?.name}</td>
                     <td className="px-4 py-2 text-sm text-gray-500">{transaction.plan?.name}</td>
                     <td className="px-4 py-2 text-sm text-gray-900">${transaction.amount}</td>
@@ -396,6 +413,15 @@ const AdminDashboard = () => {
                       }`}>
                         {transaction.status}
                       </span>
+                    </td>
+                    <td className="px-4 py-2">
+                      <button
+                        onClick={(e) => handleDeleteTransaction(transaction._id, e)}
+                        className="text-red-600 hover:text-red-800 transition-colors flex items-center gap-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -888,6 +914,21 @@ const CustomServiceRequests = () => {
     }
   };
 
+  const handleDelete = async (requestId) => {
+    if (!window.confirm('Are you sure you want to delete this custom service request? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/admin/custom-service-requests/${requestId}`);
+      alert('Custom service request deleted successfully');
+      loadData();
+    } catch (error) {
+      console.error('Error deleting custom service request:', error);
+      alert(error.response?.data?.message || 'Failed to delete request. Please try again.');
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'New – Custom Request':
@@ -990,34 +1031,46 @@ const CustomServiceRequests = () => {
                       )}
                     </div>
 
-                    {request.status === 'New – Custom Request' && (
-                      <div className="lg:w-64 flex flex-col gap-3">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Assign to Agent
-                          </label>
-                          <select
-                            value={selectedAgent[request._id] || ''}
-                            onChange={(e) => setSelectedAgent({ ...selectedAgent, [request._id]: e.target.value })}
-                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
+                    <div className="lg:w-64 flex flex-col gap-3">
+                      {request.status === 'New – Custom Request' && (
+                        <>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Assign to Agent
+                            </label>
+                            <select
+                              value={selectedAgent[request._id] || ''}
+                              onChange={(e) => setSelectedAgent({ ...selectedAgent, [request._id]: e.target.value })}
+                              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
+                            >
+                              <option value="">Select an agent...</option>
+                              {agents.filter(agent => agent.isActive !== false).map((agent) => (
+                                <option key={agent._id} value={agent._id}>
+                                  {agent.name} {agent.serviceCategory?.name ? `(${agent.serviceCategory.name})` : ''}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <button
+                            onClick={() => handleAssignAgent(request._id)}
+                            disabled={!selectedAgent[request._id] || assigningAgent === request._id}
+                            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                           >
-                            <option value="">Select an agent...</option>
-                            {agents.filter(agent => agent.isActive !== false).map((agent) => (
-                              <option key={agent._id} value={agent._id}>
-                                {agent.name} {agent.serviceCategory?.name ? `(${agent.serviceCategory.name})` : ''}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <button
-                          onClick={() => handleAssignAgent(request._id)}
-                          disabled={!selectedAgent[request._id] || assigningAgent === request._id}
-                          className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                        >
-                          {assigningAgent === request._id ? 'Assigning...' : 'Assign'}
-                        </button>
-                      </div>
-                    )}
+                            {assigningAgent === request._id ? 'Assigning...' : 'Assign'}
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(request._id);
+                        }}
+                        className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-red-700 transition-all flex items-center justify-center gap-2 text-sm"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

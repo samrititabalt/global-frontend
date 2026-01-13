@@ -17,17 +17,30 @@ const AdminCustomers = () => {
   const [adjusting, setAdjusting] = useState(false);
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const [plans, setPlans] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     country: '',
+    password: '',
+    planId: '',
     isActive: true
   });
 
   useEffect(() => {
     loadCustomers();
+    loadPlans();
   }, []);
+
+  const loadPlans = async () => {
+    try {
+      const response = await api.get('/admin/plans');
+      setPlans(response.data.plans || []);
+    } catch (error) {
+      console.error('Error loading plans:', error);
+    }
+  };
 
   useEffect(() => {
     if (searchTerm) {
@@ -97,10 +110,17 @@ const AdminCustomers = () => {
       email: customer.email || '',
       phone: customer.phone || '',
       country: customer.country || '',
+      password: '',
+      planId: customer.currentPlan?._id || '',
       isActive: customer.isActive !== undefined ? customer.isActive : true
     });
     setAvatarPreview(customer.avatar || null);
     setAvatar(null);
+    setShowEditModal(true);
+  };
+
+  const handleAddNew = () => {
+    resetForm();
     setShowEditModal(true);
   };
 
@@ -141,28 +161,57 @@ const AdminCustomers = () => {
       submitData.append('phone', formData.phone);
       submitData.append('country', formData.country);
       submitData.append('isActive', formData.isActive);
-      if (avatar) {
-        submitData.append('avatar', avatar);
-      }
-
-      await api.put(`/admin/customers/${editingCustomer._id}`, submitData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
       
-      setShowEditModal(false);
-      setEditingCustomer(null);
-      resetForm();
-      loadCustomers();
-      alert('Customer updated successfully');
+      if (editingCustomer) {
+        // Update existing customer
+        if (avatar) {
+          submitData.append('avatar', avatar);
+        }
+
+        await api.put(`/admin/customers/${editingCustomer._id}`, submitData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        setShowEditModal(false);
+        setEditingCustomer(null);
+        resetForm();
+        loadCustomers();
+        alert('Customer updated successfully');
+      } else {
+        // Create new customer
+        if (!formData.password || formData.password.length < 6) {
+          alert('Password must be at least 6 characters');
+          return;
+        }
+        
+        submitData.append('password', formData.password);
+        if (formData.planId) {
+          submitData.append('planId', formData.planId);
+        }
+        if (avatar) {
+          submitData.append('avatar', avatar);
+        }
+
+        await api.post('/admin/customers', submitData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        setShowModal(false);
+        resetForm();
+        loadCustomers();
+        alert('Customer created successfully');
+      }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to update customer');
+      alert(error.response?.data?.message || `Failed to ${editingCustomer ? 'update' : 'create'} customer`);
     }
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', phone: '', country: '', isActive: true });
+    setFormData({ name: '', email: '', phone: '', country: '', password: '', planId: '', isActive: true });
     setAvatar(null);
     setAvatarPreview(null);
     setEditingCustomer(null);
@@ -195,8 +244,18 @@ const AdminCustomers = () => {
       <div className="space-y-6">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-blue-900 text-white rounded-3xl p-6 shadow-2xl">
-          <h1 className="text-3xl font-bold mb-2">Customer Management</h1>
-          <p className="text-gray-200">View and manage customer accounts and adjust their service minutes</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Customer Management</h1>
+              <p className="text-gray-200">View and manage customer accounts and adjust their service minutes</p>
+            </div>
+            <button
+              onClick={handleAddNew}
+              className="px-6 py-3 rounded-full bg-white text-gray-900 font-semibold hover:bg-gray-100 transition shadow-lg"
+            >
+              Add New Customer
+            </button>
+          </div>
         </div>
 
         {/* Search Bar */}
@@ -472,14 +531,14 @@ const AdminCustomers = () => {
           </div>
         )}
 
-        {/* Edit Customer Modal */}
-        {showEditModal && editingCustomer && (
+        {/* Add/Edit Customer Modal */}
+        {showEditModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-gray-900">
-                    Edit Customer
+                    {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
                   </h2>
                   <button
                     onClick={() => {
@@ -593,6 +652,43 @@ const AdminCustomers = () => {
                   />
                 </div>
 
+                {!editingCustomer && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Password *
+                      </label>
+                      <input
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        required
+                        minLength={6}
+                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition"
+                        placeholder="Minimum 6 characters"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Plan (Optional)
+                      </label>
+                      <select
+                        value={formData.planId}
+                        onChange={(e) => setFormData({ ...formData, planId: e.target.value })}
+                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition"
+                      >
+                        <option value="">No plan selected</option>
+                        {plans.filter(plan => plan.isActive !== false).map((plan) => (
+                          <option key={plan._id} value={plan._id}>
+                            {plan.name} - ${plan.price} ({plan.tokens} min)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
+
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -618,7 +714,7 @@ const AdminCustomers = () => {
                     type="submit"
                     className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition"
                   >
-                    Update Customer
+                    {editingCustomer ? 'Update Customer' : 'Create Customer'}
                   </button>
                 </div>
               </form>
