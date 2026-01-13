@@ -36,8 +36,10 @@ const SolutionPro = () => {
       id: `chart-${idx + 1}`,
       enabled: false,
       chartType: 'bar',
-      xAxis: { column: '', type: 'dimension', aggregation: 'none', label: '', showLabel: true },
-      yAxis: { column: '', type: 'measure', aggregation: 'sum', label: '', showLabel: true },
+      xAxis: { columns: [], type: 'dimension', aggregation: 'none', label: '', showLabel: true }, // Changed to array for multiple dimensions
+      yAxis: { columns: [], type: 'measure', aggregation: 'sum', label: '', showLabel: true }, // Changed to array for multiple dimensions
+      zAxis: { columns: [], type: 'dimension', aggregation: 'none', label: '', showLabel: true }, // Added Z-axis
+      filters: [], // Added filters bucket: [{ column: '', type: 'dimension'|'measure', filterType: 'single'|'multi'|'range', values: [] }]
       title: '',
       showTitle: true,
       error: null,
@@ -53,13 +55,14 @@ const SolutionPro = () => {
         legendFontSize: 12,
         legendFontColor: '#000000',
         showLegend: true,
-        showDataLabels: false,
+        showDataLabels: true, // Changed default to true to show labels on bars
         barThickness: 20,
         lineThickness: 2,
         opacity: 1,
       },
     }))
   );
+  const [dateHierarchies, setDateHierarchies] = useState({}); // { columnName: 'year'|'quarter'|'month'|'week'|'day' }
   const [expandedChart, setExpandedChart] = useState('chart-1'); // Default to Chart 1
   const [showCustomization, setShowCustomization] = useState({});
   const [contextMenu, setContextMenu] = useState(null);
@@ -99,6 +102,7 @@ const SolutionPro = () => {
     { value: 'sum', label: 'Sum' },
     { value: 'average', label: 'Average' },
     { value: 'count', label: 'Count' },
+    { value: 'count_distinct', label: 'Count Distinct' },
     { value: 'mean', label: 'Mean' },
     { value: 'median', label: 'Median' },
     { value: 'cagr', label: 'CAGR (Time Series)' },
@@ -153,44 +157,84 @@ const SolutionPro = () => {
     return dataRows;
   };
 
-  // Detect column types
+  // Enhanced date parsing with multiple formats
+  const parseDate = (value) => {
+    if (!value) return null;
+    const str = String(value).trim();
+    if (!str) return null;
+
+    // Try standard Date.parse first
+    const standardDate = new Date(str);
+    if (!isNaN(standardDate.getTime()) && standardDate.toString() !== 'Invalid Date') {
+      return standardDate;
+    }
+
+    // Try date-fns formats
+    const dateFormats = [
+      'yyyy-MM-dd',
+      'MM/dd/yyyy',
+      'dd/MM/yyyy',
+      'yyyy/MM/dd',
+      'MM-dd-yyyy',
+      'dd-MM-yyyy',
+      'yyyy-MM-dd HH:mm',
+      'MM/dd/yyyy HH:mm',
+      'dd-MM-yyyy HH:mm',
+      'yyyy/MM/dd HH:mm:ss',
+      'dd/MM/yyyy HH:mm:ss',
+    ];
+
+    for (const format of dateFormats) {
+      try {
+        const parsed = parse(str, format, new Date());
+        if (isValid(parsed)) {
+          return parsed;
+        }
+      } catch (e) {
+        // Continue to next format
+      }
+    }
+
+    return null;
+  };
+
+  // Detect column types with improved date detection
   const getColumnInfo = (columnName) => {
-    if (!chartData.length || !columnName) return { type: 'text', isDate: false, isNumeric: false };
+    if (!chartData.length || !columnName) return { type: 'text', isDate: false, isNumeric: false, parsedDates: [] };
     
     const values = chartData.map(row => row[columnName]).filter(v => v !== null && v !== undefined && v !== '');
-    if (values.length === 0) return { type: 'text', isDate: false, isNumeric: false };
+    if (values.length === 0) return { type: 'text', isDate: false, isNumeric: false, parsedDates: [] };
 
-    // Check if date
+    // Check if date with improved parsing
     let dateCount = 0;
-    const dateFormats = [
-      'yyyy-MM-dd', 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy/MM/dd',
-      'MM-dd-yyyy', 'dd-MM-yyyy', 'yyyy-MM-dd HH:mm', 'MM/dd/yyyy HH:mm'
-    ];
+    const parsedDates = [];
     
-    values.slice(0, 10).forEach(val => {
-      const str = String(val);
-      if (!isNaN(Date.parse(str))) {
+    values.slice(0, 20).forEach(val => {
+      const parsed = parseDate(val);
+      if (parsed) {
         dateCount++;
-      } else {
-        dateFormats.forEach(format => {
-          try {
-            const parsed = parse(str, format, new Date());
-            if (isValid(parsed)) dateCount++;
-          } catch (e) {}
-        });
+        parsedDates.push(parsed);
       }
     });
 
-    const isDate = dateCount / Math.min(values.length, 10) > 0.7;
+    const isDate = dateCount / Math.min(values.length, 20) > 0.7;
     
-    // Check if numeric
-    const numericCount = values.filter(v => typeof v === 'number' || !isNaN(parseFloat(v))).length;
-    const isNumeric = numericCount / values.length > 0.8;
+    // Check if numeric (but not if it's a date)
+    let isNumeric = false;
+    if (!isDate) {
+      const numericCount = values.filter(v => {
+        if (typeof v === 'number') return true;
+        const num = parseFloat(v);
+        return !isNaN(num) && isFinite(num);
+      }).length;
+      isNumeric = numericCount / values.length > 0.8;
+    }
 
     return {
       type: isDate ? 'date' : (isNumeric ? 'numeric' : 'text'),
       isDate,
       isNumeric,
+      parsedDates: parsedDates.slice(0, 10), // Store sample parsed dates for hierarchy generation
     };
   };
 
@@ -200,54 +244,34 @@ const SolutionPro = () => {
     return Object.keys(chartData[0] || {});
   };
 
-  // Validate chart configuration
+  // Validate chart configuration (updated for multiple dimensions and filters)
   const validateChartConfig = (config) => {
     if (!config.enabled) return { valid: true, error: null };
 
     const { chartType, xAxis, yAxis } = config;
-    const columns = getAvailableColumns();
-    const xInfo = xAxis.column ? getColumnInfo(xAxis.column) : null;
-    const yInfo = yAxis.column ? getColumnInfo(yAxis.column) : null;
+    const xCols = Array.isArray(xAxis.columns) ? xAxis.columns : (xAxis.column ? [xAxis.column] : []);
+    const yCols = Array.isArray(yAxis.columns) ? yAxis.columns : (yAxis.column ? [yAxis.column] : []);
 
     // Basic validation
-    if (!xAxis.column && !yAxis.column) {
+    if (xCols.length === 0 && yCols.length === 0) {
       return { valid: false, error: 'Please select at least one variable.' };
     }
 
-    // Pie charts need only one dimension
+    // Pie charts need at least one dimension
     if (chartType === 'pie') {
-      if (!xAxis.column || xAxis.type !== 'dimension') {
-        return { valid: false, error: 'Pie charts require a dimension on X-axis.' };
-      }
-      if (yAxis.column && yAxis.type === 'dimension') {
-        return { valid: false, error: 'Pie charts cannot have two dimensions.' };
+      if (xCols.length === 0) {
+        return { valid: false, error: 'Pie charts require at least one dimension on X-axis.' };
       }
     }
 
-
-    // Line/Area charts work best with time on X-axis
-    if ((chartType === 'line' || chartType === 'area') && xInfo && !xInfo.isDate && xAxis.type === 'dimension') {
-      // Warning but not error - allow it
-    }
-
-    // Aggregation validation
-    if (xAxis.aggregation !== 'none' && xAxis.type === 'dimension' && !xInfo?.isNumeric) {
-      if (xAxis.aggregation === 'cagr' && !xInfo?.isDate) {
-        return { valid: false, error: 'CAGR requires a date/time column. Select the right variable.' };
+    // Date fields should never be aggregated numerically (only hierarchies allowed)
+    xCols.forEach(col => {
+      const colInfo = getColumnInfo(col);
+      if (colInfo.isDate && xAxis.aggregation && xAxis.aggregation !== 'none') {
+        // Dates can only use hierarchies, not numeric aggregations
+        // This is handled in the UI by showing hierarchy selector instead
       }
-      if (['sum', 'average', 'mean', 'median'].includes(xAxis.aggregation) && !xInfo?.isNumeric) {
-        return { valid: false, error: 'This aggregation requires numeric values. Select the right variable.' };
-      }
-    }
-
-    if (yAxis.aggregation !== 'none' && yAxis.type === 'dimension' && !yInfo?.isNumeric) {
-      if (yAxis.aggregation === 'cagr' && !yInfo?.isDate) {
-        return { valid: false, error: 'CAGR requires a date/time column. Select the right variable.' };
-      }
-      if (['sum', 'average', 'mean', 'median'].includes(yAxis.aggregation) && !yInfo?.isNumeric) {
-        return { valid: false, error: 'This aggregation requires numeric values. Select the right variable.' };
-      }
-    }
+    });
 
     return { valid: true, error: null };
   };
@@ -288,22 +312,140 @@ const SolutionPro = () => {
     }
   };
 
-  // Generate chart data from configuration
+  // Date hierarchy functions
+  const getDateHierarchy = (date, hierarchy = 'month') => {
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) return '';
+    
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const quarter = Math.floor(month / 3) + 1;
+    const week = getWeekNumber(date);
+    const day = date.getDate();
+    
+    switch (hierarchy) {
+      case 'year':
+        return String(year);
+      case 'quarter':
+        return `Q${quarter} ${year}`;
+      case 'month':
+        return `${getMonthName(month)} ${year}`;
+      case 'week':
+        return `Week ${week}, ${year}`;
+      case 'day':
+        return `${day}/${month}/${year}`;
+      default:
+        return `${getMonthName(month)} ${year}`;
+    }
+  };
+
+  const getWeekNumber = (date) => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  };
+
+  const getMonthName = (month) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[month - 1] || '';
+  };
+
+  // Apply filters to data
+  const applyFilters = (data, filters) => {
+    if (!filters || filters.length === 0) return data;
+    
+    let filtered = [...data];
+    
+    filters.forEach(filter => {
+      if (!filter.column || !filter.values || filter.values.length === 0) return;
+      
+      filtered = filtered.filter(row => {
+        const value = row[filter.column];
+        
+        if (filter.filterType === 'range') {
+          // Range filter for dates and numbers
+          const [min, max] = filter.values;
+          if (filter.isDate) {
+            const rowDate = parseDate(value);
+            const minDate = parseDate(min);
+            const maxDate = parseDate(max);
+            if (rowDate && minDate && maxDate) {
+              return rowDate >= minDate && rowDate <= maxDate;
+            }
+          } else {
+            const numValue = parseFloat(value);
+            const minNum = parseFloat(min);
+            const maxNum = parseFloat(max);
+            if (!isNaN(numValue) && !isNaN(minNum) && !isNaN(maxNum)) {
+              return numValue >= minNum && numValue <= maxNum;
+            }
+          }
+        } else {
+          // Single or multi-select
+          return filter.values.includes(String(value));
+        }
+        
+        return true;
+      });
+    });
+    
+    return filtered;
+  };
+
+  // Generate chart data from configuration with support for multiple dimensions, date hierarchies, and filters
   const generateChartData = (config) => {
     if (!config.enabled || chartData.length === 0) return [];
 
-    const { chartType, xAxis, yAxis } = config;
+    const { chartType, xAxis, yAxis, filters } = config;
     const validation = validateChartConfig(config);
     if (!validation.valid) return [];
 
-    const xCol = xAxis.column;
-    const yCol = yAxis.column;
+    // Apply filters first
+    let workingData = applyFilters(chartData, filters || []);
+
+    // Support legacy single column format and new array format
+    const xCols = Array.isArray(xAxis.columns) ? xAxis.columns : (xAxis.column ? [xAxis.column] : []);
+    const yCols = Array.isArray(yAxis.columns) ? yAxis.columns : (yAxis.column ? [yAxis.column] : []);
+
+    // Handle date hierarchies for X-axis columns
+    const getXAxisValue = (row, col) => {
+      const colInfo = getColumnInfo(col);
+      const rawValue = row[col];
+      
+      if (colInfo.isDate) {
+        const parsedDate = parseDate(rawValue);
+        if (parsedDate) {
+          const hierarchy = dateHierarchies[col] || 'month';
+          return getDateHierarchy(parsedDate, hierarchy);
+        }
+      }
+      
+      return String(rawValue || '').trim();
+    };
+
+    // Handle Y-axis: support dimensions as measures (COUNT/COUNT DISTINCT)
+    const getYAxisValue = (row, col, aggregation, isDimension) => {
+      if (isDimension) {
+        // Dimension used as measure: return 1 for COUNT, or use distinct logic
+        if (aggregation === 'count_distinct') {
+          return String(row[col] || '').trim();
+        }
+        return 1; // COUNT
+      }
+      
+      // Regular measure
+      const val = row[col];
+      if (val === null || val === undefined || val === '') return null;
+      return typeof val === 'number' ? val : parseFloat(val);
+    };
 
     // For pie charts (single dimension)
-    if (chartType === 'pie' && xCol) {
+    if (chartType === 'pie' && xCols.length > 0) {
+      const xCol = xCols[0];
       const freq = {};
-      chartData.forEach(row => {
-        const key = String(row[xCol] || '').trim();
+      workingData.forEach(row => {
+        const key = getXAxisValue(row, xCol);
         if (key) {
           freq[key] = (freq[key] || 0) + 1;
         }
@@ -323,30 +465,73 @@ const SolutionPro = () => {
       return result.slice(0, 15);
     }
 
-
-    // For other charts: aggregate by X-axis category
-    if (xCol && yCol) {
+    // For other charts: aggregate by X-axis category(ies) with support for multiple dimensions
+    if (xCols.length > 0 && yCols.length > 0) {
       const groups = {};
-      chartData.forEach(row => {
-        const xVal = String(row[xCol] || '').trim();
-        const yVal = row[yCol];
+      
+      workingData.forEach(row => {
+        // Create composite key for multiple X dimensions
+        const xKeys = xCols.map(col => getXAxisValue(row, col)).filter(k => k);
+        if (xKeys.length === 0) return;
         
-        if (xVal && yVal !== null && yVal !== undefined && yVal !== '') {
-          if (!groups[xVal]) {
-            groups[xVal] = [];
-          }
-          groups[xVal].push(yVal);
+        const compositeKey = xKeys.join(' | '); // Use separator for multiple dimensions
+        
+        if (!groups[compositeKey]) {
+          groups[compositeKey] = { xKeys, yValues: [] };
         }
+        
+        // Handle multiple Y columns
+        yCols.forEach(yCol => {
+          const colInfo = getColumnInfo(yCol);
+          const isDimension = !colInfo.isNumeric && !colInfo.isDate;
+          const yAxisConfig = yAxis.columns?.find(c => c.column === yCol) || yAxis;
+          const aggregation = yAxisConfig.aggregation || yAxis.aggregation;
+          
+          const yVal = getYAxisValue(row, yCol, aggregation, isDimension);
+          if (yVal !== null && yVal !== undefined && yVal !== '') {
+            groups[compositeKey].yValues.push({ column: yCol, value: yVal, isDimension, aggregation });
+          }
+        });
       });
 
-      let result = Object.entries(groups).map(([name, values]) => {
-        let value;
-        if (yAxis.aggregation !== 'none') {
-          value = calculateAggregation(values.map(v => ({ [yCol]: v })), yCol, yAxis.aggregation);
-        } else {
-          value = values[0];
+      let result = Object.entries(groups).map(([compositeKey, group]) => {
+        const name = xCols.length === 1 ? group.xKeys[0] : compositeKey;
+        
+        // Aggregate Y values
+        let value = 0;
+        if (group.yValues.length > 0) {
+          const firstY = group.yValues[0];
+          if (firstY.isDimension) {
+            // COUNT or COUNT DISTINCT
+            if (firstY.aggregation === 'count_distinct') {
+              const distinct = new Set(group.yValues.map(v => String(v.value))).size;
+              value = distinct;
+            } else {
+              value = group.yValues.length; // COUNT
+            }
+          } else {
+            // Regular measure aggregation
+            const numericValues = group.yValues.map(v => parseFloat(v.value)).filter(v => !isNaN(v));
+            if (numericValues.length > 0) {
+              const aggregation = firstY.aggregation || 'sum';
+              if (aggregation === 'sum') {
+                value = numericValues.reduce((a, b) => a + b, 0);
+              } else if (aggregation === 'average' || aggregation === 'mean') {
+                value = numericValues.reduce((a, b) => a + b, 0) / numericValues.length;
+              } else if (aggregation === 'count') {
+                value = numericValues.length;
+              } else if (aggregation === 'median') {
+                const sorted = [...numericValues].sort((a, b) => a - b);
+                const mid = Math.floor(sorted.length / 2);
+                value = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+              } else {
+                value = numericValues[0] || 0;
+              }
+            }
+          }
         }
-        return { name, value: value || 0 };
+        
+        return { name, value: value || 0, xKeys: group.xKeys }; // Store xKeys for grouped bars
       });
 
       // Apply sorting
@@ -367,11 +552,12 @@ const SolutionPro = () => {
       return result;
     }
 
-    // Single column charts
-    if (xCol && !yCol) {
+    // Single column charts (dimension only - count frequency)
+    if (xCols.length > 0 && yCols.length === 0) {
+      const xCol = xCols[0];
       const freq = {};
-      chartData.forEach(row => {
-        const key = String(row[xCol] || '').trim();
+      workingData.forEach(row => {
+        const key = getXAxisValue(row, xCol);
         if (key) {
           freq[key] = (freq[key] || 0) + 1;
         }
@@ -512,13 +698,13 @@ const SolutionPro = () => {
     e.dataTransfer.dropEffect = 'move';
   };
 
-  // Handle drop on axis
+  // Handle drop on axis (updated for multiple dimensions and filters)
   const handleDrop = (e, chartId, axis) => {
     e.preventDefault();
     if (!draggedField) return;
 
     const columnInfo = getColumnInfo(draggedField);
-    const role = fieldRoles[draggedField] || (columnInfo.isNumeric ? 'measure' : 'dimension');
+    let role = fieldRoles[draggedField] || (columnInfo.isNumeric ? 'measure' : 'dimension');
     const mode = fieldModes[draggedField] || (role === 'dimension' ? 'discrete' : 'continuous');
 
     // Initialize role and mode if not set
@@ -529,31 +715,93 @@ const SolutionPro = () => {
       setFieldModes(prev => ({ ...prev, [draggedField]: mode }));
     }
 
+    const config = chartConfigs.find(c => c.id === chartId);
+    if (!config) return;
+
+    // Handle filters bucket
+    if (axis === 'filters') {
+      const existingFilters = config.filters || [];
+      const filterExists = existingFilters.some(f => f.column === draggedField);
+      
+      if (!filterExists) {
+        const newFilter = {
+          column: draggedField,
+          type: role,
+          filterType: columnInfo.isDate || columnInfo.isNumeric ? 'range' : 'multi',
+          values: [],
+          isDate: columnInfo.isDate,
+        };
+        updateChartConfig(chartId, { filters: [...existingFilters, newFilter] });
+      }
+      setDraggedField(null);
+      return;
+    }
+
+    // Handle X, Y, Z axes with support for multiple dimensions
+    const currentAxis = config[axis] || { columns: [], type: 'dimension', aggregation: 'none', label: '', showLabel: true };
+    const currentColumns = Array.isArray(currentAxis.columns) ? currentAxis.columns : (currentAxis.column ? [currentAxis.column] : []);
+    
+    // Don't add if already exists
+    if (currentColumns.includes(draggedField)) {
+      setDraggedField(null);
+      return;
+    }
+
+    // For dimensions dropped into measure slots (Y-axis), auto-apply COUNT
+    if (axis === 'yAxis' && role === 'dimension' && !columnInfo.isDate) {
+      role = 'measure'; // Treat as measure
+      // Will use COUNT aggregation
+    }
+
+    // Determine aggregation
+    let aggregation = 'none';
+    if (axis === 'yAxis') {
+      if (role === 'measure') {
+        aggregation = columnInfo.isNumeric ? 'sum' : 'count';
+      } else if (role === 'dimension' && !columnInfo.isDate) {
+        aggregation = 'count'; // Dimension as measure
+      }
+    }
+
+    // For date fields, set default hierarchy
+    if (columnInfo.isDate && !dateHierarchies[draggedField]) {
+      setDateHierarchies(prev => ({ ...prev, [draggedField]: 'month' }));
+    }
+
     const axisUpdate = {
-      column: draggedField,
+      columns: [...currentColumns, draggedField], // Add to array
       type: role,
-      aggregation: role === 'measure' ? (axis === 'yAxis' ? 'sum' : 'none') : 'none',
+      aggregation: aggregation,
       label: '',
       showLabel: true,
     };
 
-    if (axis === 'xAxis') {
-      updateChartConfig(chartId, { xAxis: axisUpdate, enabled: true });
-    } else {
-      updateChartConfig(chartId, { yAxis: axisUpdate, enabled: true });
-    }
-
+    updateChartConfig(chartId, { [axis]: axisUpdate, enabled: true });
     setDraggedField(null);
   };
 
-  // Remove field from axis
-  const removeFieldFromAxis = (chartId, axis) => {
-    const emptyAxis = { column: '', type: 'dimension', aggregation: 'none', label: '', showLabel: true };
-    if (axis === 'xAxis') {
-      updateChartConfig(chartId, { xAxis: emptyAxis });
-    } else {
-      updateChartConfig(chartId, { yAxis: emptyAxis });
+  // Remove field from axis (updated for multiple dimensions)
+  const removeFieldFromAxis = (chartId, axis, columnToRemove) => {
+    const config = chartConfigs.find(c => c.id === chartId);
+    if (!config) return;
+
+    if (axis === 'filters') {
+      const currentFilters = config.filters || [];
+      const updatedFilters = currentFilters.filter(f => f.column !== columnToRemove);
+      updateChartConfig(chartId, { filters: updatedFilters });
+      return;
     }
+
+    const currentAxis = config[axis] || { columns: [], type: 'dimension', aggregation: 'none', label: '', showLabel: true };
+    const currentColumns = Array.isArray(currentAxis.columns) ? currentAxis.columns : (currentAxis.column ? [currentAxis.column] : []);
+    const updatedColumns = currentColumns.filter(col => col !== columnToRemove);
+    
+    const axisUpdate = {
+      ...currentAxis,
+      columns: updatedColumns,
+    };
+
+    updateChartConfig(chartId, { [axis]: axisUpdate });
   };
 
   // Toggle field role
@@ -1081,8 +1329,10 @@ const SolutionPro = () => {
         id: `chart-${idx + 1}`,
         enabled: false,
         chartType: 'bar',
-        xAxis: { column: '', type: 'dimension', aggregation: 'none', label: '', showLabel: true },
-        yAxis: { column: '', type: 'measure', aggregation: 'sum', label: '', showLabel: true },
+        xAxis: { columns: [], type: 'dimension', aggregation: 'none', label: '', showLabel: true },
+        yAxis: { columns: [], type: 'measure', aggregation: 'sum', label: '', showLabel: true },
+        zAxis: { columns: [], type: 'dimension', aggregation: 'none', label: '', showLabel: true },
+        filters: [],
         title: '',
         showTitle: true,
         error: null,
@@ -1097,7 +1347,7 @@ const SolutionPro = () => {
           legendFontSize: 12,
           legendFontColor: '#000000',
           showLegend: true,
-          showDataLabels: false,
+          showDataLabels: true, // Default to true to show labels on bars
           barThickness: 20,
           lineThickness: 2,
           opacity: 1,
@@ -1109,6 +1359,7 @@ const SolutionPro = () => {
       setContextMenu(null);
       setEditedLabels({});
       setEditingLabel(null);
+      setDateHierarchies({});
     }
   };
 
@@ -2320,6 +2571,36 @@ const SolutionPro = () => {
                 </div>
               </div>
 
+              {/* Filters Bucket */}
+              <div className="mb-4 p-4 bg-yellow-50 rounded-lg border-2 border-dashed border-yellow-300">
+                <div className="text-xs font-semibold text-gray-700 mb-2">Filters</div>
+                <div
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, chartConfigs[currentChartIndex].id, 'filters')}
+                  className={`min-h-[60px] p-3 rounded border-2 border-dashed transition-colors ${
+                    draggedField ? 'border-yellow-500 bg-yellow-100' : 'border-yellow-300 bg-yellow-50'
+                  }`}
+                >
+                  {chartConfigs[currentChartIndex].filters && chartConfigs[currentChartIndex].filters.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {chartConfigs[currentChartIndex].filters.map((filter, idx) => (
+                        <div key={idx} className="bg-white px-3 py-1 rounded border border-yellow-300 text-sm flex items-center gap-2">
+                          <span className="font-medium">{filter.column}</span>
+                          <button
+                            onClick={() => removeFieldFromAxis(chartConfigs[currentChartIndex].id, 'filters', filter.column)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-500 text-center">Drop fields here to filter data</div>
+                  )}
+                </div>
+              </div>
+
               <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 min-h-[400px] p-6">
                 {/* Chart Axis Placeholders */}
                 <div className="flex flex-col h-full">
@@ -2328,18 +2609,33 @@ const SolutionPro = () => {
                     <div
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, chartConfigs[currentChartIndex].id, 'yAxis')}
-                      className={`w-32 p-4 rounded-lg border-2 border-dashed transition-colors flex flex-col items-center justify-center min-h-[200px] ${
+                      className={`w-40 p-4 rounded-lg border-2 border-dashed transition-colors flex flex-col items-center justify-start min-h-[200px] ${
                         draggedField ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-100'
                       }`}
                     >
-                      <div className="text-xs font-semibold text-gray-600 mb-2">Y-Axis</div>
-                      {chartConfigs[currentChartIndex].yAxis.column ? (
-                        <div className="bg-white px-3 py-2 rounded border border-gray-200 text-sm font-medium text-gray-700">
-                          {chartConfigs[currentChartIndex].yAxis.column}
-                        </div>
-                      ) : (
-                        <div className="text-xs text-gray-400 text-center">Drop measure here</div>
-                      )}
+                      <div className="text-xs font-semibold text-gray-600 mb-2">Y-Axis (Measures)</div>
+                      {(() => {
+                        const yCols = Array.isArray(chartConfigs[currentChartIndex].yAxis.columns) 
+                          ? chartConfigs[currentChartIndex].yAxis.columns 
+                          : (chartConfigs[currentChartIndex].yAxis.column ? [chartConfigs[currentChartIndex].yAxis.column] : []);
+                        return yCols.length > 0 ? (
+                          <div className="w-full space-y-2">
+                            {yCols.map((col, idx) => (
+                              <div key={idx} className="bg-white px-2 py-1 rounded border border-gray-200 text-xs flex items-center justify-between">
+                                <span className="font-medium truncate">{col}</span>
+                                <button
+                                  onClick={() => removeFieldFromAxis(chartConfigs[currentChartIndex].id, 'yAxis', col)}
+                                  className="text-red-600 hover:text-red-800 ml-1"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-400 text-center">Drop measure here</div>
+                        );
+                      })()}
                     </div>
 
                     {/* Chart Area */}
@@ -2349,49 +2645,107 @@ const SolutionPro = () => {
                         <div
                           onDragOver={handleDragOver}
                           onDrop={(e) => handleDrop(e, chartConfigs[currentChartIndex].id, 'xAxis')}
-                          className={`w-full p-4 rounded-lg border-2 border-dashed transition-colors flex flex-col items-center justify-center min-h-[60px] ${
+                          className={`w-full p-4 rounded-lg border-2 border-dashed transition-colors flex flex-col items-center justify-center min-h-[80px] ${
                             draggedField ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-100'
                           }`}
                         >
-                          <div className="text-xs font-semibold text-gray-600 mb-2">X-Axis</div>
-                          {chartConfigs[currentChartIndex].xAxis.column ? (
-                            <div className="bg-white px-3 py-2 rounded border border-gray-200 text-sm font-medium text-gray-700">
-                              {chartConfigs[currentChartIndex].xAxis.column}
-                            </div>
-                          ) : (
-                            <div className="text-xs text-gray-400">Drop dimension here</div>
-                          )}
+                          <div className="text-xs font-semibold text-gray-600 mb-2">X-Axis (Dimensions)</div>
+                          {(() => {
+                            const xCols = Array.isArray(chartConfigs[currentChartIndex].xAxis.columns) 
+                              ? chartConfigs[currentChartIndex].xAxis.columns 
+                              : (chartConfigs[currentChartIndex].xAxis.column ? [chartConfigs[currentChartIndex].xAxis.column] : []);
+                            return xCols.length > 0 ? (
+                              <div className="flex flex-wrap gap-2 justify-center">
+                                {xCols.map((col, idx) => {
+                                  const colInfo = getColumnInfo(col);
+                                  return (
+                                    <div key={idx} className="bg-white px-3 py-1 rounded border border-gray-200 text-sm flex items-center gap-2">
+                                      <span className="font-medium">{col}</span>
+                                      {colInfo.isDate && (
+                                        <select
+                                          value={dateHierarchies[col] || 'month'}
+                                          onChange={(e) => setDateHierarchies(prev => ({ ...prev, [col]: e.target.value }))}
+                                          className="text-xs border border-gray-300 rounded px-1 py-0.5"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <option value="year">Year</option>
+                                          <option value="quarter">Quarter</option>
+                                          <option value="month">Month</option>
+                                          <option value="week">Week</option>
+                                          <option value="day">Day</option>
+                                        </select>
+                                      )}
+                                      <button
+                                        onClick={() => removeFieldFromAxis(chartConfigs[currentChartIndex].id, 'xAxis', col)}
+                                        className="text-red-600 hover:text-red-800"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className="text-xs text-gray-400">Drop dimension here</div>
+                            );
+                          })()}
                         </div>
                       </div>
 
                       {/* Chart Preview Area */}
                       <div className="flex-1 bg-white rounded border border-gray-200 p-4 flex items-center justify-center min-h-[300px]">
-                        {chartConfigs[currentChartIndex].xAxis.column && chartConfigs[currentChartIndex].yAxis.column ? (
-                          <div className="w-full h-full">
-                            {renderChart(chartConfigs[currentChartIndex])}
-                          </div>
-                        ) : (
-                          <div className="text-center text-gray-400">
-                            <BarChart3 className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                            <p className="text-sm">Drag fields to X and Y axes to generate chart</p>
-                          </div>
-                        )}
+                        {(() => {
+                          const xCols = Array.isArray(chartConfigs[currentChartIndex].xAxis.columns) 
+                            ? chartConfigs[currentChartIndex].xAxis.columns 
+                            : (chartConfigs[currentChartIndex].xAxis.column ? [chartConfigs[currentChartIndex].xAxis.column] : []);
+                          const yCols = Array.isArray(chartConfigs[currentChartIndex].yAxis.columns) 
+                            ? chartConfigs[currentChartIndex].yAxis.columns 
+                            : (chartConfigs[currentChartIndex].yAxis.column ? [chartConfigs[currentChartIndex].yAxis.column] : []);
+                          return xCols.length > 0 && yCols.length > 0 ? (
+                            <div className="w-full h-full">
+                              {renderChart(chartConfigs[currentChartIndex])}
+                            </div>
+                          ) : (
+                            <div className="text-center text-gray-400">
+                              <BarChart3 className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                              <p className="text-sm">Drag fields to X and Y axes to generate chart</p>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
 
                     {/* Z-Axis Placeholder (Right - Optional) */}
                     <div
                       onDragOver={handleDragOver}
-                      onDrop={(e) => {
-                        // Handle Z-axis drop if needed for 3D charts
-                        e.preventDefault();
-                      }}
-                      className={`w-32 p-4 rounded-lg border-2 border-dashed transition-colors flex flex-col items-center justify-center min-h-[200px] ${
-                        draggedField ? 'border-purple-400 bg-purple-50' : 'border-gray-200 bg-gray-50 opacity-50'
+                      onDrop={(e) => handleDrop(e, chartConfigs[currentChartIndex].id, 'zAxis')}
+                      className={`w-40 p-4 rounded-lg border-2 border-dashed transition-colors flex flex-col items-center justify-start min-h-[200px] ${
+                        draggedField ? 'border-purple-400 bg-purple-50' : 'border-gray-200 bg-gray-50'
                       }`}
                     >
-                      <div className="text-xs font-semibold text-gray-500 mb-2">Z-Axis (Optional)</div>
-                      <div className="text-xs text-gray-400 text-center">For 3D charts</div>
+                      <div className="text-xs font-semibold text-gray-600 mb-2">Z-Axis (Optional)</div>
+                      {(() => {
+                        const zCols = Array.isArray(chartConfigs[currentChartIndex].zAxis?.columns) 
+                          ? chartConfigs[currentChartIndex].zAxis.columns 
+                          : (chartConfigs[currentChartIndex].zAxis?.column ? [chartConfigs[currentChartIndex].zAxis.column] : []);
+                        return zCols.length > 0 ? (
+                          <div className="w-full space-y-2">
+                            {zCols.map((col, idx) => (
+                              <div key={idx} className="bg-white px-2 py-1 rounded border border-gray-200 text-xs flex items-center justify-between">
+                                <span className="font-medium truncate">{col}</span>
+                                <button
+                                  onClick={() => removeFieldFromAxis(chartConfigs[currentChartIndex].id, 'zAxis', col)}
+                                  className="text-red-600 hover:text-red-800 ml-1"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-400 text-center">For color/size encoding</div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
