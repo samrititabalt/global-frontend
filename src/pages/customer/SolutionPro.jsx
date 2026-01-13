@@ -7,6 +7,7 @@ import html2canvas from 'html2canvas';
 import { parse, isValid } from 'date-fns';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
+import api from '../../utils/axios';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
 
@@ -4130,50 +4131,67 @@ const SolutionPro = () => {
                 setChatbotLoading(true);
 
                 try {
-                  // Get current data table state
+                  // Get current data table state (limit to avoid huge payloads)
                   const tableData = {
                     columns: availableColumns,
-                    sampleData: gridData.slice(0, 10).map((row) => {
+                    sampleData: gridData.slice(0, 5).map((row) => {
                       const rowData = {};
                       availableColumns.forEach((col, colIdx) => {
                         rowData[col] = row[colIdx] || '';
                       });
                       return rowData;
                     }),
-                    currentChart: chartConfigs[currentChartIndex],
-                    fieldRoles,
-                    fieldModes
+                    currentChart: {
+                      chartType: chartConfigs[currentChartIndex].chartType,
+                      xAxis: chartConfigs[currentChartIndex].xAxis.column,
+                      yAxis: chartConfigs[currentChartIndex].yAxis.column,
+                    },
+                    fieldRoles: Object.fromEntries(Object.entries(fieldRoles).slice(0, 10)),
                   };
 
-                  // Call chatbot API
-                  const response = await fetch('/api/public/chatbot-message', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      message: `I'm working with Sam's Smart Reports Pro. Here's my current data table: ${JSON.stringify(tableData)}. My question: ${userMessage}`,
-                      chatHistory: chatbotMessages.map(m => ({
-                        sender: m.sender === 'user' ? 'user' : 'bot',
-                        text: m.text
-                      }))
-                    })
+                  // Build context message
+                  const contextMessage = `I'm working with Sam's Smart Reports Pro chart builder. `;
+                  const dataContext = `My data has ${availableColumns.length} columns: ${availableColumns.slice(0, 5).join(', ')}${availableColumns.length > 5 ? '...' : ''}. `;
+                  const chartContext = chartConfigs[currentChartIndex].xAxis.column || chartConfigs[currentChartIndex].yAxis.column
+                    ? `Current chart: ${chartConfigs[currentChartIndex].xAxis.column || 'No X-axis'} vs ${chartConfigs[currentChartIndex].yAxis.column || 'No Y-axis'}. `
+                    : '';
+                  const fullMessage = contextMessage + dataContext + chartContext + `My question: ${userMessage}`;
+
+                  // Call chatbot API using axios
+                  const response = await api.post('/public/chatbot-message', {
+                    message: fullMessage,
+                    chatHistory: chatbotMessages.map(m => ({
+                      sender: m.sender === 'user' ? 'user' : 'bot',
+                      text: m.text
+                    }))
                   });
 
-                  const data = await response.json();
-                  if (data.success) {
-                    setChatbotMessages(prev => [...prev, { sender: 'bot', text: data.message }]);
+                  if (response.data && response.data.success) {
+                    setChatbotMessages(prev => [...prev, { sender: 'bot', text: response.data.message }]);
                   } else {
-                    setChatbotMessages(prev => [...prev, { sender: 'bot', text: 'Sorry, I encountered an error. Please try again.' }]);
+                    setChatbotMessages(prev => [...prev, { 
+                      sender: 'bot', 
+                      text: response.data?.message || 'Sorry, I encountered an error. Please try again.' 
+                    }]);
                   }
                 } catch (error) {
                   console.error('Chatbot error:', error);
-                  setChatbotMessages(prev => [...prev, { sender: 'bot', text: 'Sorry, I encountered an error. Please try again.' }]);
+                  const errorMessage = error.response?.data?.message || 
+                                       error.message || 
+                                       'Sorry, I encountered an error. Please try again.';
+                  setChatbotMessages(prev => [...prev, { 
+                    sender: 'bot', 
+                    text: `Error: ${errorMessage}` 
+                  }]);
                 } finally {
                   setChatbotLoading(false);
-                  if (chatbotRef.current) {
-                    chatbotRef.current.scrollTop = chatbotRef.current.scrollHeight;
-                  }
+                  // Auto-scroll to bottom
+                  setTimeout(() => {
+                    const chatContainer = document.querySelector('.fixed.bottom-4.right-4 .overflow-y-auto');
+                    if (chatContainer) {
+                      chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }
+                  }, 100);
                 }
               }}
               className="flex gap-2"
