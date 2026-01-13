@@ -994,31 +994,45 @@ const SolutionPro = () => {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Arrow key navigation (only when not typing in input)
+      // Arrow key navigation (only when not typing in input or when input is empty)
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         const activeInput = document.activeElement;
-        if (activeInput && activeInput.classList.contains('grid-cell') && !activeInput.value) {
-          e.preventDefault();
-          let newRow = activeCell.row;
-          let newCol = activeCell.col;
+        if (activeInput && activeInput.classList.contains('grid-cell')) {
+          // If input has no value or cursor is at start/end, allow navigation
+          const inputValue = activeInput.value || '';
+          const selectionStart = activeInput.selectionStart || 0;
+          const selectionEnd = activeInput.selectionEnd || 0;
+          const isAtStart = selectionStart === 0 && selectionEnd === 0;
+          const isAtEnd = selectionStart === inputValue.length && selectionEnd === inputValue.length;
           
-          if (e.key === 'ArrowUp' && newRow > 0) {
-            newRow--;
-          } else if (e.key === 'ArrowDown' && newRow < 999) {
-            newRow++;
-          } else if (e.key === 'ArrowLeft' && newCol > 0) {
-            newCol--;
-          } else if (e.key === 'ArrowRight' && newCol < 19) {
-            newCol++;
-          }
-          
-          setActiveCell({ row: newRow, col: newCol });
-          setSelectedCells([{ row: newRow, col: newCol }]);
-          
-          // Focus the new cell
-          const nextCell = document.getElementById(`cell-${newRow}-${newCol}`);
-          if (nextCell) {
-            nextCell.focus();
+          if (!inputValue || isAtStart || isAtEnd) {
+            e.preventDefault();
+            let newRow = activeCell.row;
+            let newCol = activeCell.col;
+            
+            if (e.key === 'ArrowUp' && newRow > 0) {
+              newRow--;
+            } else if (e.key === 'ArrowDown' && newRow < 999) {
+              newRow++;
+            } else if (e.key === 'ArrowLeft' && newCol > 0) {
+              newCol--;
+            } else if (e.key === 'ArrowRight' && newCol < 19) {
+              newCol++;
+            }
+            
+            setActiveCell({ row: newRow, col: newCol });
+            setSelectedCells([{ row: newRow, col: newCol }]);
+            
+            // Focus the new cell
+            setTimeout(() => {
+              const nextCell = document.getElementById(`cell-${newRow}-${newCol}`);
+              if (nextCell) {
+                nextCell.focus();
+                if (nextCell.value) {
+                  nextCell.setSelectionRange(nextCell.value.length, nextCell.value.length);
+                }
+              }
+            }, 10);
           }
         }
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
@@ -1039,6 +1053,11 @@ const SolutionPro = () => {
         }
         e.preventDefault();
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        const activeInput = document.activeElement;
+        if (activeInput && activeInput.classList.contains('grid-cell')) {
+          // If input is focused, let it handle backspace/delete normally
+          return;
+        }
         if (selectedCells.length > 0) {
           const newData = [...gridData];
           selectedCells.forEach(({ row, col }) => {
@@ -1887,22 +1906,249 @@ const SolutionPro = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="pt-20 pb-12">
+      <div className="pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-8 flex items-start justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Sam's Smart Reports Pro</h1>
-              <p className="text-gray-600">Transform your data into professional dashboards</p>
+          {/* Rich Header Section */}
+          <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-2xl mb-8 overflow-hidden">
+            <div className="p-8 md:p-12 text-white">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <BarChart3 className="h-10 w-10 md:h-12 md:w-12" />
+                    <h1 className="text-3xl md:text-5xl font-bold">Sam's Smart Reports Pro</h1>
+                  </div>
+                  <p className="text-lg md:text-xl text-blue-100 mb-6">Transform your data into professional dashboards</p>
+                  <div className="flex flex-wrap gap-4">
+                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                      <BarChart3 className="h-5 w-5" />
+                      <span className="text-sm font-medium">Chart Builder</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                      <FileSpreadsheet className="h-5 w-5" />
+                      <span className="text-sm font-medium">Data Tables</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                      <Download className="h-5 w-5" />
+                      <span className="text-sm font-medium">PPT Export</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-shrink-0">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                    <div className="text-center">
+                      <div className="text-4xl font-bold mb-2">{availableColumns.length}</div>
+                      <div className="text-sm text-blue-100">Columns Detected</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
+
+          {/* Chatbot at Top - First Step */}
+          {showChatbot && (
+            <div 
+              ref={chatbotRef}
+              className="bg-white rounded-xl shadow-xl border border-gray-200 mb-8 flex flex-col"
+            >
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-t-xl flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5" />
+                  <h3 className="font-semibold">Chart Builder Assistant - Your First Step</h3>
+                </div>
+                <button
+                  onClick={() => setShowChatbot(false)}
+                  className="text-white hover:text-gray-200 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-96">
+                {chatbotMessages.length === 0 && (
+                  <div className="text-sm text-gray-600 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <p className="font-semibold mb-2 text-blue-900">👋 Welcome to Sam's Smart Reports Pro!</p>
+                    <p className="mb-3 text-gray-700">I'm your Chart Builder Assistant. Let's get started:</p>
+                    <ol className="list-decimal list-inside space-y-2 text-xs text-gray-600">
+                      <li><strong>Step 1:</strong> Paste or enter your data into the table below</li>
+                      <li><strong>Step 2:</strong> I'll help you drag dimensions to build charts</li>
+                      <li><strong>Step 3:</strong> Guide you to drag charts to the dashboard canvas</li>
+                      <li><strong>Step 4:</strong> Assist in exporting to PPT</li>
+                    </ol>
+                    <p className="mt-3 text-xs text-gray-500 italic">I'm focused on helping you build charts, format dashboards, and export to PPT. Ask me anything about these features!</p>
+                  </div>
+                )}
+                {chatbotMessages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] rounded-lg p-3 ${
+                        msg.sender === 'user'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                    </div>
+                  </div>
+                ))}
+                {chatbotLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-100 rounded-lg p-3">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-gray-200 p-4">
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!chatbotInput.trim() || chatbotLoading) return;
+
+                    const userMessage = chatbotInput.trim();
+                    setChatbotInput('');
+                    setChatbotMessages(prev => [...prev, { sender: 'user', text: userMessage }]);
+                    setChatbotLoading(true);
+
+                    try {
+                      // Get current data table state (limit to avoid huge payloads)
+                      const tableData = {
+                        columns: availableColumns,
+                        sampleData: gridData.slice(0, 5).map((row) => {
+                          const rowData = {};
+                          availableColumns.forEach((col, colIdx) => {
+                            rowData[col] = row[colIdx] || '';
+                          });
+                          return rowData;
+                        }),
+                        currentChart: {
+                          chartType: chartConfigs[currentChartIndex].chartType,
+                          xAxis: chartConfigs[currentChartIndex].xAxis.column,
+                          yAxis: chartConfigs[currentChartIndex].yAxis.column,
+                        },
+                        fieldRoles: Object.fromEntries(Object.entries(fieldRoles).slice(0, 10)),
+                      };
+
+                      // Build context message with guardrails
+                      const contextMessage = `I'm working with Sam's Smart Reports Pro chart builder. `;
+                      const dataContext = availableColumns.length > 0 
+                        ? `My data has ${availableColumns.length} columns: ${availableColumns.slice(0, 5).join(', ')}${availableColumns.length > 5 ? '...' : ''}. ` 
+                        : 'I haven\'t entered data yet. ';
+                      const chartContext = chartConfigs[currentChartIndex].xAxis.column || chartConfigs[currentChartIndex].yAxis.column
+                        ? `Current chart: ${chartConfigs[currentChartIndex].xAxis.column || 'No X-axis'} vs ${chartConfigs[currentChartIndex].yAxis.column || 'No Y-axis'}. `
+                        : '';
+                      const fullMessage = contextMessage + dataContext + chartContext + `My question: ${userMessage}`;
+
+                      // Call chatbot API using axios
+                      const response = await api.post('/public/chatbot-message', {
+                        message: fullMessage,
+                        chatHistory: chatbotMessages.map(m => ({
+                          sender: m.sender === 'user' ? 'user' : 'bot',
+                          text: m.text
+                        }))
+                      });
+
+                      if (response.data && response.data.success) {
+                        setChatbotMessages(prev => [...prev, { sender: 'bot', text: response.data.message }]);
+                      } else {
+                        setChatbotMessages(prev => [...prev, { 
+                          sender: 'bot', 
+                          text: response.data?.message || 'Sorry, I encountered an error. Please try again.' 
+                        }]);
+                      }
+                    } catch (error) {
+                      console.error('Chatbot error:', error);
+                      const errorMessage = error.response?.data?.message || 
+                                           error.message || 
+                                           'Sorry, I encountered an error. Please try again.';
+                      setChatbotMessages(prev => [...prev, { 
+                        sender: 'bot', 
+                        text: `Error: ${errorMessage}` 
+                      }]);
+                    } finally {
+                      setChatbotLoading(false);
+                    }
+                  }}
+                  className="flex gap-2"
+                >
+                  <input
+                    type="text"
+                    value={chatbotInput}
+                    onChange={(e) => setChatbotInput(e.target.value)}
+                    placeholder="Ask about building charts, formatting dashboards, or PPT export..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={chatbotLoading}
+                  />
+                  <button
+                    type="submit"
+                    disabled={chatbotLoading || !chatbotInput.trim()}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Chatbot Toggle Button - Top Right */}
+          {!showChatbot && (
+            <div className="mb-6 flex justify-end">
+              <button
+                onClick={() => setShowChatbot(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105"
+                title="Open Chart Builder Assistant"
+              >
+                <MessageCircle className="h-5 w-5" />
+                <span className="font-medium">Get Started with Assistant</span>
+              </button>
+            </div>
+          )}
+
+          {/* Instructions Panel - Collapsible */}
+          <div className="mb-6 flex justify-end">
             <button
               onClick={() => setShowInstructions(!showInstructions)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors shadow-sm"
             >
               <Info className="h-4 w-4" />
               How to use the tool
             </button>
           </div>
+          {showInstructions && (
+            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-6 relative">
+              <button
+                onClick={() => setShowInstructions(false)}
+                className="absolute top-4 right-4 text-blue-600 hover:text-blue-800"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div className="flex items-start gap-3">
+                <Info className="h-6 w-6 text-blue-600 mt-1 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-blue-900 mb-2">Chart Builder Instructions</h3>
+                  <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                    <li>Select variables to build your own charts using dropdowns or drag-and-drop.</li>
+                    <li>Use dimensions for categories and measures for values.</li>
+                    <li>Drag fields from the field list onto X or Y axis drop zones.</li>
+                    <li>Toggle between Dimension/Measure and Discrete/Continuous for each field.</li>
+                    <li>Right-click on chart labels to sort data (Ascending, Descending, or Clear).</li>
+                    <li>Click on any label (title, axis labels, category names) to edit them directly.</li>
+                    <li>Choose aggregation methods to analyze your data.</li>
+                    <li>For time series data, select a date column and apply CAGR or trend analysis.</li>
+                    <li>To reuse this tool for multiple datasets, remove the old data first.</li>
+                    <li>For large datasets beyond 1000 rows or 20 columns, please contact the admin.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Instructions Panel - Collapsible */}
           {showInstructions && (
@@ -1999,6 +2245,30 @@ const SolutionPro = () => {
                               onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
                               onFocus={() => handleCellFocus(rowIndex, colIndex)}
                               onPaste={handlePaste}
+                              onKeyDown={(e) => {
+                                // Enter key: move to next row in same column
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  const nextRow = Math.min(rowIndex + 1, 999);
+                                  setActiveCell({ row: nextRow, col: colIndex });
+                                  setSelectedCells([{ row: nextRow, col: colIndex }]);
+                                  setTimeout(() => {
+                                    const nextCell = document.getElementById(`cell-${nextRow}-${colIndex}`);
+                                    if (nextCell) {
+                                      nextCell.focus();
+                                    }
+                                  }, 10);
+                                }
+                                // Arrow keys: navigate cells (handled by global handler, but allow default if typing)
+                                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                                  const activeInput = document.activeElement;
+                                  if (activeInput && activeInput.classList.contains('grid-cell') && activeInput.value) {
+                                    // If cell has value, allow default cursor movement within input
+                                    return;
+                                  }
+                                  // Otherwise, global handler will take over
+                                }
+                              }}
                             />
                             {rowIndex === activeCell.row && colIndex === activeCell.col && (
                               <div 
@@ -2024,7 +2294,32 @@ const SolutionPro = () => {
           {/* Chart Placeholder - Below Data Input */}
           {availableColumns.length > 0 && (
             <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Chart Preview</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Drag & Drop Chart Builder</h3>
+              
+              {/* Draggable Column Headers */}
+              <div className="mb-6">
+                <p className="text-sm text-gray-600 mb-3">Drag column headers to axes below:</p>
+                <div className="flex flex-wrap gap-2">
+                  {availableColumns.map((col) => {
+                    const columnInfo = getColumnInfo(col);
+                    const role = fieldRoles[col] || (columnInfo.isNumeric ? 'measure' : 'dimension');
+                    const roleColor = role === 'dimension' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-green-100 text-green-700 border-green-300';
+                    return (
+                      <button
+                        key={col}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, col)}
+                        className={`px-4 py-2 rounded-lg border-2 border-dashed cursor-move hover:shadow-md transition-all ${roleColor} font-medium text-sm`}
+                        title={`${col} (${role}) - Drag to X, Y, or Z axis`}
+                      >
+                        {col}
+                        <span className="ml-2 text-xs opacity-75">({role})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 min-h-[400px] p-6">
                 {/* Chart Axis Placeholders */}
                 <div className="flex flex-col h-full">
@@ -4058,174 +4353,6 @@ const SolutionPro = () => {
         </div>
       )}
 
-      {/* Chatbot Integration */}
-      {showChatbot && (
-        <div 
-          ref={chatbotRef}
-          className="fixed bottom-4 right-4 w-96 h-[600px] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col z-50"
-        >
-          <div className="bg-blue-600 text-white p-4 rounded-t-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5" />
-              <h3 className="font-semibold">Chart Builder Assistant</h3>
-            </div>
-            <button
-              onClick={() => setShowChatbot(false)}
-              className="text-white hover:text-gray-200"
-            >
-              <Minimize2 className="h-5 w-5" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {chatbotMessages.length === 0 && (
-              <div className="text-sm text-gray-600">
-                <p className="font-semibold mb-2">Hi! I'm your Chart Builder Assistant.</p>
-                <p className="mb-2">I can help you with:</p>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  <li>Building charts from your data</li>
-                  <li>Modifying chart labels and formatting</li>
-                  <li>Formatting the Dashboard Canvas</li>
-                  <li>Using the PPT Builder</li>
-                  <li>Step-by-step guidance</li>
-                </ul>
-                <p className="mt-3 text-xs text-gray-500">I can see your Data Input table and help you create the perfect visualizations!</p>
-              </div>
-            )}
-            {chatbotMessages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
-                    msg.sender === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
-                </div>
-              </div>
-            ))}
-            {chatbotLoading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-lg p-3">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="border-t border-gray-200 p-4">
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!chatbotInput.trim() || chatbotLoading) return;
-
-                const userMessage = chatbotInput.trim();
-                setChatbotInput('');
-                setChatbotMessages(prev => [...prev, { sender: 'user', text: userMessage }]);
-                setChatbotLoading(true);
-
-                try {
-                  // Get current data table state (limit to avoid huge payloads)
-                  const tableData = {
-                    columns: availableColumns,
-                    sampleData: gridData.slice(0, 5).map((row) => {
-                      const rowData = {};
-                      availableColumns.forEach((col, colIdx) => {
-                        rowData[col] = row[colIdx] || '';
-                      });
-                      return rowData;
-                    }),
-                    currentChart: {
-                      chartType: chartConfigs[currentChartIndex].chartType,
-                      xAxis: chartConfigs[currentChartIndex].xAxis.column,
-                      yAxis: chartConfigs[currentChartIndex].yAxis.column,
-                    },
-                    fieldRoles: Object.fromEntries(Object.entries(fieldRoles).slice(0, 10)),
-                  };
-
-                  // Build context message
-                  const contextMessage = `I'm working with Sam's Smart Reports Pro chart builder. `;
-                  const dataContext = `My data has ${availableColumns.length} columns: ${availableColumns.slice(0, 5).join(', ')}${availableColumns.length > 5 ? '...' : ''}. `;
-                  const chartContext = chartConfigs[currentChartIndex].xAxis.column || chartConfigs[currentChartIndex].yAxis.column
-                    ? `Current chart: ${chartConfigs[currentChartIndex].xAxis.column || 'No X-axis'} vs ${chartConfigs[currentChartIndex].yAxis.column || 'No Y-axis'}. `
-                    : '';
-                  const fullMessage = contextMessage + dataContext + chartContext + `My question: ${userMessage}`;
-
-                  // Call chatbot API using axios
-                  const response = await api.post('/public/chatbot-message', {
-                    message: fullMessage,
-                    chatHistory: chatbotMessages.map(m => ({
-                      sender: m.sender === 'user' ? 'user' : 'bot',
-                      text: m.text
-                    }))
-                  });
-
-                  if (response.data && response.data.success) {
-                    setChatbotMessages(prev => [...prev, { sender: 'bot', text: response.data.message }]);
-                  } else {
-                    setChatbotMessages(prev => [...prev, { 
-                      sender: 'bot', 
-                      text: response.data?.message || 'Sorry, I encountered an error. Please try again.' 
-                    }]);
-                  }
-                } catch (error) {
-                  console.error('Chatbot error:', error);
-                  const errorMessage = error.response?.data?.message || 
-                                       error.message || 
-                                       'Sorry, I encountered an error. Please try again.';
-                  setChatbotMessages(prev => [...prev, { 
-                    sender: 'bot', 
-                    text: `Error: ${errorMessage}` 
-                  }]);
-                } finally {
-                  setChatbotLoading(false);
-                  // Auto-scroll to bottom
-                  setTimeout(() => {
-                    const chatContainer = document.querySelector('.fixed.bottom-4.right-4 .overflow-y-auto');
-                    if (chatContainer) {
-                      chatContainer.scrollTop = chatContainer.scrollHeight;
-                    }
-                  }, 100);
-                }
-              }}
-              className="flex gap-2"
-            >
-              <input
-                type="text"
-                value={chatbotInput}
-                onChange={(e) => setChatbotInput(e.target.value)}
-                placeholder="Ask me anything about building charts..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={chatbotLoading}
-              />
-              <button
-                type="submit"
-                disabled={chatbotLoading || !chatbotInput.trim()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Chatbot Toggle Button */}
-      {!showChatbot && (
-        <button
-          onClick={() => setShowChatbot(true)}
-          className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors z-50"
-          title="Open Chart Builder Assistant"
-        >
-          <MessageCircle className="h-6 w-6" />
-        </button>
-      )}
 
       <Footer />
     </div>
