@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, LineChart, AreaChart, Palette, Eye, EyeOff, ChevronRight, ChevronLeft, Image as ImageIcon, MessageCircle, Send, Minimize2, Maximize2 } from 'lucide-react';
+import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, LineChart, AreaChart, Palette, Eye, EyeOff, ChevronRight, ChevronLeft, Image as ImageIcon, MessageCircle, Send, Minimize2, Maximize2, Filter, Search } from 'lucide-react';
 import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart as RechartsLineChart, Line, AreaChart as RechartsAreaChart, Area, LabelList, Text } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -10,6 +10,112 @@ import Footer from '../../components/public/Footer';
 import api from '../../utils/axios';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
+
+// Filter Multi-Select Component
+const FilterMultiSelect = ({ filter, uniqueValues, onUpdate }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedValues = filter.values || [];
+  const filteredValues = uniqueValues.filter(v => 
+    v.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const toggleValue = (value) => {
+    const newValues = selectedValues.includes(value)
+      ? selectedValues.filter(v => v !== value)
+      : [...selectedValues, value];
+    onUpdate({ ...filter, values: newValues });
+  };
+
+  const selectAll = () => {
+    onUpdate({ ...filter, values: [...uniqueValues] });
+  };
+
+  const clearAll = () => {
+    onUpdate({ ...filter, values: [] });
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-3 py-2 text-left text-xs border border-gray-300 rounded bg-white hover:bg-gray-50 flex items-center justify-between"
+      >
+        <span className="truncate">
+          {selectedValues.length === 0 
+            ? 'Select values...' 
+            : selectedValues.length === uniqueValues.length
+            ? `All (${selectedValues.length})`
+            : `${selectedValues.length} selected`}
+        </span>
+        <ChevronRight className={`h-3 w-3 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+      </button>
+      
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+          <div className="p-2 border-b border-gray-200">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search..."
+                className="w-full pl-7 pr-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex gap-1 mt-2">
+              <button
+                onClick={selectAll}
+                className="flex-1 px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100"
+              >
+                Select All
+              </button>
+              <button
+                onClick={clearAll}
+                className="flex-1 px-2 py-1 text-xs bg-gray-50 text-gray-700 rounded hover:bg-gray-100"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+          <div className="max-h-40 overflow-y-auto">
+            {filteredValues.length === 0 ? (
+              <div className="p-2 text-xs text-gray-500 text-center">No values found</div>
+            ) : (
+              filteredValues.map((value) => (
+                <label
+                  key={value}
+                  className="flex items-center px-3 py-1.5 hover:bg-gray-50 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedValues.includes(value)}
+                    onChange={() => toggleValue(value)}
+                    className="mr-2 h-3 w-3 text-blue-600"
+                  />
+                  <span className="text-xs text-gray-700 truncate">{value}</span>
+                </label>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const SolutionPro = () => {
   const [gridData, setGridData] = useState(() => {
@@ -91,6 +197,8 @@ const SolutionPro = () => {
     { value: 'pie', label: 'Pie Chart', icon: PieChart },
     { value: 'line', label: 'Line Chart', icon: LineChart },
     { value: 'area', label: 'Area Chart', icon: AreaChart },
+    { value: 'table', label: 'Table', icon: FileSpreadsheet },
+    { value: 'heatmap', label: 'Heatmap', icon: BarChart3 },
   ];
   const SORT_OPTIONS = [
     { value: 'none', label: 'No Sorting' },
@@ -351,43 +459,96 @@ const SolutionPro = () => {
     return months[month - 1] || '';
   };
 
-  // Apply filters to data
+  // Get unique values from a column
+  const getUniqueValues = (columnName) => {
+    if (!chartData.length || !columnName) return [];
+    const values = chartData.map(row => row[columnName]).filter(v => v !== null && v !== undefined && v !== '');
+    const unique = [...new Set(values.map(v => String(v).trim()))].sort();
+    return unique;
+  };
+
+  // Get min/max values from a numeric column
+  const getMinMaxValues = (columnName) => {
+    if (!chartData.length || !columnName) return { min: 0, max: 100 };
+    const values = chartData.map(row => row[columnName])
+      .filter(v => v !== null && v !== undefined && v !== '')
+      .map(v => parseFloat(v))
+      .filter(v => !isNaN(v) && isFinite(v));
+    
+    if (values.length === 0) return { min: 0, max: 100 };
+    return {
+      min: Math.min(...values),
+      max: Math.max(...values),
+    };
+  };
+
+  // Apply filters to data (updated to work correctly)
   const applyFilters = (data, filters) => {
     if (!filters || filters.length === 0) return data;
     
     let filtered = [...data];
     
     filters.forEach(filter => {
-      if (!filter.column || !filter.values || filter.values.length === 0) return;
+      if (!filter.column) return;
       
-      filtered = filtered.filter(row => {
-        const value = row[filter.column];
+      // Skip if no values selected (show all)
+      if (filter.filterType === 'range') {
+        // Range filter for dates and numbers
+        if (!filter.minValue && !filter.maxValue) return; // No range set, show all
         
-        if (filter.filterType === 'range') {
-          // Range filter for dates and numbers
-          const [min, max] = filter.values;
+        filtered = filtered.filter(row => {
+          const value = row[filter.column];
+          
           if (filter.isDate) {
             const rowDate = parseDate(value);
-            const minDate = parseDate(min);
-            const maxDate = parseDate(max);
-            if (rowDate && minDate && maxDate) {
-              return rowDate >= minDate && rowDate <= maxDate;
+            const minDate = filter.minValue ? parseDate(filter.minValue) : null;
+            const maxDate = filter.maxValue ? parseDate(filter.maxValue) : null;
+            
+            if (rowDate) {
+              if (minDate && maxDate) {
+                return rowDate >= minDate && rowDate <= maxDate;
+              } else if (minDate) {
+                return rowDate >= minDate;
+              } else if (maxDate) {
+                return rowDate <= maxDate;
+              }
             }
+            return false;
           } else {
+            // Numeric range
             const numValue = parseFloat(value);
-            const minNum = parseFloat(min);
-            const maxNum = parseFloat(max);
-            if (!isNaN(numValue) && !isNaN(minNum) && !isNaN(maxNum)) {
+            if (isNaN(numValue)) return false;
+            
+            const minNum = filter.minValue !== undefined && filter.minValue !== null ? parseFloat(filter.minValue) : null;
+            const maxNum = filter.maxValue !== undefined && filter.maxValue !== null ? parseFloat(filter.maxValue) : null;
+            
+            if (minNum !== null && maxNum !== null) {
               return numValue >= minNum && numValue <= maxNum;
+            } else if (minNum !== null) {
+              return numValue >= minNum;
+            } else if (maxNum !== null) {
+              return numValue <= maxNum;
             }
+            return true;
           }
-        } else {
-          // Single or multi-select
-          return filter.values.includes(String(value));
+        });
+      } else {
+        // Multi-select filter
+        // If no values selected OR all unique values are selected, show all (no filtering)
+        const uniqueValues = getUniqueValues(filter.column);
+        const selectedValues = filter.values || [];
+        
+        // If all values are selected, don't filter (show all)
+        if (selectedValues.length === 0 || selectedValues.length === uniqueValues.length) {
+          return; // No filtering needed
         }
         
-        return true;
-      });
+        // Filter to only selected values
+        filtered = filtered.filter(row => {
+          const value = String(row[filter.column] || '').trim();
+          return selectedValues.includes(value);
+        });
+      }
     });
     
     return filtered;
@@ -724,13 +885,31 @@ const SolutionPro = () => {
       const filterExists = existingFilters.some(f => f.column === draggedField);
       
       if (!filterExists) {
-        const newFilter = {
-          column: draggedField,
-          type: role,
-          filterType: columnInfo.isDate || columnInfo.isNumeric ? 'range' : 'multi',
-          values: [],
-          isDate: columnInfo.isDate,
-        };
+        const colInfo = getColumnInfo(draggedField);
+        let newFilter;
+        
+        if (colInfo.isDate || colInfo.isNumeric) {
+          // Range filter for dates and numbers
+          const minMax = colInfo.isNumeric ? getMinMaxValues(draggedField) : null;
+          newFilter = {
+            column: draggedField,
+            type: role,
+            filterType: 'range',
+            minValue: colInfo.isNumeric ? minMax.min : null,
+            maxValue: colInfo.isNumeric ? minMax.max : null,
+            isDate: colInfo.isDate,
+          };
+        } else {
+          // Multi-select filter for dimensions
+          const uniqueValues = getUniqueValues(draggedField);
+          newFilter = {
+            column: draggedField,
+            type: role,
+            filterType: 'multi',
+            values: [...uniqueValues], // Default to all values selected (copy array)
+            isDate: false,
+          };
+        }
         updateChartConfig(chartId, { filters: [...existingFilters, newFilter] });
       }
       setDraggedField(null);
@@ -1516,7 +1695,149 @@ const SolutionPro = () => {
           }}
         >
           <div style={{ minWidth: needsHorizontalScroll ? chartWidth : '100%', height: '100%' }}>
-            <ResponsiveContainer width="100%" height={chartHeight}>
+            {config.chartType === 'table' ? (
+              <div className="w-full overflow-auto max-h-96">
+                {(() => {
+                  const xCols = Array.isArray(config.xAxis.columns) ? config.xAxis.columns : (config.xAxis.column ? [config.xAxis.column] : []);
+                  const yCols = Array.isArray(config.yAxis.columns) ? config.yAxis.columns : (config.yAxis.column ? [config.yAxis.column] : []);
+                  const allColumns = [...xCols, ...yCols];
+                  
+                  if (allColumns.length === 0) {
+                    return (
+                      <div className="h-64 flex items-center justify-center text-gray-400">
+                        <div className="text-center">
+                          <FileSpreadsheet className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Add fields to X or Y axis to generate table</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <table className="min-w-full border-collapse bg-white">
+                      <thead className="bg-gray-100 sticky top-0">
+                        <tr>
+                          {allColumns.map((col, idx) => (
+                            <th
+                              key={idx}
+                              className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-300"
+                            >
+                              {col}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {dataWithEditedLabels.map((row, rowIdx) => (
+                          <tr
+                            key={rowIdx}
+                            className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+                          >
+                            {allColumns.map((col, colIdx) => {
+                              const cellValue = xCols.includes(col) 
+                                ? row.name 
+                                : (row[col] !== undefined ? row[col] : row.value);
+                              return (
+                                <td
+                                  key={colIdx}
+                                  className="px-4 py-3 text-sm text-gray-700 border-b border-gray-200"
+                                >
+                                  {cellValue}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  );
+                })()}
+              </div>
+            ) : config.chartType === 'heatmap' ? (
+              <div className="w-full h-full">
+                {(() => {
+                  const xCols = Array.isArray(config.xAxis.columns) ? config.xAxis.columns : (config.xAxis.column ? [config.xAxis.column] : []);
+                  const yCols = Array.isArray(config.yAxis.columns) ? config.yAxis.columns : (config.yAxis.column ? [config.yAxis.column] : []);
+                  
+                  if (xCols.length === 0 || yCols.length === 0 || data.length === 0) {
+                    return (
+                      <div className="h-64 flex items-center justify-center text-gray-400">
+                        <div className="text-center">
+                          <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Add fields to X and Y axes to generate heatmap</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const values = data.map(d => parseFloat(d.value) || 0);
+                  const minValue = Math.min(...values);
+                  const maxValue = Math.max(...values);
+                  const range = maxValue - minValue || 1;
+
+                  const getColor = (value) => {
+                    const normalized = (value - minValue) / range;
+                    if (normalized < 0.5) {
+                      const ratio = normalized * 2;
+                      const r = Math.round(ratio * 255);
+                      const g = 255;
+                      const b = Math.round((1 - ratio) * 100);
+                      return `rgb(${r}, ${g}, ${b})`;
+                    } else {
+                      const ratio = (normalized - 0.5) * 2;
+                      const r = 255;
+                      const g = Math.round((1 - ratio) * 255);
+                      const b = 0;
+                      return `rgb(${r}, ${g}, ${b})`;
+                    }
+                  };
+
+                  return (
+                    <>
+                      <ResponsiveContainer width="100%" height={chartHeight}>
+                        <BarChart data={dataWithEditedLabels} layout="vertical">
+                          <XAxis type="number" hide />
+                          <YAxis 
+                            dataKey="name" 
+                            type="category" 
+                            width={150}
+                            tick={{ fontSize: fontSize, fill: appearance.fontColor || '#000000' }}
+                          />
+                          <Tooltip 
+                            contentStyle={{ fontSize: `${fontSize}px` }}
+                            formatter={(value) => [value, 'Value']}
+                          />
+                          <Bar 
+                            dataKey="value" 
+                            radius={[0, 4, 4, 0]}
+                          >
+                            {dataWithEditedLabels.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={getColor(entry.value)} />
+                            ))}
+                            {appearance.showDataLabels && (
+                              <LabelList 
+                                dataKey="value" 
+                                position="right" 
+                                style={{ fontSize: `${fontSize}px`, fill: appearance.fontColor || '#000000' }} 
+                              />
+                            )}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                      <div className="mt-2 flex items-center gap-2 text-xs">
+                        <span className="text-gray-600">Low:</span>
+                        <div className="flex-1 h-4 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 rounded"></div>
+                        <span className="text-gray-600">High:</span>
+                        <span className="font-semibold">{minValue.toFixed(2)}</span>
+                        <span className="text-gray-400">-</span>
+                        <span className="font-semibold">{maxValue.toFixed(2)}</span>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={chartHeight}>
           {config.chartType === 'bar' && (
             <BarChart data={dataWithEditedLabels}>
               <XAxis 
@@ -2038,6 +2359,7 @@ const SolutionPro = () => {
             </RechartsAreaChart>
           )}
             </ResponsiveContainer>
+            )}
           </div>
           
           {/* Chart Title - Below Chart, Centered */}
@@ -2571,9 +2893,12 @@ const SolutionPro = () => {
                 </div>
               </div>
 
-              {/* Filters Bucket */}
+              {/* Filters Bucket - Functional */}
               <div className="mb-4 p-4 bg-yellow-50 rounded-lg border-2 border-dashed border-yellow-300">
-                <div className="text-xs font-semibold text-gray-700 mb-2">Filters</div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Filter className="h-4 w-4 text-yellow-700" />
+                  <div className="text-xs font-semibold text-gray-700">Filters</div>
+                </div>
                 <div
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, chartConfigs[currentChartIndex].id, 'filters')}
@@ -2582,21 +2907,68 @@ const SolutionPro = () => {
                   }`}
                 >
                   {chartConfigs[currentChartIndex].filters && chartConfigs[currentChartIndex].filters.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {chartConfigs[currentChartIndex].filters.map((filter, idx) => (
-                        <div key={idx} className="bg-white px-3 py-1 rounded border border-yellow-300 text-sm flex items-center gap-2">
-                          <span className="font-medium">{filter.column}</span>
-                          <button
-                            onClick={() => removeFieldFromAxis(chartConfigs[currentChartIndex].id, 'filters', filter.column)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
+                    <div className="space-y-3">
+                      {chartConfigs[currentChartIndex].filters.map((filter, idx) => {
+                        const colInfo = getColumnInfo(filter.column);
+                        return (
+                          <div key={idx} className="bg-white p-3 rounded-lg border border-yellow-300 shadow-sm">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-semibold text-gray-700">{filter.column}</span>
+                              <button
+                                onClick={() => removeFieldFromAxis(chartConfigs[currentChartIndex].id, 'filters', filter.column)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                            
+                            {filter.filterType === 'range' ? (
+                              // Range filter for measures/dates
+                              <div className="space-y-2">
+                                <div className="flex gap-2 items-center">
+                                  <input
+                                    type={colInfo.isDate ? 'date' : 'number'}
+                                    value={filter.minValue || ''}
+                                    onChange={(e) => {
+                                      const updatedFilters = [...(chartConfigs[currentChartIndex].filters || [])];
+                                      updatedFilters[idx] = { ...filter, minValue: e.target.value };
+                                      updateChartConfig(chartConfigs[currentChartIndex].id, { filters: updatedFilters });
+                                    }}
+                                    placeholder="Min"
+                                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded"
+                                  />
+                                  <span className="text-xs text-gray-500">to</span>
+                                  <input
+                                    type={colInfo.isDate ? 'date' : 'number'}
+                                    value={filter.maxValue || ''}
+                                    onChange={(e) => {
+                                      const updatedFilters = [...(chartConfigs[currentChartIndex].filters || [])];
+                                      updatedFilters[idx] = { ...filter, maxValue: e.target.value };
+                                      updateChartConfig(chartConfigs[currentChartIndex].id, { filters: updatedFilters });
+                                    }}
+                                    placeholder="Max"
+                                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded"
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              // Multi-select filter for dimensions
+                              <FilterMultiSelect
+                                filter={filter}
+                                uniqueValues={getUniqueValues(filter.column)}
+                                onUpdate={(updatedFilter) => {
+                                  const updatedFilters = [...(chartConfigs[currentChartIndex].filters || [])];
+                                  updatedFilters[idx] = updatedFilter;
+                                  updateChartConfig(chartConfigs[currentChartIndex].id, { filters: updatedFilters });
+                                }}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
-                    <div className="text-xs text-gray-500 text-center">Drop fields here to filter data</div>
+                    <div className="text-xs text-gray-500 text-center py-2">Drop fields here to filter data</div>
                   )}
                 </div>
               </div>
@@ -2844,7 +3216,77 @@ const SolutionPro = () => {
                             </button>
                           )}
                         </div>
+                        {/* Filter Button for Dashboard */}
+                        {config.filters && config.filters.length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <Filter className="h-4 w-4 text-yellow-600" />
+                            <span className="text-xs text-gray-600">{config.filters.length} filter(s) active</span>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Filters Display in Dashboard */}
+                      {config.filters && config.filters.length > 0 && (
+                        <div className="mb-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                          <div className="text-xs font-semibold text-gray-700 mb-2">Filters</div>
+                          <div className="space-y-2">
+                            {config.filters.map((filter, idx) => {
+                              const colInfo = getColumnInfo(filter.column);
+                              return (
+                                <div key={idx} className="bg-white p-2 rounded border border-yellow-300">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-semibold text-gray-700">{filter.column}</span>
+                                    <button
+                                      onClick={() => removeFieldFromAxis(config.id, 'filters', filter.column)}
+                                      className="text-red-600 hover:text-red-800"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                  
+                                  {filter.filterType === 'range' ? (
+                                    <div className="flex gap-2 items-center">
+                                      <input
+                                        type={colInfo.isDate ? 'date' : 'number'}
+                                        value={filter.minValue || ''}
+                                        onChange={(e) => {
+                                          const updatedFilters = [...(config.filters || [])];
+                                          updatedFilters[idx] = { ...filter, minValue: e.target.value };
+                                          updateChartConfig(config.id, { filters: updatedFilters });
+                                        }}
+                                        placeholder="Min"
+                                        className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded"
+                                      />
+                                      <span className="text-xs text-gray-500">to</span>
+                                      <input
+                                        type={colInfo.isDate ? 'date' : 'number'}
+                                        value={filter.maxValue || ''}
+                                        onChange={(e) => {
+                                          const updatedFilters = [...(config.filters || [])];
+                                          updatedFilters[idx] = { ...filter, maxValue: e.target.value };
+                                          updateChartConfig(config.id, { filters: updatedFilters });
+                                        }}
+                                        placeholder="Max"
+                                        className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <FilterMultiSelect
+                                      filter={filter}
+                                      uniqueValues={getUniqueValues(filter.column)}
+                                      onUpdate={(updatedFilter) => {
+                                        const updatedFilters = [...(config.filters || [])];
+                                        updatedFilters[idx] = updatedFilter;
+                                        updateChartConfig(config.id, { filters: updatedFilters });
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
 
                     {/* Chart Configuration Panel */}
                     {expandedChart === config.id && (
