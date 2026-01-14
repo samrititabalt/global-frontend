@@ -279,22 +279,55 @@ const DocumentConverterPro = () => {
 
   // PDF Editor - Save Edited PDF
   const saveEditedPdf = async () => {
-    if (!pdfUrl) return;
+    if (!pdfUrl || !editorPdfFile) return;
 
     try {
-      // In production, use pdf-lib to merge annotations with PDF
-      // For now, create a simple download
-      const response = await fetch(pdfUrl);
-      const blob = await response.blob();
-      
-      // Add annotations info as metadata (in production, embed in PDF)
+      // Get the PDF viewer dimensions for coordinate scaling
+      const pdfViewer = document.querySelector('iframe[title="PDF Viewer"]');
+      const viewerRect = pdfViewer?.getBoundingClientRect();
+      const viewerWidth = viewerRect?.width || 800;
+      const viewerHeight = viewerRect?.height || 600;
+
+      // Prepare annotations data with proper coordinates
       const annotationsData = {
-        annotations,
-        highlights: highlightAreas,
-        timestamp: new Date().toISOString(),
+        annotations: annotations.filter(a => a.type === 'text').map(a => ({
+          type: 'text',
+          text: a.text || '',
+          x: a.x || 0,
+          y: a.y || 0,
+          pageIndex: 0, // For now, assume single page
+          fontSize: 12,
+        })),
+        highlights: highlightAreas.map(h => ({
+          x: h.x || 0,
+          y: h.y || 0,
+          width: h.width || 0,
+          height: h.height || 0,
+          pageIndex: 0,
+        })),
+        drawings: annotations.filter(a => a.type === 'draw' && a.path).map(a => ({
+          path: a.path || [],
+          pageIndex: 0,
+        })),
       };
-      
-      // Create a new blob with annotations (simplified)
+
+      // Create FormData with file and annotations
+      const formData = new FormData();
+      formData.append('file', editorPdfFile);
+      formData.append('annotations', JSON.stringify(annotationsData.annotations));
+      formData.append('highlights', JSON.stringify(annotationsData.highlights));
+      formData.append('drawings', JSON.stringify(annotationsData.drawings));
+
+      // Call backend API to save edited PDF
+      const response = await api.post('/document-converter/edit-pdf', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        responseType: 'blob',
+      });
+
+      // Create blob URL from response
+      const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       setEditedPdfUrl(url);
       
@@ -306,10 +339,13 @@ const DocumentConverterPro = () => {
       a.click();
       document.body.removeChild(a);
       
-      alert('Edited PDF saved successfully!');
+      alert('Edited PDF saved successfully! All annotations have been embedded in the PDF.');
     } catch (error) {
       console.error('Save error:', error);
-      alert('Error saving PDF. Please try again.');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Error saving PDF. Please try again.';
+      alert(errorMessage);
     }
   };
 
