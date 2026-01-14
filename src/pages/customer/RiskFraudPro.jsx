@@ -7,7 +7,7 @@ import html2canvas from 'html2canvas';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
 import { useAuth } from '../../context/AuthContext';
-import ProtectedRoute from '../../components/auth/ProtectedRoute';
+import ProtectedRoute from '../../components/ProtectedRoute';
 import api from '../../utils/axios';
 
 const COLORS = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'];
