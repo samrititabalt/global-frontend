@@ -317,6 +317,8 @@ const DocumentConverterPro = () => {
       formData.append('annotations', JSON.stringify(annotationsData.annotations));
       formData.append('highlights', JSON.stringify(annotationsData.highlights));
       formData.append('drawings', JSON.stringify(annotationsData.drawings));
+      formData.append('viewerWidth', String(viewerWidth));
+      formData.append('viewerHeight', String(viewerHeight));
 
       // Call backend API to save edited PDF
       const response = await api.post('/document-converter/edit-pdf', formData, {
@@ -342,9 +344,27 @@ const DocumentConverterPro = () => {
       alert('Edited PDF saved successfully! All annotations have been embedded in the PDF.');
     } catch (error) {
       console.error('Save error:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          'Error saving PDF. Please try again.';
+      let errorMessage = 'Error saving PDF. Please try again.';
+      const data = error?.response?.data;
+
+      try {
+        if (data instanceof Blob) {
+          const text = await data.text();
+          try {
+            const parsed = JSON.parse(text);
+            errorMessage = parsed.message || parsed.error || errorMessage;
+          } catch {
+            if (text) {
+              errorMessage = text;
+            }
+          }
+        } else if (data) {
+          errorMessage = data.message || data.error || errorMessage;
+        }
+      } catch (parseError) {
+        console.error('Error parsing save error response:', parseError);
+      }
+
       alert(errorMessage);
     }
   };
