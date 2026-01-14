@@ -44,6 +44,7 @@ const Header = () => {
     { name: 'Run Facebook Ads', path: '/solutions/facebook-ads', key: 'facebookAds' },
     { name: 'Resume Builder', path: '/resume-builder' },
     { name: 'LinkedIn Helper', path: '/solutions/linkedin-helper' },
+    { name: 'Industry Solutions', path: '/solutions/industry-solutions' },
   ];
 
   // Check if we're on the home page
