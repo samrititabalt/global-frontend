@@ -48,39 +48,34 @@ const DocumentConverterPro = () => {
 
     setWordFile(file);
     setIsConvertingWord(true);
+    setWordPdfUrl(null); // Clear previous result
 
     try {
       // Create FormData
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('type', 'word-to-pdf');
 
-      // For now, we'll use a client-side conversion approach
-      // In production, this would call a backend API
-      // Simulating conversion process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call backend API for conversion
+      const response = await api.post('/document-converter/word-to-pdf', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        responseType: 'blob', // Important: receive binary data
+      });
 
-      // Create a PDF using jsPDF (simplified - in production, use proper Word to PDF conversion)
-      const { jsPDF } = await import('jspdf');
-      const doc = new jsPDF();
-      
-      // Add text indicating this is a converted document
-      doc.setFontSize(16);
-      doc.text('Converted from Word Document', 20, 20);
-      doc.setFontSize(12);
-      doc.text(`Original File: ${file.name}`, 20, 30);
-      doc.text('Note: Full Word to PDF conversion requires backend processing.', 20, 40);
-      doc.text('This is a placeholder. In production, the actual Word content', 20, 50);
-      doc.text('would be converted and displayed here.', 20, 60);
-
-      const pdfBlob = doc.output('blob');
-      const url = URL.createObjectURL(pdfBlob);
+      // Create blob URL from response
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
       setWordPdfUrl(url);
       
       alert('Word document converted to PDF successfully!');
     } catch (error) {
       console.error('Conversion error:', error);
-      alert('Error converting Word to PDF. Please try again.');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Error converting Word to PDF. Please try again.';
+      alert(errorMessage);
+      setWordFile(null);
     } finally {
       setIsConvertingWord(false);
     }
@@ -98,24 +93,36 @@ const DocumentConverterPro = () => {
 
     setPdfFile(file);
     setIsConvertingPdf(true);
+    setWordDocUrl(null); // Clear previous result
 
     try {
-      // Simulating conversion process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Create FormData
+      const formData = new FormData();
+      formData.append('file', file);
 
-      // In production, this would call a backend API to convert PDF to Word
-      // For now, create a placeholder Word document
-      const textContent = `Converted from PDF: ${file.name}\n\nNote: Full PDF to Word conversion requires backend processing.\nThis is a placeholder. In production, the actual PDF content would be extracted and converted to Word format.`;
-      
-      // Create a simple text file as placeholder (in production, use proper DOCX generation)
-      const blob = new Blob([textContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      // Call backend API for conversion
+      const response = await api.post('/document-converter/pdf-to-word', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        responseType: 'blob', // Important: receive binary data
+      });
+
+      // Create blob URL from response
+      const blob = new Blob([response.data], { 
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+      });
       const url = URL.createObjectURL(blob);
       setWordDocUrl(url);
       
       alert('PDF converted to Word document successfully!');
     } catch (error) {
       console.error('Conversion error:', error);
-      alert('Error converting PDF to Word. Please try again.');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Error converting PDF to Word. Please try again.';
+      alert(errorMessage);
+      setPdfFile(null);
     } finally {
       setIsConvertingPdf(false);
     }
@@ -314,7 +321,14 @@ const DocumentConverterPro = () => {
   // Update annotation text
   const updateAnnotationText = (id, text) => {
     setAnnotations(annotations.map(a => 
-      a.id === id ? { ...a, text, editing: false } : a
+      a.id === id ? { ...a, text: text || a.text, editing: false } : a
+    ));
+  };
+
+  // Handle text input change
+  const handleTextInputChange = (id, value) => {
+    setAnnotations(annotations.map(a => 
+      a.id === id ? { ...a, text: value } : a
     ));
   };
 
@@ -597,26 +611,40 @@ const DocumentConverterPro = () => {
                             style={{ left: `${annotation.x}px`, top: `${annotation.y}px` }}
                           >
                             {annotation.editing ? (
-                              <input
-                                type="text"
+                              <textarea
                                 value={annotation.text}
-                                onChange={(e) => updateAnnotationText(annotation.id, e.target.value)}
+                                onChange={(e) => handleTextInputChange(annotation.id, e.target.value)}
                                 onBlur={() => updateAnnotationText(annotation.id, annotation.text)}
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
+                                  if (e.key === 'Escape') {
                                     updateAnnotationText(annotation.id, annotation.text);
                                   }
                                 }}
                                 autoFocus
-                                className="px-2 py-1 border-2 border-blue-500 rounded bg-white text-sm"
+                                className="px-2 py-1 border-2 border-blue-500 rounded bg-white text-sm min-w-[200px] min-h-[60px] resize-both z-50"
+                                style={{ 
+                                  position: 'absolute',
+                                  left: '0',
+                                  top: '0',
+                                }}
                               />
                             ) : (
                               <div className="relative group">
-                                <div className="px-2 py-1 bg-blue-100 border border-blue-300 rounded text-sm cursor-pointer">
+                                <div 
+                                  className="px-2 py-1 bg-blue-100 border border-blue-300 rounded text-sm cursor-pointer max-w-[300px] break-words"
+                                  onClick={() => {
+                                    setAnnotations(annotations.map(a => 
+                                      a.id === annotation.id ? { ...a, editing: true } : a
+                                    ));
+                                  }}
+                                >
                                   {annotation.text}
                                 </div>
                                 <button
-                                  onClick={() => deleteAnnotation(annotation.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteAnnotation(annotation.id);
+                                  }}
                                   className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
                                 >
                                   <X className="h-3 w-3" />
@@ -645,10 +673,16 @@ const DocumentConverterPro = () => {
 
                   {/* Click to Add Text */}
                   {editorMode === 'text' && (
-                    <div className="absolute inset-0 pointer-events-auto cursor-text" 
+                    <div 
+                      className="absolute inset-0 pointer-events-auto cursor-text" 
                       onClick={(e) => {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        addTextAnnotation(e.clientX - rect.left, e.clientY - rect.top);
+                        // Only add text if clicking on the PDF viewer area, not on existing annotations
+                        if (e.target === e.currentTarget || e.target.tagName === 'IFRAME' || e.target.tagName === 'CANVAS') {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const x = e.clientX - rect.left;
+                          const y = e.clientY - rect.top;
+                          addTextAnnotation(x, y);
+                        }
                       }}
                     />
                   )}
