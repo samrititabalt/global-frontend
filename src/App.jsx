@@ -67,6 +67,7 @@ import SoftwareTechSupport from './pages/services/SoftwareTechSupport';
 // Solution Pages
 import SamsSmartReports from './pages/solutions/SamsSmartReports';
 import IndustrySolutions from './pages/solutions/IndustrySolutions';
+import DocumentConverter from './pages/solutions/DocumentConverter';
 import ExpenseMonitor from './pages/solutions/ExpenseMonitor';
 import ExpenseMonitorPro from './pages/solutions/ExpenseMonitorPro';
 import MergeSpreadsheets from './pages/solutions/MergeSpreadsheets';
@@ -83,6 +84,7 @@ import ForecastsPro from './pages/customer/ForecastsPro';
 import RiskFraudPro from './pages/customer/RiskFraudPro';
 import HiringPro from './pages/customer/HiringPro';
 import IndustrySolutionsPro from './pages/customer/IndustrySolutionsPro';
+import DocumentConverterPro from './pages/customer/DocumentConverterPro';
 import ResumeBuilder from './pages/ResumeBuilder';
 import SharedChartView from './pages/public/SharedChartView';
 import ResumeBuilderCreate from './pages/customer/ResumeBuilderCreate';
@@ -134,6 +136,7 @@ function App() {
             {/* Solution Pages */}
             <Route path="/solutions/sams-smart-reports" element={<SamsSmartReports />} />
             <Route path="/solutions/industry-solutions" element={<IndustrySolutions />} />
+            <Route path="/solutions/document-converter" element={<DocumentConverter />} />
             <Route path="/solutions/expense-monitor" element={<ExpenseMonitor />} />
             <Route path="/expense-monitor-pro" element={<ExpenseMonitorPro />} />
             <Route path="/solutions/merge-spreadsheets" element={<MergeSpreadsheets />} />
@@ -242,6 +245,14 @@ function App() {
               element={
                 <ProtectedRoute role="customer">
                   <IndustrySolutionsPro />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/document-converter-pro" 
+              element={
+                <ProtectedRoute role="customer">
+                  <DocumentConverterPro />
                 </ProtectedRoute>
               } 
             />

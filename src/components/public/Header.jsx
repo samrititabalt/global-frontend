@@ -45,6 +45,7 @@ const Header = () => {
     { name: 'Resume Builder', path: '/resume-builder' },
     { name: 'LinkedIn Helper', path: '/solutions/linkedin-helper' },
     { name: 'Industry Solutions', path: '/solutions/industry-solutions' },
+    { name: 'Document Converter & PDF Editor', path: '/solutions/document-converter' },
   ];
 
   // Check if we're on the home page
