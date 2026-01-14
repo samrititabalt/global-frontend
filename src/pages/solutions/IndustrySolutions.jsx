@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
+import AccessProButton from '../../components/solutions/AccessProButton';
 
 const IndustrySolutions = () => {
   const industries = [
@@ -194,10 +195,12 @@ const IndustrySolutions = () => {
                   <p className="text-gray-600 text-sm mb-4 leading-relaxed">
                     {industry.description}
                   </p>
-                  <button className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors group">
-                    Learn More
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </button>
+                  <div className="mt-4">
+                    <AccessProButton 
+                      proPath="/solutions/industry-solutions-pro"
+                      className="w-full text-sm py-2"
+                    />
+                  </div>
                 </motion.div>
               );
             })}

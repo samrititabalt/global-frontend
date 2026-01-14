@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Users, Search, CheckCircle, Briefcase } from 'lucide-react';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
+import AccessProButton from '../../components/solutions/AccessProButton';
 
 const Hiring = () => {
   return (
@@ -30,12 +31,15 @@ const Hiring = () => {
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
               Streamline your recruitment process with intelligent candidate matching and assessment tools.
             </p>
-            <Link
-              to="/contact-us"
-              className="inline-flex items-center px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              Get Started
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <AccessProButton proPath="/customer/hiring-pro" />
+              <Link
+                to="/contact-us"
+                className="inline-flex items-center justify-center px-8 py-4 bg-white text-gray-900 font-semibold rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all"
+              >
+                Learn More
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>

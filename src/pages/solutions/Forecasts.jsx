@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { TrendingUp, BarChart3, Target, Lightbulb } from 'lucide-react';
+import { TrendingUp, BarChart3, Target, Lightbulb, ArrowRight } from 'lucide-react';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
+import AccessProButton from '../../components/solutions/AccessProButton';
 
 const Forecasts = () => {
   return (
@@ -30,12 +31,15 @@ const Forecasts = () => {
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
               Predict future trends and make data-driven decisions with advanced forecasting models.
             </p>
-            <Link
-              to="/contact-us"
-              className="inline-flex items-center px-8 py-4 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              Get Started
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <AccessProButton proPath="/customer/forecasts-pro" />
+              <Link
+                to="/contact-us"
+                className="inline-flex items-center justify-center px-8 py-4 bg-white text-gray-900 font-semibold rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all"
+              >
+                Learn More
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>

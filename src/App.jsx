@@ -79,6 +79,10 @@ import RiskFraud from './pages/solutions/RiskFraud';
 import Hiring from './pages/solutions/Hiring';
 import FacebookAdsQuickLaunch from './pages/solutions/FacebookAdsQuickLaunch';
 import SolutionPro from './pages/customer/SolutionPro';
+import ForecastsPro from './pages/customer/ForecastsPro';
+import RiskFraudPro from './pages/customer/RiskFraudPro';
+import HiringPro from './pages/customer/HiringPro';
+import IndustrySolutionsPro from './pages/customer/IndustrySolutionsPro';
 import ResumeBuilder from './pages/ResumeBuilder';
 import SharedChartView from './pages/public/SharedChartView';
 import ResumeBuilderCreate from './pages/customer/ResumeBuilderCreate';
@@ -206,6 +210,38 @@ function App() {
               element={
                 <ProtectedRoute role="customer">
                   <SolutionPro />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/forecasts-pro" 
+              element={
+                <ProtectedRoute role="customer">
+                  <ForecastsPro />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/risk-fraud-pro" 
+              element={
+                <ProtectedRoute role="customer">
+                  <RiskFraudPro />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/hiring-pro" 
+              element={
+                <ProtectedRoute role="customer">
+                  <HiringPro />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/solutions/industry-solutions-pro" 
+              element={
+                <ProtectedRoute role="customer">
+                  <IndustrySolutionsPro />
                 </ProtectedRoute>
               } 
             />
