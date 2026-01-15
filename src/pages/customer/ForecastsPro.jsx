@@ -7,7 +7,6 @@ import html2canvas from 'html2canvas';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
 import { useAuth } from '../../context/AuthContext';
-import ProtectedRoute from '../../components/ProtectedRoute';
 import api from '../../utils/axios';
 
 const ForecastsPro = () => {
@@ -292,16 +291,6 @@ Format with clear sections and use professional business language.`,
     }).length;
     return numericCount / sampleSize > 0.7;
   };
-
-  const hasProAccess = user?.role === 'customer' || (user?.role === 'agent' && user?.pro_access_enabled);
-
-  if (!isAuthenticated || !hasProAccess) {
-    return (
-      <ProtectedRoute role="customer">
-        <div>Loading...</div>
-      </ProtectedRoute>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">

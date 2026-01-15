@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { BarChart3, FileSpreadsheet, TrendingUp, Zap, CheckCircle, ArrowRight, Play } from 'lucide-react';
+import { BarChart3, FileSpreadsheet, TrendingUp, Zap, CheckCircle, Play } from 'lucide-react';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
 import { useAuth } from '../../context/AuthContext';
-import OwnerAutoLoginButton from '../../components/solutions/OwnerAutoLoginButton';
+import AccessProButton from '../../components/solutions/AccessProButton';
 
 const SamsSmartReports = () => {
   const { isAuthenticated, user, autoLoginOwnerAsCustomer, loading } = useAuth();
@@ -27,11 +27,7 @@ const SamsSmartReports = () => {
     checkAndAutoLogin();
   }, [isAuthenticated, user, loading, ownerEmail, autoLoginOwnerAsCustomer]);
   
-  // Check if user is customer OR owner email (which should have customer access)
-  const isCustomer = isAuthenticated && (
-    user?.role === 'customer' || 
-    user?.email?.toLowerCase() === ownerEmail
-  );
+  // Owner auto-login retained for backward compatibility
 
   const features = [
     { icon: FileSpreadsheet, title: 'Paste Excel Data', description: 'Simply paste your Excel-style data (rows and columns) directly into the tool' },
@@ -69,22 +65,10 @@ const SamsSmartReports = () => {
                 Convert pasted Excel-style data (rows + columns) into interactive dashboards with beautiful charts automatically.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                {isCustomer ? (
-                  <Link
-                    to="/customer/solution-pro"
-                    className="inline-flex items-center justify-center px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                  >
-                    Access Pro Version
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                ) : (
-                  <OwnerAutoLoginButton 
-                    ownerEmail={ownerEmail}
-                    autoLoginOwnerAsCustomer={autoLoginOwnerAsCustomer}
-                    onSuccess={() => window.location.href = '/customer/solution-pro'}
-                    text="Try Free"
-                  />
-                )}
+                <AccessProButton
+                  customerProPath="/customer/solution-pro"
+                  agentProPath="/agent/solution-pro"
+                />
                 <Link
                   to="/contact-us"
                   className="inline-flex items-center justify-center px-8 py-4 bg-white text-gray-900 font-semibold rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all"
@@ -559,23 +543,11 @@ const SamsSmartReports = () => {
               Start creating professional reports and dashboards in minutes. No technical skills required.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {isCustomer ? (
-                <Link
-                  to="/customer/solution-pro"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                >
-                  Access Pro Version
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              ) : (
-                <OwnerAutoLoginButton 
-                  ownerEmail={ownerEmail}
-                  autoLoginOwnerAsCustomer={autoLoginOwnerAsCustomer}
-                  onSuccess={() => window.location.href = '/customer/solution-pro'}
-                  text="Get Started Free"
-                  className="bg-white text-blue-600 hover:bg-gray-100"
-                />
-              )}
+              <AccessProButton
+                customerProPath="/customer/solution-pro"
+                agentProPath="/agent/solution-pro"
+                className="bg-white text-blue-600 hover:bg-gray-100"
+              />
               <Link
                 to="/contact-us"
                 className="inline-flex items-center justify-center px-8 py-4 bg-transparent text-white font-semibold rounded-lg border-2 border-white hover:bg-white/10 transition-all"

@@ -1,46 +1,11 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Sparkles, CheckCircle2, ArrowRight, User, Briefcase, Award, Zap } from 'lucide-react';
+import { FileText, Sparkles, CheckCircle2, User, Briefcase, Award, Zap } from 'lucide-react';
 import Header from '../components/public/Header';
 import Footer from '../components/public/Footer';
-import { useAuth } from '../context/AuthContext';
-import api from '../utils/axios';
+import AccessProButton from '../components/solutions/AccessProButton';
 
 const ResumeBuilder = () => {
-  const navigate = useNavigate();
-  const { isAuthenticated, user, autoLoginOwnerAsCustomer } = useAuth();
-  const [autoLoggingIn, setAutoLoggingIn] = useState(false);
-
-  const handleGetStarted = async () => {
-    // Special handling for owner email - auto-login as customer
-    const ownerEmail = 'spbajaj25@gmail.com';
-    
-    if (isAuthenticated && (user?.role === 'customer' || user?.email?.toLowerCase() === ownerEmail)) {
-      navigate('/resume-builder/create');
-    } else if (user?.email?.toLowerCase() === ownerEmail || 
-               localStorage.getItem('ownerEmail') === ownerEmail) {
-      // Auto-login owner as customer
-      try {
-        setAutoLoggingIn(true);
-        const result = await autoLoginOwnerAsCustomer();
-        
-        if (result.success) {
-          navigate('/resume-builder/create');
-        } else {
-          navigate('/customer/login?redirect=/resume-builder/create');
-        }
-      } catch (error) {
-        console.error('Auto-login error:', error);
-        navigate('/customer/login?redirect=/resume-builder/create');
-      } finally {
-        setAutoLoggingIn(false);
-      }
-    } else {
-      navigate('/customer/login?redirect=/resume-builder/create');
-    }
-  };
-
   const features = [
     {
       icon: Sparkles,
@@ -93,14 +58,11 @@ const ResumeBuilder = () => {
               Powered by GPT-4 Mini, our Resume Builder transforms your experience into 
               compelling career documents.
             </p>
-            <button
-              onClick={handleGetStarted}
-              disabled={autoLoggingIn}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold text-lg hover:bg-blue-700 transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {autoLoggingIn ? 'Logging in...' : 'Get Started'}
-              {!autoLoggingIn && <ArrowRight className="w-5 h-5" />}
-            </button>
+            <AccessProButton
+              customerProPath="/customer/resume-builder-pro"
+              agentProPath="/agent/resume-builder-pro"
+              className="bg-blue-600 text-white hover:bg-blue-700"
+            />
           </motion.div>
 
           {/* Features Grid */}

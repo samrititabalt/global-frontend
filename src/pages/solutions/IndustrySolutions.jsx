@@ -197,7 +197,8 @@ const IndustrySolutions = () => {
                   </p>
                   <div className="mt-4">
                     <AccessProButton 
-                      proPath="/solutions/industry-solutions-pro"
+                      customerProPath="/customer/industry-solutions-pro"
+                      agentProPath="/agent/industry-solutions-pro"
                       className="w-full text-sm py-2"
                     />
                   </div>

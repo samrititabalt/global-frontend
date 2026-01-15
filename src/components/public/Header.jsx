@@ -19,16 +19,25 @@ const Header = () => {
   const { user, isAuthenticated } = useAuth();
   const { content: commonContent } = usePageContent('common');
   const getCommon = (key, fallback) => getBlockContent(commonContent, key) || fallback;
+  const agentInitials = isAgent
+    ? (user?.name || user?.email || 'A')
+        .split(' ')
+        .map(part => part[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+    : '';
   const dropdownRef = useRef(null);
   const solutionsDropdownRef = useRef(null);
   
   // Check if user is a customer
   const isCustomer = isAuthenticated && user?.role === 'customer';
+  const isAgent = isAuthenticated && user?.role === 'agent';
   // Check if user can access Sam Studios solutions
   const isAdminOrCustomer = isAuthenticated && (
     user?.role === 'admin' ||
     user?.role === 'customer' ||
-    (user?.role === 'agent' && user?.pro_access_enabled)
+    user?.role === 'agent'
   );
 
   const services = [
@@ -347,20 +356,27 @@ const Header = () => {
             </div>
             )}
             {/* Buttons - Always visible */}
-            {isCustomer ? (
-              <Link
-                to="/customer/dashboard"
-                className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800"
-              >
-                <EditableContent
-                  blockId="common-nav-dashboard"
-                  blockType="text"
-                  tag="span"
-                  page="common"
+            {isCustomer || isAgent ? (
+              <div className="flex items-center gap-3">
+                {isAgent && (
+                  <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
+                    {agentInitials}
+                  </div>
+                )}
+                <Link
+                  to={isAgent ? '/agent/dashboard' : '/customer/dashboard'}
+                  className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800"
                 >
-                  {getCommon('common-nav-dashboard', 'Dashboard')}
-                </EditableContent>
-              </Link>
+                  <EditableContent
+                    blockId="common-nav-dashboard"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-nav-dashboard', 'Dashboard')}
+                  </EditableContent>
+                </Link>
+              </div>
             ) : (
               <div className="flex items-center gap-3">
                 <Link
@@ -623,9 +639,9 @@ const Header = () => {
                   {getCommon('common-nav-home', 'Home')}
                 </EditableContent>
               </Link>
-              {isCustomer ? (
+              {isCustomer || isAgent ? (
                 <Link
-                  to="/customer/dashboard"
+                  to={isAgent ? '/agent/dashboard' : '/customer/dashboard'}
                   className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >

@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Linkedin, MessageSquare, Users, Send, ArrowRight, CheckCircle, Zap } from 'lucide-react';
+import { Linkedin, MessageSquare, Users, Send, CheckCircle, Zap } from 'lucide-react';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
+import AccessProButton from '../../components/solutions/AccessProButton';
 
 const LinkedInHelper = () => {
   return (
@@ -156,13 +157,11 @@ const LinkedInHelper = () => {
             <p className="text-xl text-blue-100 mb-8">
               Start managing your LinkedIn messages more efficiently today.
             </p>
-            <Link
-              to="/linkedin-helper-pro"
-              className="inline-flex items-center px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              Get Started with LinkedIn Helper Pro
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
+            <AccessProButton
+              customerProPath="/customer/linkedin-helper-pro"
+              agentProPath="/agent/linkedin-helper-pro"
+              className="bg-white text-blue-600 hover:bg-gray-100"
+            />
           </motion.div>
         </div>
       </section>

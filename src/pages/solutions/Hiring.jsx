@@ -32,7 +32,10 @@ const Hiring = () => {
               Streamline your recruitment process with intelligent candidate matching and assessment tools.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <AccessProButton proPath="/customer/hiring-pro" />
+              <AccessProButton
+                customerProPath="/customer/hiring-pro"
+                agentProPath="/agent/hiring-pro"
+              />
               <Link
                 to="/contact-us"
                 className="inline-flex items-center justify-center px-8 py-4 bg-white text-gray-900 font-semibold rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all"

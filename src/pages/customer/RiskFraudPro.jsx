@@ -7,7 +7,6 @@ import html2canvas from 'html2canvas';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
 import { useAuth } from '../../context/AuthContext';
-import ProtectedRoute from '../../components/ProtectedRoute';
 import api from '../../utils/axios';
 
 const COLORS = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'];
@@ -322,16 +321,6 @@ Please provide a focused, detailed answer about this specific risk area.`,
       alert('Error exporting PDF. Please try again.');
     }
   };
-
-  const hasProAccess = user?.role === 'customer' || (user?.role === 'agent' && user?.pro_access_enabled);
-
-  if (!isAuthenticated || !hasProAccess) {
-    return (
-      <ProtectedRoute role="customer">
-        <div>Loading...</div>
-      </ProtectedRoute>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">

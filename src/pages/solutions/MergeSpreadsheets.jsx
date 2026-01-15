@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { FileSpreadsheet, Merge, CheckCircle, Zap } from 'lucide-react';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
+import AccessProButton from '../../components/solutions/AccessProButton';
 
 const MergeSpreadsheets = () => {
   return (
@@ -31,18 +32,15 @@ const MergeSpreadsheets = () => {
               Combine multiple spreadsheets effortlessly with intelligent data matching and deduplication.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/merge-spreadsheets-pro"
-                className="inline-flex items-center px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                Merge Spreadsheets Pro
-                <Zap className="ml-2 h-5 w-5" />
-              </Link>
+              <AccessProButton
+                customerProPath="/customer/merge-spreadsheets-pro"
+                agentProPath="/agent/merge-spreadsheets-pro"
+              />
               <Link
                 to="/contact-us"
                 className="inline-flex items-center px-8 py-4 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                Get Started
+                Access Pro Version
               </Link>
             </div>
           </motion.div>

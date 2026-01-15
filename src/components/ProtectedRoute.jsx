@@ -40,9 +40,7 @@ const ProtectedRoute = ({ children, role }) => {
 
   // Special exception: Allow spbajaj25@gmail.com to access admin and customer routes
   const isOwnerEmail = user.email && user.email.toLowerCase() === 'spbajaj25@gmail.com';
-  const isAgentPro = user.role === 'agent' && user.pro_access_enabled;
   const canAccess = user.role === role || 
-                   (role === 'customer' && isAgentPro) ||
                    (isOwnerEmail && role === 'admin') || 
                    (isOwnerEmail && role === 'customer');
   
@@ -52,7 +50,7 @@ const ProtectedRoute = ({ children, role }) => {
         <div className="flex items-center justify-center min-h-screen bg-white px-6">
           <div className="max-w-md text-center">
             <h1 className="text-2xl font-semibold text-gray-900 mb-3">Access restricted</h1>
-            <p className="text-gray-600">Please contact admin to enable Pro access.</p>
+            <p className="text-gray-600">You do not have access to this solution. Please contact your administrator.</p>
           </div>
         </div>
       );

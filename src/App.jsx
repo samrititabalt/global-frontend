@@ -37,6 +37,7 @@ import RecentActivity from './pages/admin/RecentActivity';
 
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute';
+import ProAccessGuard from './components/ProAccessGuard';
 
 // Public Pages
 import Home from './pages/Home';
@@ -136,16 +137,43 @@ function App() {
             <Route path="/solutions/industry-solutions" element={<IndustrySolutions />} />
             <Route path="/solutions/document-converter" element={<DocumentConverter />} />
             <Route path="/solutions/expense-monitor" element={<ExpenseMonitor />} />
-            <Route path="/expense-monitor-pro" element={<ExpenseMonitorPro />} />
+            <Route
+              path="/expense-monitor-pro"
+              element={
+                <ProtectedRoute role="customer">
+                  <ProAccessGuard requiredRole="customer">
+                    <ExpenseMonitorPro />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              }
+            />
             <Route path="/solutions/merge-spreadsheets" element={<MergeSpreadsheets />} />
-            <Route path="/merge-spreadsheets-pro" element={<MergeSpreadsheetsPro />} />
+            <Route
+              path="/merge-spreadsheets-pro"
+              element={
+                <ProtectedRoute role="customer">
+                  <ProAccessGuard requiredRole="customer">
+                    <MergeSpreadsheetsPro />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              }
+            />
             <Route path="/solutions/forecasts" element={<Forecasts />} />
             <Route path="/solutions/risk-fraud" element={<RiskFraud />} />
             <Route path="/solutions/hiring" element={<Hiring />} />
             <Route path="/solutions/facebook-ads" element={<FacebookAdsQuickLaunch />} />
             <Route path="/resume-builder" element={<ResumeBuilder />} />
             <Route path="/solutions/linkedin-helper" element={<LinkedInHelper />} />
-            <Route path="/linkedin-helper-pro" element={<ErrorBoundary><LinkedInHelperPro /></ErrorBoundary>} />
+            <Route
+              path="/linkedin-helper-pro"
+              element={
+                <ProtectedRoute role="customer">
+                  <ProAccessGuard requiredRole="customer">
+                    <ErrorBoundary><LinkedInHelperPro /></ErrorBoundary>
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              }
+            />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/data-deletion" element={<DataDeletion />} />
@@ -210,7 +238,9 @@ function App() {
               path="/customer/solution-pro" 
               element={
                 <ProtectedRoute role="customer">
-                  <SolutionPro />
+                  <ProAccessGuard requiredRole="customer">
+                    <SolutionPro />
+                  </ProAccessGuard>
                 </ProtectedRoute>
               } 
             />
@@ -218,7 +248,9 @@ function App() {
               path="/customer/forecasts-pro" 
               element={
                 <ProtectedRoute role="customer">
-                  <ForecastsPro />
+                  <ProAccessGuard requiredRole="customer">
+                    <ForecastsPro />
+                  </ProAccessGuard>
                 </ProtectedRoute>
               } 
             />
@@ -226,7 +258,9 @@ function App() {
               path="/customer/risk-fraud-pro" 
               element={
                 <ProtectedRoute role="customer">
-                  <RiskFraudPro />
+                  <ProAccessGuard requiredRole="customer">
+                    <RiskFraudPro />
+                  </ProAccessGuard>
                 </ProtectedRoute>
               } 
             />
@@ -234,7 +268,9 @@ function App() {
               path="/customer/hiring-pro" 
               element={
                 <ProtectedRoute role="customer">
-                  <HiringPro />
+                  <ProAccessGuard requiredRole="customer">
+                    <HiringPro />
+                  </ProAccessGuard>
                 </ProtectedRoute>
               } 
             />
@@ -242,7 +278,19 @@ function App() {
               path="/solutions/industry-solutions-pro" 
               element={
                 <ProtectedRoute role="customer">
-                  <IndustrySolutionsPro />
+                  <ProAccessGuard requiredRole="customer">
+                    <IndustrySolutionsPro />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/industry-solutions-pro" 
+              element={
+                <ProtectedRoute role="customer">
+                  <ProAccessGuard requiredRole="customer">
+                    <IndustrySolutionsPro />
+                  </ProAccessGuard>
                 </ProtectedRoute>
               } 
             />
@@ -250,7 +298,39 @@ function App() {
               path="/customer/document-converter-pro" 
               element={
                 <ProtectedRoute role="customer">
-                  <DocumentConverterPro />
+                  <ProAccessGuard requiredRole="customer">
+                    <DocumentConverterPro />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/expense-monitor-pro" 
+              element={
+                <ProtectedRoute role="customer">
+                  <ProAccessGuard requiredRole="customer">
+                    <ExpenseMonitorPro />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/merge-spreadsheets-pro" 
+              element={
+                <ProtectedRoute role="customer">
+                  <ProAccessGuard requiredRole="customer">
+                    <MergeSpreadsheetsPro />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/linkedin-helper-pro" 
+              element={
+                <ProtectedRoute role="customer">
+                  <ProAccessGuard requiredRole="customer">
+                    <ErrorBoundary><LinkedInHelperPro /></ErrorBoundary>
+                  </ProAccessGuard>
                 </ProtectedRoute>
               } 
             />
@@ -258,7 +338,19 @@ function App() {
               path="/resume-builder/create" 
               element={
                 <ProtectedRoute role="customer">
-                  <ResumeBuilderCreate />
+                  <ProAccessGuard requiredRole="customer">
+                    <ResumeBuilderCreate />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/resume-builder-pro" 
+              element={
+                <ProtectedRoute role="customer">
+                  <ProAccessGuard requiredRole="customer">
+                    <ResumeBuilderCreate />
+                  </ProAccessGuard>
                 </ProtectedRoute>
               } 
             />
@@ -288,6 +380,106 @@ function App() {
               element={
                 <ProtectedRoute role="agent">
                   <AgentChat />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/agent/solution-pro" 
+              element={
+                <ProtectedRoute role="agent">
+                  <ProAccessGuard requiredRole="agent">
+                    <SolutionPro />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/agent/forecasts-pro" 
+              element={
+                <ProtectedRoute role="agent">
+                  <ProAccessGuard requiredRole="agent">
+                    <ForecastsPro />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/agent/risk-fraud-pro" 
+              element={
+                <ProtectedRoute role="agent">
+                  <ProAccessGuard requiredRole="agent">
+                    <RiskFraudPro />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/agent/hiring-pro" 
+              element={
+                <ProtectedRoute role="agent">
+                  <ProAccessGuard requiredRole="agent">
+                    <HiringPro />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/agent/industry-solutions-pro" 
+              element={
+                <ProtectedRoute role="agent">
+                  <ProAccessGuard requiredRole="agent">
+                    <IndustrySolutionsPro />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/agent/document-converter-pro" 
+              element={
+                <ProtectedRoute role="agent">
+                  <ProAccessGuard requiredRole="agent">
+                    <DocumentConverterPro />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/agent/expense-monitor-pro" 
+              element={
+                <ProtectedRoute role="agent">
+                  <ProAccessGuard requiredRole="agent">
+                    <ExpenseMonitorPro />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/agent/merge-spreadsheets-pro" 
+              element={
+                <ProtectedRoute role="agent">
+                  <ProAccessGuard requiredRole="agent">
+                    <MergeSpreadsheetsPro />
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/agent/linkedin-helper-pro" 
+              element={
+                <ProtectedRoute role="agent">
+                  <ProAccessGuard requiredRole="agent">
+                    <ErrorBoundary><LinkedInHelperPro /></ErrorBoundary>
+                  </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/agent/resume-builder-pro" 
+              element={
+                <ProtectedRoute role="agent">
+                  <ProAccessGuard requiredRole="agent">
+                    <ResumeBuilderCreate />
+                  </ProAccessGuard>
                 </ProtectedRoute>
               } 
             />

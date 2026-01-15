@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { DollarSign, TrendingDown, Shield, BarChart3 } from 'lucide-react';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
+import AccessProButton from '../../components/solutions/AccessProButton';
 
 const ExpenseMonitor = () => {
   return (
@@ -31,18 +32,15 @@ const ExpenseMonitor = () => {
               Track and manage your expenses with intelligent monitoring and insights.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/expense-monitor-pro"
-                className="inline-flex items-center justify-center px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                Expense Monitor Pro
-                <BarChart3 className="ml-2 h-5 w-5" />
-              </Link>
+              <AccessProButton
+                customerProPath="/customer/expense-monitor-pro"
+                agentProPath="/agent/expense-monitor-pro"
+              />
               <Link
                 to="/contact-us"
                 className="inline-flex items-center justify-center px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg border-2 border-blue-600 hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                Get Started
+                Access Pro Version
               </Link>
             </div>
           </motion.div>

@@ -4,7 +4,6 @@ import { Upload, Download, FileText, FileType, Edit3, Save, X, PenTool, Highligh
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
 import { useAuth } from '../../context/AuthContext';
-import ProtectedRoute from '../../components/ProtectedRoute';
 import api from '../../utils/axios';
 
 const DocumentConverterPro = () => {
@@ -387,16 +386,6 @@ const DocumentConverterPro = () => {
       a.id === id ? { ...a, text: value } : a
     ));
   };
-
-  const hasProAccess = user?.role === 'customer' || (user?.role === 'agent' && user?.pro_access_enabled);
-
-  if (!isAuthenticated || !hasProAccess) {
-    return (
-      <ProtectedRoute role="customer">
-        <div>Loading...</div>
-      </ProtectedRoute>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">

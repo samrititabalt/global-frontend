@@ -58,7 +58,10 @@ const DocumentConverter = () => {
                 No software installation required—everything works online.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <AccessProButton proPath="/customer/document-converter-pro" />
+                <AccessProButton
+                  customerProPath="/customer/document-converter-pro"
+                  agentProPath="/agent/document-converter-pro"
+                />
                 <a
                   href="/contact-us"
                   className="inline-flex items-center justify-center px-8 py-4 bg-white text-gray-900 font-semibold rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all"
@@ -181,7 +184,11 @@ const DocumentConverter = () => {
             <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
               Start converting and editing documents today. No installation, no hassle—just powerful tools at your fingertips.
             </p>
-            <AccessProButton proPath="/customer/document-converter-pro" className="bg-white text-blue-600 hover:bg-gray-100" />
+            <AccessProButton
+              customerProPath="/customer/document-converter-pro"
+              agentProPath="/agent/document-converter-pro"
+              className="bg-white text-blue-600 hover:bg-gray-100"
+            />
           </motion.div>
         </div>
       </section>

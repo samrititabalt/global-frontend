@@ -14,7 +14,6 @@ import { motion } from 'framer-motion';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
 import { useAuth } from '../../context/AuthContext';
-import ProtectedRoute from '../../components/ProtectedRoute';
 
 const IndustrySolutionsPro = () => {
   const { user, isAuthenticated } = useAuth();
@@ -28,16 +27,6 @@ const IndustrySolutionsPro = () => {
     { icon: Code, name: 'IT & Technology', color: 'from-indigo-500 to-blue-500' },
     { icon: Building, name: 'Public Sector', color: 'from-gray-600 to-slate-600' },
   ];
-
-  const hasProAccess = user?.role === 'customer' || (user?.role === 'agent' && user?.pro_access_enabled);
-
-  if (!isAuthenticated || !hasProAccess) {
-    return (
-      <ProtectedRoute role="customer">
-        <div>Loading...</div>
-      </ProtectedRoute>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
