@@ -23,6 +23,7 @@ const EmployeeDashboard = () => {
   const [holidayForm, setHolidayForm] = useState({ startDate: '', endDate: '', reason: '' });
   const [documentForm, setDocumentForm] = useState({ title: '', type: '', file: null });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -59,6 +60,7 @@ const EmployeeDashboard = () => {
 
   const handleSubmitTimesheet = async () => {
     try {
+      setSuccess('');
       const response = await api.post('/hiring-pro/employee/timesheets', timesheetForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -71,6 +73,7 @@ const EmployeeDashboard = () => {
 
   const handleSubmitHoliday = async () => {
     try {
+      setSuccess('');
       const response = await api.post('/hiring-pro/employee/holidays', holidayForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -83,11 +86,14 @@ const EmployeeDashboard = () => {
 
   const handleProfileSave = async () => {
     try {
+      setError('');
+      setSuccess('');
       const response = await api.put('/hiring-pro/employee/profile', profile, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.profile) {
         setProfile(response.data.profile);
+        setSuccess('Personal details saved successfully.');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to update profile');
@@ -96,15 +102,22 @@ const EmployeeDashboard = () => {
 
   const handleDocumentUpload = async () => {
     try {
+      setError('');
+      setSuccess('');
+      if (!documentForm.file) {
+        setError('Please choose a document before uploading.');
+        return;
+      }
       const payload = new FormData();
       payload.append('title', documentForm.title);
       payload.append('type', documentForm.type);
       if (documentForm.file) payload.append('document', documentForm.file);
       const response = await api.post('/hiring-pro/employee/documents', payload, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        headers: { Authorization: `Bearer ${token}` }
       });
       setDocuments(prev => [response.data.document, ...prev]);
       setDocumentForm({ title: '', type: '', file: null });
+      setSuccess('Document uploaded successfully.');
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to upload document');
     }
@@ -177,6 +190,7 @@ const EmployeeDashboard = () => {
   return (
     <div className="space-y-8">
       {error && <div className="text-sm text-red-600">{error}</div>}
+      {success && <div className="text-sm text-green-600">{success}</div>}
 
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
         <h2 className="text-2xl font-semibold text-gray-900 mb-4">Weekly Timesheets</h2>
