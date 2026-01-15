@@ -81,6 +81,15 @@ const AgentLogin = () => {
               autoComplete="current-password"
             />
 
+            <div className="flex justify-end">
+              <Link
+                to="/agent/forgot-password"
+                className="text-sm text-primary-600 hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
