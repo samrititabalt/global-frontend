@@ -293,7 +293,9 @@ Format with clear sections and use professional business language.`,
     return numericCount / sampleSize > 0.7;
   };
 
-  if (!isAuthenticated || user?.role !== 'customer') {
+  const hasProAccess = user?.role === 'customer' || (user?.role === 'agent' && user?.pro_access_enabled);
+
+  if (!isAuthenticated || !hasProAccess) {
     return (
       <ProtectedRoute role="customer">
         <div>Loading...</div>

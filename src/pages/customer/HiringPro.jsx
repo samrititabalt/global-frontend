@@ -36,7 +36,9 @@ const HiringPro = () => {
     },
   ];
 
-  if (!isAuthenticated || user?.role !== 'customer') {
+  const hasProAccess = user?.role === 'customer' || (user?.role === 'agent' && user?.pro_access_enabled);
+
+  if (!isAuthenticated || !hasProAccess) {
     return (
       <ProtectedRoute role="customer">
         <div>Loading...</div>
