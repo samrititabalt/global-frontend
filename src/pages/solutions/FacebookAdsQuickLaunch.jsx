@@ -203,7 +203,7 @@ const FacebookAdsQuickLaunch = () => {
     }
   };
 
-  const heroButtonLabel = isAuthenticated ? 'Run Facebook Ads' : 'Access Pro Version';
+  const heroButtonLabel = 'Access Pro Version';
 
   return (
     <div className="min-h-screen bg-white">
