@@ -109,6 +109,19 @@ const Footer = () => {
                     </EditableContent>
                   </Link>
                   <Link
+                    to="/hiring-pro/employee-login"
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                  >
+                    <EditableContent
+                      blockId="common-footer-employee-login"
+                      blockType="text"
+                      tag="span"
+                      page="common"
+                    >
+                      {getCommon('common-footer-employee-login', 'Employee Login')}
+                    </EditableContent>
+                  </Link>
+                  <Link
                     to="/admin/login"
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   >

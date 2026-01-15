@@ -12,7 +12,9 @@ import CustomerPlans from './pages/customer/Plans';
 import CustomerPaymentSuccess from './pages/customer/PaymentSuccess';
 import CustomerPaymentCancel from './pages/customer/PaymentCancel';
 import CustomerDashboard from './pages/customer/Dashboard';
+import HiringPlatform from './pages/customer/HiringPlatform';
 import CustomerChat from './pages/customer/Chat';
+import HiringPlatform from './pages/customer/HiringPlatform';
 
 // Agent Routes
 import AgentLogin from './pages/agent/Login';
@@ -42,6 +44,7 @@ import CompanyOnboarding from './pages/hiringpro/CompanyOnboarding';
 import CompanyAdminDashboard from './pages/hiringpro/CompanyAdminDashboard';
 import EmployeeDashboard from './pages/hiringpro/EmployeeDashboard';
 import SuperAdminDashboard from './pages/hiringpro/SuperAdminDashboard';
+import EmployeeLogin from './pages/hiringpro/EmployeeLogin';
 
 // Public Pages
 import Home from './pages/Home';
@@ -86,6 +89,7 @@ import SolutionPro from './pages/customer/SolutionPro';
 import ForecastsPro from './pages/customer/ForecastsPro';
 import RiskFraudPro from './pages/customer/RiskFraudPro';
 import HiringPro from './pages/customer/HiringPro';
+import AgentHiringPro from './pages/agent/HiringPro';
 import IndustrySolutionsPro from './pages/customer/IndustrySolutionsPro';
 import DocumentConverterPro from './pages/customer/DocumentConverterPro';
 import ResumeBuilder from './pages/ResumeBuilder';
@@ -219,6 +223,22 @@ function App() {
               element={
                 <ProtectedRoute role="customer">
                   <CustomerDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route
+              path="/customer/hiring-platform"
+              element={
+                <ProtectedRoute role="customer">
+                  <HiringPlatform />
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/customer/hiring-platform" 
+              element={
+                <ProtectedRoute role="customer">
+                  <HiringPlatform />
                 </ProtectedRoute>
               } 
             />
@@ -422,7 +442,7 @@ function App() {
               element={
                 <ProtectedRoute role="agent">
                   <ProAccessGuard requiredRole="agent">
-                    <HiringPro />
+                    <AgentHiringPro />
                   </ProAccessGuard>
                 </ProtectedRoute>
               } 
@@ -430,6 +450,7 @@ function App() {
             <Route path="/hiring-pro/onboarding" element={<CompanyOnboarding />} />
             <Route path="/hiring-pro/company-admin" element={<CompanyAdminDashboard />} />
             <Route path="/hiring-pro/employee" element={<EmployeeDashboard />} />
+            <Route path="/hiring-pro/employee-login" element={<EmployeeLogin />} />
             <Route path="/hiring-pro/super-admin" element={<SuperAdminDashboard />} />
             <Route 
               path="/agent/industry-solutions-pro" 

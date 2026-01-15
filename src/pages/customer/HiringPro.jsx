@@ -3,9 +3,6 @@ import { Users } from 'lucide-react';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
 import CompanyOnboarding from '../hiringpro/CompanyOnboarding';
-import CompanyAdminDashboard from '../hiringpro/CompanyAdminDashboard';
-import EmployeeDashboard from '../hiringpro/EmployeeDashboard';
-import SuperAdminDashboard from '../hiringpro/SuperAdminDashboard';
 
 const HiringPro = () => {
   return (
@@ -21,14 +18,7 @@ const HiringPro = () => {
             </h1>
             <p className="text-xl text-indigo-100">Multi-tenant HR onboarding platform for modern teams</p>
           </div>
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
-            <CompanyOnboarding />
-            <div className="space-y-6">
-              <CompanyAdminDashboard />
-              <EmployeeDashboard />
-            </div>
-          </div>
-          <SuperAdminDashboard />
+          <CompanyOnboarding />
         </div>
       </div>
       <Footer />

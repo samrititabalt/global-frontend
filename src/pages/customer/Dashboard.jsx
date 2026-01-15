@@ -34,6 +34,7 @@ const CustomerDashboard = () => {
   const [customRequestModalOpen, setCustomRequestModalOpen] = useState(false);
   const [customRequest, setCustomRequest] = useState('');
   const [submittingCustomRequest, setSubmittingCustomRequest] = useState(false);
+  const [hiringCompany, setHiringCompany] = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
   const availableMinutes = Number(user?.tokenBalance ?? 0);
@@ -92,12 +93,14 @@ const CustomerDashboard = () => {
 
   const loadData = async () => {
     try {
-      const [servicesRes, chatsRes] = await Promise.all([
+      const [servicesRes, chatsRes, hiringRes] = await Promise.all([
         customerAPI.getServices(),
-        customerAPI.getChatSessions()
+        customerAPI.getChatSessions(),
+        api.get('/hiring-pro/customer/company').catch(() => ({ data: { company: null } }))
       ]);
       setServices(servicesRes.data.services);
       setChatSessions(chatsRes.data.chatSessions);
+      setHiringCompany(hiringRes.data.company || null);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -215,6 +218,14 @@ const CustomerDashboard = () => {
               >
                 Request a service
               </button>
+              {hiringCompany && (
+                <Link
+                  to="/customer/hiring-platform"
+                  className="px-6 py-3 rounded-full bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition"
+                >
+                  Hiring Platform
+                </Link>
+              )}
               <Link
                 to="/customer/plans"
                 className="px-6 py-3 rounded-full border border-white/40 text-white font-semibold hover:bg-white/10 transition"

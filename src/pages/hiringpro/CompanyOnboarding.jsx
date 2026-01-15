@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import api from '../../utils/axios';
+import { useAuth } from '../../context/AuthContext';
 
 const CompanyOnboarding = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
+    customerEmail: user?.email || '',
     companyName: '',
     authorityName: '',
     authorityTitle: '',
@@ -27,12 +30,13 @@ const CompanyOnboarding = () => {
     setLoading(true);
     try {
       const payload = new FormData();
+      payload.append('customerEmail', formData.customerEmail);
       payload.append('companyName', formData.companyName);
       payload.append('authorityName', formData.authorityName);
       payload.append('authorityTitle', formData.authorityTitle);
       if (formData.logo) payload.append('logo', formData.logo);
 
-      const response = await api.post('/hiring-pro/companies', payload, {
+      const response = await api.post('/hiring-pro/onboard', payload, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (response.data.success) {
@@ -59,14 +63,27 @@ const CompanyOnboarding = () => {
             <p className="font-semibold text-green-900">Company onboarded successfully.</p>
             <p className="text-sm text-green-700">Use the admin credentials below to access your company admin panel.</p>
           </div>
-          <div className="rounded-xl border border-gray-200 p-4">
-            <p className="text-sm text-gray-500 uppercase tracking-wide">Company Admin Credentials</p>
-            <p className="mt-2 text-sm"><span className="font-semibold">Email:</span> {result.adminCredentials.email}</p>
-            <p className="text-sm"><span className="font-semibold">Temporary Password:</span> {result.adminCredentials.password}</p>
-          </div>
+          {result.adminCredentials && (
+            <div className="rounded-xl border border-gray-200 p-4">
+              <p className="text-sm text-gray-500 uppercase tracking-wide">Company Admin Credentials</p>
+              <p className="mt-2 text-sm"><span className="font-semibold">Email:</span> {result.adminCredentials.email}</p>
+              <p className="text-sm"><span className="font-semibold">Temporary Password:</span> {result.adminCredentials.password}</p>
+            </div>
+          )}
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Customer Email</label>
+            <input
+              name="customerEmail"
+              value={formData.customerEmail}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Enter customer email"
+              required
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
             <input
