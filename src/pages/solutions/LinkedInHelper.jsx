@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import { Linkedin, MessageSquare, Users, Send, CheckCircle, Zap } from 'lucide-react';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
@@ -34,13 +33,10 @@ const LinkedInHelper = () => {
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
               Streamline your LinkedIn inbox management with intelligent message extraction and personalized bulk replies.
             </p>
-            <Link
-              to="/linkedin-helper-pro"
-              className="inline-flex items-center px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              LinkedIn Helper Pro
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
+            <AccessProButton
+              customerProPath="/customer/linkedin-helper-pro"
+              agentProPath="/agent/linkedin-helper-pro"
+            />
           </motion.div>
         </div>
       </section>
