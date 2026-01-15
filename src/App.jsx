@@ -12,7 +12,6 @@ import CustomerPlans from './pages/customer/Plans';
 import CustomerPaymentSuccess from './pages/customer/PaymentSuccess';
 import CustomerPaymentCancel from './pages/customer/PaymentCancel';
 import CustomerDashboard from './pages/customer/Dashboard';
-import HiringPlatform from './pages/customer/HiringPlatform';
 import CustomerChat from './pages/customer/Chat';
 import HiringPlatform from './pages/customer/HiringPlatform';
 
