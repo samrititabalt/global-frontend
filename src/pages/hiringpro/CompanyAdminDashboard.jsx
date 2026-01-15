@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../utils/axios';
+import { useAuth } from '../../context/AuthContext';
 
 const CompanyAdminDashboard = () => {
+  const { user, loading: authLoading } = useAuth();
   const legacyToken = localStorage.getItem('hiringProToken');
   const [token, setToken] = useState(localStorage.getItem('hiringProAdminToken') || legacyToken);
   const [email, setEmail] = useState('');
@@ -24,6 +26,7 @@ const CompanyAdminDashboard = () => {
   const [offerContent, setOfferContent] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [autoLoggingIn, setAutoLoggingIn] = useState(false);
 
   const loadCompanyData = async (authToken) => {
     const [profile, employeeRes, offerRes, timesheetRes, holidayRes, expenseRes] = await Promise.all([
@@ -131,6 +134,27 @@ const CompanyAdminDashboard = () => {
   };
 
   useEffect(() => {
+    const exchangeCustomerSession = async () => {
+      if (token || authLoading || user?.role !== 'customer') return;
+      setAutoLoggingIn(true);
+      setError('');
+      try {
+        const response = await api.post('/hiring-pro/auth/customer-session');
+        if (response.data.success) {
+          localStorage.setItem('hiringProAdminToken', response.data.token);
+          localStorage.removeItem('hiringProToken');
+          setToken(response.data.token);
+        }
+      } catch (err) {
+        setError(err.response?.data?.message || 'Unable to access Hiring Platform. Please sign in.');
+      } finally {
+        setAutoLoggingIn(false);
+      }
+    };
+    exchangeCustomerSession();
+  }, [token, user, authLoading]);
+
+  useEffect(() => {
     if (token) {
       loadCompanyData(token).catch((err) => {
         setError(err.response?.data?.message || 'Unable to load company data');
@@ -145,33 +169,42 @@ const CompanyAdminDashboard = () => {
   if (!token) {
     return (
       <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Company Admin Login</h2>
-        {error && <div className="mb-3 text-sm text-red-600">{error}</div>}
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2"
-            placeholder="Admin email"
-            required
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2"
-            placeholder="Password"
-            required
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-indigo-600 text-white py-2 font-semibold"
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+        {autoLoggingIn ? (
+          <div className="flex flex-col items-center justify-center py-10">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-200 border-t-indigo-600"></div>
+            <p className="mt-4 text-sm text-gray-600">Opening Hiring Platform...</p>
+          </div>
+        ) : (
+          <>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Company Admin Login</h2>
+            {error && <div className="mb-3 text-sm text-red-600">{error}</div>}
+            <form onSubmit={handleLogin} className="space-y-4">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2"
+                placeholder="Admin email"
+                required
+              />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2"
+                placeholder="Password"
+                required
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-lg bg-indigo-600 text-white py-2 font-semibold"
+              >
+                {loading ? 'Signing in...' : 'Sign In'}
+              </button>
+            </form>
+          </>
+        )}
       </div>
     );
   }
