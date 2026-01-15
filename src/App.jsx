@@ -38,6 +38,10 @@ import RecentActivity from './pages/admin/RecentActivity';
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute';
 import ProAccessGuard from './components/ProAccessGuard';
+import CompanyOnboarding from './pages/hiringpro/CompanyOnboarding';
+import CompanyAdminDashboard from './pages/hiringpro/CompanyAdminDashboard';
+import EmployeeDashboard from './pages/hiringpro/EmployeeDashboard';
+import SuperAdminDashboard from './pages/hiringpro/SuperAdminDashboard';
 
 // Public Pages
 import Home from './pages/Home';
@@ -423,6 +427,10 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            <Route path="/hiring-pro/onboarding" element={<CompanyOnboarding />} />
+            <Route path="/hiring-pro/company-admin" element={<CompanyAdminDashboard />} />
+            <Route path="/hiring-pro/employee" element={<EmployeeDashboard />} />
+            <Route path="/hiring-pro/super-admin" element={<SuperAdminDashboard />} />
             <Route 
               path="/agent/industry-solutions-pro" 
               element={
