@@ -24,8 +24,12 @@ const Header = () => {
   
   // Check if user is a customer
   const isCustomer = isAuthenticated && user?.role === 'customer';
-  // Check if user is admin or customer (for Sam Studios visibility)
-  const isAdminOrCustomer = isAuthenticated && (user?.role === 'admin' || user?.role === 'customer');
+  // Check if user can access Sam Studios solutions
+  const isAdminOrCustomer = isAuthenticated && (
+    user?.role === 'admin' ||
+    user?.role === 'customer' ||
+    (user?.role === 'agent' && user?.pro_access_enabled)
+  );
 
   const services = [
     { name: 'UK Accounting, Taxation & Reporting', path: '/services/uk-accounting-taxation-reporting', key: 'common-services-uk-accounting' },
