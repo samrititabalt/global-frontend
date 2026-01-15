@@ -19,6 +19,9 @@ const Header = () => {
   const { user, isAuthenticated } = useAuth();
   const { content: commonContent } = usePageContent('common');
   const getCommon = (key, fallback) => getBlockContent(commonContent, key) || fallback;
+  // Check if user is a customer/agent
+  const isCustomer = isAuthenticated && user?.role === 'customer';
+  const isAgent = isAuthenticated && user?.role === 'agent';
   const agentInitials = isAgent
     ? (user?.name || user?.email || 'A')
         .split(' ')
@@ -30,9 +33,7 @@ const Header = () => {
   const dropdownRef = useRef(null);
   const solutionsDropdownRef = useRef(null);
   
-  // Check if user is a customer
-  const isCustomer = isAuthenticated && user?.role === 'customer';
-  const isAgent = isAuthenticated && user?.role === 'agent';
+  // Check if user can access Sam Studios solutions
   // Check if user can access Sam Studios solutions
   const isAdminOrCustomer = isAuthenticated && (
     user?.role === 'admin' ||
