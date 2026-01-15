@@ -47,7 +47,7 @@ const CompanyAdminDashboard = () => {
     setError('');
     setLoading(true);
     try {
-      const response = await api.post('/hiring-pro/auth/login', { email, password, role: 'company_admin' });
+      const response = await api.post('/hiring-pro/auth/customer-login', { email, password });
       if (response.data.success) {
         localStorage.setItem('hiringProAdminToken', response.data.token);
         localStorage.removeItem('hiringProToken');
