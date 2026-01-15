@@ -36,7 +36,8 @@ const EmployeeLogin = () => {
     try {
       const response = await api.post('/hiring-pro/auth/login', { email, password, role: 'employee' });
       if (response.data.success) {
-        localStorage.setItem('hiringProToken', response.data.token);
+        localStorage.setItem('hiringProEmployeeToken', response.data.token);
+        localStorage.removeItem('hiringProToken');
         navigate('/hiring-pro/employee');
       }
     } catch (err) {
@@ -73,7 +74,8 @@ const EmployeeLogin = () => {
         companyId
       });
       if (response.data.success) {
-        localStorage.setItem('hiringProToken', response.data.token);
+        localStorage.setItem('hiringProEmployeeToken', response.data.token);
+        localStorage.removeItem('hiringProToken');
         navigate('/hiring-pro/employee');
       }
     } catch (err) {

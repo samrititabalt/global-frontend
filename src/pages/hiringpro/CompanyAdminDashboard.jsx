@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import api from '../../utils/axios';
 
 const CompanyAdminDashboard = () => {
-  const [token, setToken] = useState(localStorage.getItem('hiringProToken'));
+  const legacyToken = localStorage.getItem('hiringProToken');
+  const [token, setToken] = useState(localStorage.getItem('hiringProAdminToken') || legacyToken);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [company, setCompany] = useState(null);
@@ -48,7 +49,8 @@ const CompanyAdminDashboard = () => {
     try {
       const response = await api.post('/hiring-pro/auth/login', { email, password, role: 'company_admin' });
       if (response.data.success) {
-        localStorage.setItem('hiringProToken', response.data.token);
+        localStorage.setItem('hiringProAdminToken', response.data.token);
+        localStorage.removeItem('hiringProToken');
         setToken(response.data.token);
         await loadCompanyData(response.data.token);
       }
@@ -132,6 +134,10 @@ const CompanyAdminDashboard = () => {
     if (token) {
       loadCompanyData(token).catch((err) => {
         setError(err.response?.data?.message || 'Unable to load company data');
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          localStorage.removeItem('hiringProAdminToken');
+          setToken(null);
+        }
       });
     }
   }, [token]);

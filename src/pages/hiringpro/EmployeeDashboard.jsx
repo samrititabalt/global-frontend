@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import api from '../../utils/axios';
 
 const EmployeeDashboard = () => {
-  const [token, setToken] = useState(localStorage.getItem('hiringProToken'));
+  const legacyToken = localStorage.getItem('hiringProToken');
+  const [token, setToken] = useState(localStorage.getItem('hiringProEmployeeToken') || legacyToken);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [offerLetters, setOfferLetters] = useState([]);
@@ -31,7 +32,8 @@ const EmployeeDashboard = () => {
     try {
       const response = await api.post('/hiring-pro/auth/login', { email, password, role: 'employee' });
       if (response.data.success) {
-        localStorage.setItem('hiringProToken', response.data.token);
+        localStorage.setItem('hiringProEmployeeToken', response.data.token);
+        localStorage.removeItem('hiringProToken');
         setToken(response.data.token);
         const [offers, timesheetRes, holidayRes, docRes, salaryRes, profileRes] = await Promise.all([
           api.get('/hiring-pro/employee/offer-letters', { headers: { Authorization: `Bearer ${response.data.token}` } }),
@@ -149,6 +151,10 @@ const EmployeeDashboard = () => {
         }
       } catch (err) {
         setError(err.response?.data?.message || 'Unable to load employee data');
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          localStorage.removeItem('hiringProEmployeeToken');
+          setToken(null);
+        }
       }
     };
     loadData();
