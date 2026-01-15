@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import EditableContent from '../admin/EditableContent';
+import { usePageContent, getBlockContent } from '../../hooks/usePageContent';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -15,6 +17,8 @@ const Header = () => {
   const [logoError, setLogoError] = useState(false);
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const { content: commonContent } = usePageContent('common');
+  const getCommon = (key, fallback) => getBlockContent(commonContent, key) || fallback;
   const dropdownRef = useRef(null);
   const solutionsDropdownRef = useRef(null);
   
@@ -24,28 +28,28 @@ const Header = () => {
   const isAdminOrCustomer = isAuthenticated && (user?.role === 'admin' || user?.role === 'customer');
 
   const services = [
-    { name: 'UK Accounting, Taxation & Reporting', path: '/services/uk-accounting-taxation-reporting' },
-    { name: 'ESG', path: '/services/esg' },
-    { name: 'Market Research', path: '/services/market-research' },
-    { name: 'Contact Centre Support', path: '/services/contact-centre-support' },
-    { name: 'Recruitment & Staffing', path: '/services/recruitment-staffing' },
-    { name: 'Equity Research & Management', path: '/services/equity-research-management' },
-    { name: 'Industry Reports', path: '/services/industry-reports' },
-    { name: 'Software & Tech Support', path: '/services/software-tech-support' },
+    { name: 'UK Accounting, Taxation & Reporting', path: '/services/uk-accounting-taxation-reporting', key: 'common-services-uk-accounting' },
+    { name: 'ESG', path: '/services/esg', key: 'common-services-esg' },
+    { name: 'Market Research', path: '/services/market-research', key: 'common-services-market-research' },
+    { name: 'Contact Centre Support', path: '/services/contact-centre-support', key: 'common-services-contact-centre' },
+    { name: 'Recruitment & Staffing', path: '/services/recruitment-staffing', key: 'common-services-recruitment' },
+    { name: 'Equity Research & Management', path: '/services/equity-research-management', key: 'common-services-equity-research' },
+    { name: 'Industry Reports', path: '/services/industry-reports', key: 'common-services-industry-reports' },
+    { name: 'Software & Tech Support', path: '/services/software-tech-support', key: 'common-services-software-tech' },
   ];
 
   const solutions = [
-    { name: "Sam's Smart Reports", path: '/solutions/sams-smart-reports' },
-    { name: 'Expense Monitor', path: '/solutions/expense-monitor' },
-    { name: 'Merge Spreadsheets', path: '/solutions/merge-spreadsheets' },
-    { name: 'Forecasts', path: '/solutions/forecasts' },
-    { name: 'Risk & Fraud', path: '/solutions/risk-fraud' },
-    { name: 'Hiring', path: '/solutions/hiring' },
-    { name: 'Run Facebook Ads', path: '/solutions/facebook-ads', key: 'facebookAds' },
-    { name: 'Resume Builder', path: '/resume-builder' },
-    { name: 'LinkedIn Helper', path: '/solutions/linkedin-helper' },
-    { name: 'Industry Solutions', path: '/solutions/industry-solutions' },
-    { name: 'Document Converter & PDF Editor', path: '/solutions/document-converter' },
+    { name: "Sam's Smart Reports", path: '/solutions/sams-smart-reports', key: 'common-solutions-smart-reports' },
+    { name: 'Expense Monitor', path: '/solutions/expense-monitor', key: 'common-solutions-expense-monitor' },
+    { name: 'Merge Spreadsheets', path: '/solutions/merge-spreadsheets', key: 'common-solutions-merge-spreadsheets' },
+    { name: 'Forecasts', path: '/solutions/forecasts', key: 'common-solutions-forecasts' },
+    { name: 'Risk & Fraud', path: '/solutions/risk-fraud', key: 'common-solutions-risk-fraud' },
+    { name: 'Hiring', path: '/solutions/hiring', key: 'common-solutions-hiring' },
+    { name: 'Run Facebook Ads', path: '/solutions/facebook-ads', key: 'common-solutions-facebook-ads', isFacebook: true },
+    { name: 'Resume Builder', path: '/resume-builder', key: 'common-solutions-resume-builder' },
+    { name: 'LinkedIn Helper', path: '/solutions/linkedin-helper', key: 'common-solutions-linkedin-helper' },
+    { name: 'Industry Solutions', path: '/solutions/industry-solutions', key: 'common-solutions-industry' },
+    { name: 'Document Converter & PDF Editor', path: '/solutions/document-converter', key: 'common-solutions-document-converter' },
   ];
 
   // Check if we're on the home page
@@ -78,11 +82,11 @@ const Header = () => {
   }, [isServicesDropdownOpen, isSolutionsDropdownOpen]);
 
   const navLinks = [
-    { name: 'About Us', path: '/about-us' },
-    { name: 'Ask Sam', path: '/ask-sam' },
-    { name: 'Industry', path: '/industry' },
-    { name: 'Case Studies', path: '/case-studies' },
-    { name: 'Contact Us', path: '/contact-us' },
+    { name: 'About Us', path: '/about-us', key: 'common-nav-about' },
+    { name: 'Ask Sam', path: '/ask-sam', key: 'common-nav-ask-sam' },
+    { name: 'Industry', path: '/industry', key: 'common-nav-industry' },
+    { name: 'Case Studies', path: '/case-studies', key: 'common-nav-case-studies' },
+    { name: 'Contact Us', path: '/contact-us', key: 'common-nav-contact' },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -105,18 +109,36 @@ const Header = () => {
                   className="h-10 w-auto object-contain"
                   onError={() => setLogoError(true)}
                 />
-                <span className="text-[10px] font-medium mt-0.5 text-center text-gray-600">
-                  Sam Studios
-                </span>
+                <EditableContent
+                  blockId="common-logo-subtitle"
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                  className="text-[10px] font-medium mt-0.5 text-center text-gray-600"
+                >
+                  {getCommon('common-logo-subtitle', 'Sam Studios')}
+                </EditableContent>
               </div>
             ) : (
               <div className="flex flex-col items-center">
-                <span className="text-xl font-bold group-hover:text-blue-600 transition-colors text-gray-900">
-                  Tabalt
-                </span>
-                <span className="text-[10px] font-medium mt-0.5 text-center text-gray-600">
-                  Sam Studios
-                </span>
+                <EditableContent
+                  blockId="common-logo-title"
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                  className="text-xl font-bold group-hover:text-blue-600 transition-colors text-gray-900"
+                >
+                  {getCommon('common-logo-title', 'Tabalt')}
+                </EditableContent>
+                <EditableContent
+                  blockId="common-logo-subtitle"
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                  className="text-[10px] font-medium mt-0.5 text-center text-gray-600"
+                >
+                  {getCommon('common-logo-subtitle', 'Sam Studios')}
+                </EditableContent>
               </div>
             )}
           </Link>
@@ -132,7 +154,14 @@ const Header = () => {
                   : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
-              Home
+              <EditableContent
+                blockId="common-nav-home"
+                blockType="text"
+                tag="span"
+                page="common"
+              >
+                {getCommon('common-nav-home', 'Home')}
+              </EditableContent>
             </Link>
             
             {navLinks.map((link) => (
@@ -145,7 +174,14 @@ const Header = () => {
                     : 'text-gray-700 hover:text-gray-900'
                 }`}
               >
-                {link.name}
+                <EditableContent
+                  blockId={link.key}
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                >
+                  {getCommon(link.key, link.name)}
+                </EditableContent>
               </Link>
             ))}
             
@@ -159,7 +195,14 @@ const Header = () => {
                     : 'text-gray-700 hover:text-gray-900'
                 }`}
               >
-                Services
+                <EditableContent
+                  blockId="common-nav-services"
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                >
+                  {getCommon('common-nav-services', 'Services')}
+                </EditableContent>
                 <ChevronDown 
                   className={`h-4 w-4 transition-transform duration-200 ${
                     isServicesDropdownOpen ? 'rotate-180' : ''
@@ -186,7 +229,14 @@ const Header = () => {
                         }`}
                         onClick={() => setIsServicesDropdownOpen(false)}
                       >
-                        {service.name}
+                        <EditableContent
+                          blockId={service.key}
+                          blockType="text"
+                          tag="span"
+                          page="common"
+                        >
+                          {getCommon(service.key, service.name)}
+                        </EditableContent>
                       </Link>
                     ))}
                   </motion.div>
@@ -205,7 +255,14 @@ const Header = () => {
                     : 'text-gray-700 hover:text-gray-900'
                 }`}
               >
-                Sam Studios
+                <EditableContent
+                  blockId="common-nav-sam-studios"
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                >
+                  {getCommon('common-nav-sam-studios', 'Sam Studios')}
+                </EditableContent>
                 <ChevronDown 
                   className={`h-4 w-4 transition-transform duration-200 ${
                     isSolutionsDropdownOpen ? 'rotate-180' : ''
@@ -222,13 +279,15 @@ const Header = () => {
                     className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
                   >
                     {solutions.map((solution) => {
-                      const isFacebook = solution.key === 'facebookAds';
+                      const isFacebook = solution.isFacebook;
                       const linkPath =
                         isFacebook && !isAuthenticated
                           ? '/customer/login?redirect=/solutions/facebook-ads'
                           : solution.path;
                       const label =
-                        isFacebook && !isAuthenticated ? 'Get Started' : solution.name;
+                        isFacebook && !isAuthenticated
+                          ? getCommon('common-solutions-facebook-cta', 'Get Started')
+                          : getCommon(solution.key, solution.name);
 
                       return (
                         <Link
@@ -242,16 +301,37 @@ const Header = () => {
                           onClick={() => setIsSolutionsDropdownOpen(false)}
                         >
                           <div className="flex items-center justify-between">
-                            <span>{label}</span>
+                            <EditableContent
+                              blockId={isFacebook && !isAuthenticated ? 'common-solutions-facebook-cta' : solution.key}
+                              blockType="text"
+                              tag="span"
+                              page="common"
+                            >
+                              {label}
+                            </EditableContent>
                             {isFacebook && (
                               <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                                New
+                                <EditableContent
+                                  blockId="common-solutions-facebook-new"
+                                  blockType="text"
+                                  tag="span"
+                                  page="common"
+                                >
+                                  {getCommon('common-solutions-facebook-new', 'New')}
+                                </EditableContent>
                               </span>
                             )}
                           </div>
                           {isFacebook && (
                             <p className="text-xs text-gray-500 mt-1">
-                              Facebook Ads Quick Launch
+                              <EditableContent
+                                blockId="common-solutions-facebook-note"
+                                blockType="text"
+                                tag="span"
+                                page="common"
+                              >
+                                {getCommon('common-solutions-facebook-note', 'Facebook Ads Quick Launch')}
+                              </EditableContent>
                             </p>
                           )}
                         </Link>
@@ -268,7 +348,14 @@ const Header = () => {
                 to="/customer/dashboard"
                 className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800"
               >
-                Dashboard
+                <EditableContent
+                  blockId="common-nav-dashboard"
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                >
+                  {getCommon('common-nav-dashboard', 'Dashboard')}
+                </EditableContent>
               </Link>
             ) : (
               <div className="flex items-center gap-3">
@@ -276,13 +363,27 @@ const Header = () => {
                   to="/customer/signup"
                   className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap"
                 >
-                  Sign up
+                  <EditableContent
+                    blockId="common-nav-signup"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-nav-signup', 'Sign up')}
+                  </EditableContent>
                 </Link>
                 <Link
                   to="/customer/login"
                   className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap"
                 >
-                  Customer Login
+                  <EditableContent
+                    blockId="common-nav-customer-login"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-nav-customer-login', 'Customer Login')}
+                  </EditableContent>
                 </Link>
               </div>
             )}
@@ -325,7 +426,14 @@ const Header = () => {
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  {link.name}
+                  <EditableContent
+                    blockId={link.key}
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon(link.key, link.name)}
+                  </EditableContent>
                 </Link>
               ))}
               
@@ -339,7 +447,14 @@ const Header = () => {
                       : 'text-gray-700 hover:text-gray-900'
                   }`}
                 >
-                  Services
+                  <EditableContent
+                    blockId="common-nav-services"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-nav-services', 'Services')}
+                  </EditableContent>
                   <ChevronDown 
                     className={`h-5 w-5 transition-transform duration-200 ${
                       isMobileServicesOpen ? 'rotate-180' : ''
@@ -370,7 +485,14 @@ const Header = () => {
                               setIsMobileServicesOpen(false);
                             }}
                           >
-                            {service.name}
+                            <EditableContent
+                              blockId={service.key}
+                              blockType="text"
+                              tag="span"
+                              page="common"
+                            >
+                              {getCommon(service.key, service.name)}
+                            </EditableContent>
                           </Link>
                         ))}
                       </div>
@@ -390,7 +512,14 @@ const Header = () => {
                       : 'text-gray-700 hover:text-gray-900'
                   }`}
                 >
-                  Sam Studios
+                  <EditableContent
+                    blockId="common-nav-sam-studios"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-nav-sam-studios', 'Sam Studios')}
+                  </EditableContent>
                   <ChevronDown 
                     className={`h-5 w-5 transition-transform duration-200 ${
                       isMobileSolutionsOpen ? 'rotate-180' : ''
@@ -408,13 +537,15 @@ const Header = () => {
                     >
                       <div className="pl-4 pt-2 space-y-2">
                         {solutions.map((solution) => {
-                          const isFacebook = solution.key === 'facebookAds';
+                          const isFacebook = solution.isFacebook;
                           const linkPath =
                             isFacebook && !isAuthenticated
                               ? '/customer/login?redirect=/solutions/facebook-ads'
                               : solution.path;
                           const label =
-                            isFacebook && !isAuthenticated ? 'Get Started' : solution.name;
+                            isFacebook && !isAuthenticated
+                              ? getCommon('common-solutions-facebook-cta', 'Get Started')
+                              : getCommon(solution.key, solution.name);
 
                           return (
                             <Link
@@ -431,16 +562,37 @@ const Header = () => {
                               }}
                             >
                               <div className="flex items-center justify-between">
-                                <span>{label}</span>
+                                <EditableContent
+                                  blockId={isFacebook && !isAuthenticated ? 'common-solutions-facebook-cta' : solution.key}
+                                  blockType="text"
+                                  tag="span"
+                                  page="common"
+                                >
+                                  {label}
+                                </EditableContent>
                                 {isFacebook && (
                                   <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                                    New
+                                    <EditableContent
+                                      blockId="common-solutions-facebook-new"
+                                      blockType="text"
+                                      tag="span"
+                                      page="common"
+                                    >
+                                      {getCommon('common-solutions-facebook-new', 'New')}
+                                    </EditableContent>
                                   </span>
                                 )}
                               </div>
                               {isFacebook && (
                                 <p className="text-xs text-gray-500">
-                                  Facebook Ads Quick Launch
+                                  <EditableContent
+                                    blockId="common-solutions-facebook-note"
+                                    blockType="text"
+                                    tag="span"
+                                    page="common"
+                                  >
+                                    {getCommon('common-solutions-facebook-note', 'Facebook Ads Quick Launch')}
+                                  </EditableContent>
                                 </p>
                               )}
                             </Link>
@@ -458,7 +610,14 @@ const Header = () => {
                 className="block w-full text-gray-700 hover:text-gray-900 font-medium text-center py-3 px-6 rounded-lg hover:bg-gray-100 transition-all"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Home
+                <EditableContent
+                  blockId="common-nav-home"
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                >
+                  {getCommon('common-nav-home', 'Home')}
+                </EditableContent>
               </Link>
               {isCustomer ? (
                 <Link
@@ -466,7 +625,14 @@ const Header = () => {
                   className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Dashboard
+                  <EditableContent
+                    blockId="common-nav-dashboard"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-nav-dashboard', 'Dashboard')}
+                  </EditableContent>
                 </Link>
               ) : (
                 <div className="space-y-2">
@@ -475,14 +641,28 @@ const Header = () => {
                     className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all border-2 border-gray-900 hover:border-gray-800"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Sign up
+                    <EditableContent
+                      blockId="common-nav-signup"
+                      blockType="text"
+                      tag="span"
+                      page="common"
+                    >
+                      {getCommon('common-nav-signup', 'Sign up')}
+                    </EditableContent>
                   </Link>
                   <Link
                     to="/customer/login"
                     className="block w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-800 transition-all border-2 border-gray-900 hover:border-gray-800"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Customer Login
+                    <EditableContent
+                      blockId="common-nav-customer-login"
+                      blockType="text"
+                      tag="span"
+                      page="common"
+                    >
+                      {getCommon('common-nav-customer-login', 'Customer Login')}
+                    </EditableContent>
                   </Link>
                 </div>
               )}

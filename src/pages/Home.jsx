@@ -11,6 +11,7 @@ import { usePageContent, getBlockContent } from '../hooks/usePageContent';
 
 const Home = () => {
   const { content: pageContent } = usePageContent();
+  const getHome = (key, fallback) => getBlockContent(pageContent, key) || fallback;
   
   // Get editable content for hero section
   const heroHeading = getBlockContent(pageContent, 'home-hero-heading') || 'Transform Your Business Operations';
@@ -20,40 +21,52 @@ const Home = () => {
     {
       icon: Users,
       title: 'Dedicated Teams',
+      titleKey: 'home-feature-1-title',
       description: 'Get a complete operations organization, not just individual agents. Every team includes trainers, QA analysts, and managers.',
+      descriptionKey: 'home-feature-1-description',
     },
     {
       icon: Shield,
       title: 'Brand Protection',
+      titleKey: 'home-feature-2-title',
       description: 'Maintain your brand voice while scaling. Our teams are trained to represent your company authentically.',
+      descriptionKey: 'home-feature-2-description',
     },
     {
       icon: Zap,
       title: 'Rapid Scaling',
+      titleKey: 'home-feature-3-title',
       description: 'Scale your operations quickly without compromising quality. Launch new teams in weeks, not months.',
+      descriptionKey: 'home-feature-3-description',
     },
     {
       icon: Headphones,
       title: '24/7 Support',
+      titleKey: 'home-feature-4-title',
       description: 'Round-the-clock customer service across multiple time zones. Never miss a customer interaction.',
+      descriptionKey: 'home-feature-4-description',
     },
     {
       icon: BarChart3,
       title: 'Data-Driven',
+      titleKey: 'home-feature-5-title',
       description: 'Real-time analytics and insights to optimize your customer experience and business performance.',
+      descriptionKey: 'home-feature-5-description',
     },
     {
       icon: Globe,
       title: 'Global Reach',
+      titleKey: 'home-feature-6-title',
       description: 'Teams located in strategic regions to serve your customers wherever they are in the world.',
+      descriptionKey: 'home-feature-6-description',
     },
   ];
 
   const stats = [
-    { number: '80%', label: 'ROI Increase' },
-    { number: '50%', label: 'Cost Savings' },
-    { number: '2200+', label: 'Team Members' },
-    { number: '100+', label: 'Clients Served' },
+    { number: '80%', label: 'ROI Increase', numberKey: 'home-stat-1-number', labelKey: 'home-stat-1-label' },
+    { number: '50%', label: 'Cost Savings', numberKey: 'home-stat-2-number', labelKey: 'home-stat-2-label' },
+    { number: '2200+', label: 'Team Members', numberKey: 'home-stat-3-number', labelKey: 'home-stat-3-label' },
+    { number: '100+', label: 'Clients Served', numberKey: 'home-stat-4-number', labelKey: 'home-stat-4-label' },
   ];
 
   return (
@@ -127,14 +140,26 @@ const Home = () => {
                   to="/why-us"
                   className="inline-flex items-center justify-center bg-gray-900 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-gray-300"
                 >
-                  Learn More
+                  <EditableContent
+                    blockId="home-hero-learn-more"
+                    blockType="text"
+                    tag="span"
+                  >
+                    {getHome('home-hero-learn-more', 'Learn More')}
+                  </EditableContent>
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
                 <Link
                   to="/customer/signup"
                   className="inline-flex items-center justify-center bg-white text-gray-900 px-8 py-4 rounded-lg font-semibold text-lg border-2 border-gray-300 hover:border-gray-400 transition-all focus:outline-none focus:ring-4 focus:ring-gray-200"
                 >
-                  Get Started
+                  <EditableContent
+                    blockId="home-hero-get-started"
+                    blockType="text"
+                    tag="span"
+                  >
+                    {getHome('home-hero-get-started', 'Get Started')}
+                  </EditableContent>
                 </Link>
               </motion.div>
             </motion.div>
@@ -174,8 +199,24 @@ const Home = () => {
                 {index < stats.length - 1 && (
                   <div className="hidden md:block absolute right-0 top-1/2 transform -translate-y-1/2 w-px h-16 bg-gray-700"></div>
                 )}
-                <div className="text-5xl md:text-6xl font-bold mb-2">{stat.number}</div>
-                <div className="text-lg text-gray-300">{stat.label}</div>
+                <div className="text-5xl md:text-6xl font-bold mb-2">
+                  <EditableContent
+                    blockId={stat.numberKey}
+                    blockType="text"
+                    tag="span"
+                  >
+                    {getHome(stat.numberKey, stat.number)}
+                  </EditableContent>
+                </div>
+                <div className="text-lg text-gray-300">
+                  <EditableContent
+                    blockId={stat.labelKey}
+                    blockType="text"
+                    tag="span"
+                  >
+                    {getHome(stat.labelKey, stat.label)}
+                  </EditableContent>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -220,8 +261,22 @@ const Home = () => {
                   <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
                     <Icon className="w-8 h-8 text-blue-600" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">{feature.title}</h3>
-                  <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                  <EditableContent
+                    blockId={feature.titleKey}
+                    blockType="heading"
+                    tag="h3"
+                    className="text-xl font-bold text-gray-900 mb-4"
+                  >
+                    {getHome(feature.titleKey, feature.title)}
+                  </EditableContent>
+                  <EditableContent
+                    blockId={feature.descriptionKey}
+                    blockType="paragraph"
+                    tag="p"
+                    className="text-gray-600 leading-relaxed"
+                  >
+                    {getHome(feature.descriptionKey, feature.description)}
+                  </EditableContent>
                 </motion.div>
               );
             })}
@@ -244,20 +299,41 @@ const Home = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-              Ready to scale your business?
-            </h2>
-            <p className="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed max-w-3xl mx-auto">
-              Choose an automation solution that boosts your efficiency, fuels company growth with top-notch performance, and scales your business with high conversion rates. All at lower costs.
-            </p>
-            <p className="text-lg text-gray-400 mb-10">
-              Quality results at a better value — 80% ROI increase and save 50% compared to in-house teams.
-            </p>
+            <EditableContent
+              blockId="home-cta-title"
+              blockType="heading"
+              tag="h2"
+              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight"
+            >
+              {getHome('home-cta-title', 'Ready to scale your business?')}
+            </EditableContent>
+            <EditableContent
+              blockId="home-cta-description"
+              blockType="paragraph"
+              tag="p"
+              className="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed max-w-3xl mx-auto"
+            >
+              {getHome('home-cta-description', 'Choose an automation solution that boosts your efficiency, fuels company growth with top-notch performance, and scales your business with high conversion rates. All at lower costs.')}
+            </EditableContent>
+            <EditableContent
+              blockId="home-cta-note"
+              blockType="paragraph"
+              tag="p"
+              className="text-lg text-gray-400 mb-10"
+            >
+              {getHome('home-cta-note', 'Quality results at a better value — 80% ROI increase and save 50% compared to in-house teams.')}
+            </EditableContent>
             <Link
               to="/contact-us"
               className="inline-flex items-center justify-center bg-white text-gray-900 px-10 py-5 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all shadow-2xl hover:shadow-3xl focus:outline-none focus:ring-4 focus:ring-white/50"
             >
-              Let's Talk!
+              <EditableContent
+                blockId="home-cta-button"
+                blockType="text"
+                tag="span"
+              >
+                {getHome('home-cta-button', "Let's Talk!")}
+              </EditableContent>
               <ArrowRight className="ml-2 h-6 w-6" />
             </Link>
           </motion.div>

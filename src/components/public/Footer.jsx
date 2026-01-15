@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import EditableContent from '../admin/EditableContent';
+import { usePageContent, getBlockContent } from '../../hooks/usePageContent';
 
 const Footer = () => {
   const [logoError, setLogoError] = useState(false);
+  const { content: commonContent } = usePageContent('common');
+  const getCommon = (key, fallback) => getBlockContent(commonContent, key) || fallback;
   const services = [
     'Trust & Safety',
   ];
@@ -21,10 +25,24 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-12">
           <div>
-            <span className="text-xs text-gray-400 font-medium mb-4 block">UK Outsourcing Partners</span>
-            <p className="text-gray-400 mb-6">
-              Premium outsourcing services that help businesses scale without losing their identity.
-            </p>
+            <EditableContent
+              blockId="common-footer-kicker"
+              blockType="text"
+              tag="span"
+              page="common"
+              className="text-xs text-gray-400 font-medium mb-4 block"
+            >
+              {getCommon('common-footer-kicker', 'UK Outsourcing Partners')}
+            </EditableContent>
+            <EditableContent
+              blockId="common-footer-description"
+              blockType="paragraph"
+              tag="p"
+              page="common"
+              className="text-gray-400 mb-6"
+            >
+              {getCommon('common-footer-description', 'Premium outsourcing services that help businesses scale without losing their identity.')}
+            </EditableContent>
             <div className="flex space-x-4">
               {socialLinks.map((social) => (
                 <a
@@ -46,7 +64,14 @@ const Footer = () => {
                   to="/ask-sam"
                   className="text-white font-semibold mb-4 block hover:text-white transition-colors text-center"
                 >
-                  {service}
+                  <EditableContent
+                    blockId="common-footer-service-primary"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-footer-service-primary', service)}
+                  </EditableContent>
                 </Link>
                 <Link to="/" className="block mb-4 flex justify-center">
                   {!logoError ? (
@@ -58,9 +83,15 @@ const Footer = () => {
                       onError={() => setLogoError(true)}
                     />
                   ) : (
-                    <span className="text-2xl font-bold text-white block">
-                      Tabalt
-                    </span>
+                    <EditableContent
+                      blockId="common-footer-logo-text"
+                      blockType="text"
+                      tag="span"
+                      page="common"
+                      className="text-2xl font-bold text-white block"
+                    >
+                      {getCommon('common-footer-logo-text', 'Tabalt')}
+                    </EditableContent>
                   )}
                 </Link>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-4">
@@ -68,13 +99,27 @@ const Footer = () => {
                     to="/agent/login"
                     className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
                   >
-                    Agent Login
+                    <EditableContent
+                      blockId="common-footer-agent-login"
+                      blockType="text"
+                      tag="span"
+                      page="common"
+                    >
+                      {getCommon('common-footer-agent-login', 'Agent Login')}
+                    </EditableContent>
                   </Link>
                   <Link
                     to="/admin/login"
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   >
-                    Admin Login
+                    <EditableContent
+                      blockId="common-footer-admin-login"
+                      blockType="text"
+                      tag="span"
+                      page="common"
+                    >
+                      {getCommon('common-footer-admin-login', 'Admin Login')}
+                    </EditableContent>
                   </Link>
                 </div>
               </React.Fragment>
@@ -82,29 +127,66 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-white font-semibold mb-4">Contact Us</h3>
+            <EditableContent
+              blockId="common-footer-contact-title"
+              blockType="heading"
+              tag="h3"
+              page="common"
+              className="text-white font-semibold mb-4"
+            >
+              {getCommon('common-footer-contact-title', 'Contact Us')}
+            </EditableContent>
             <div className="space-y-3 text-sm">
               <p className="text-gray-400">
                 <a href="mailto:info@tabalt.co.uk" className="text-white hover:text-blue-400 transition-colors">
-                  info@tabalt.co.uk
+                  <EditableContent
+                    blockId="common-footer-email"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-footer-email', 'info@tabalt.co.uk')}
+                  </EditableContent>
                 </a>
               </p>
               <p className="text-gray-400">
                 <a href="tel:+447448614160" className="text-white hover:text-blue-400 transition-colors">
-                  +44 7448614160
+                  <EditableContent
+                    blockId="common-footer-phone"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-footer-phone', '+44 7448614160')}
+                  </EditableContent>
                 </a>
               </p>
               <p className="text-gray-400">
-                3 Herron Court, Bromley,<br />
-                London, United Kingdom
+                <EditableContent
+                  blockId="common-footer-address"
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                  className="whitespace-pre-line"
+                >
+                  {getCommon('common-footer-address', '3 Herron Court, Bromley,\nLondon, United Kingdom')}
+                </EditableContent>
               </p>
             </div>
             <div className="mt-6">
-              <h4 className="text-white font-semibold mb-3 text-sm">Stay Connected</h4>
+              <EditableContent
+                blockId="common-footer-stay-connected"
+                blockType="text"
+                tag="h4"
+                page="common"
+                className="text-white font-semibold mb-3 text-sm"
+              >
+                {getCommon('common-footer-stay-connected', 'Stay Connected')}
+              </EditableContent>
               <form className="space-y-3">
                 <input
                   type="email"
-                  placeholder="Your email"
+                  placeholder={getCommon('common-footer-email-placeholder', 'Your email')}
                   className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   aria-label="Email address"
                 />
@@ -112,7 +194,14 @@ const Footer = () => {
                   type="submit"
                   className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  Subscribe
+                  <EditableContent
+                    blockId="common-footer-subscribe"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-footer-subscribe', 'Subscribe')}
+                  </EditableContent>
                 </button>
               </form>
             </div>
@@ -122,17 +211,45 @@ const Footer = () => {
         <div className="border-t border-gray-800 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-gray-400">
-              © {new Date().getFullYear()} Tabalt Ltd. All rights reserved.
+              <EditableContent
+                blockId="common-footer-copyright"
+                blockType="text"
+                tag="span"
+                page="common"
+              >
+                {getCommon('common-footer-copyright', `© ${new Date().getFullYear()} Tabalt Ltd. All rights reserved.`)}
+              </EditableContent>
             </div>
             <div className="flex flex-wrap justify-center md:justify-end space-x-6 text-sm">
               <Link to="/terms-of-service" className="hover:text-white transition-colors">
-                Terms of Service
+                <EditableContent
+                  blockId="common-footer-terms"
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                >
+                  {getCommon('common-footer-terms', 'Terms of Service')}
+                </EditableContent>
               </Link>
               <Link to="/privacy-policy" className="hover:text-white transition-colors">
-                Privacy Policy
+                <EditableContent
+                  blockId="common-footer-privacy"
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                >
+                  {getCommon('common-footer-privacy', 'Privacy Policy')}
+                </EditableContent>
               </Link>
               <Link to="/data-deletion" className="hover:text-white transition-colors">
-                Data Deletion
+                <EditableContent
+                  blockId="common-footer-data-deletion"
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                >
+                  {getCommon('common-footer-data-deletion', 'Data Deletion')}
+                </EditableContent>
               </Link>
             </div>
           </div>

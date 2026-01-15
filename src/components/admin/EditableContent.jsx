@@ -9,7 +9,8 @@ import { useLocation } from 'react-router-dom';
  * EditableContent Component
  * Makes any text content editable for admin users
  * 
- * @param {string} blockId - Unique identifier for this content block
+ * @param {string} blockId - Unique identifier for this content block (legacy alias for contentKey)
+ * @param {string} contentKey - Unique identifier for this content block
  * @param {string} blockType - Type of content (heading, paragraph, text, etc.)
  * @param {string} children - The text content to display/edit
  * @param {string} className - Additional CSS classes
@@ -17,7 +18,10 @@ import { useLocation } from 'react-router-dom';
  * @param {object} metadata - Additional metadata for the content block
  */
 const EditableContent = ({ 
-  blockId, 
+  blockId,
+  contentKey,
+  page,
+  section = '',
   blockType = 'text', 
   children, 
   className = '', 
@@ -65,53 +69,37 @@ const EditableContent = ({
       return;
     }
 
+    const resolvedContentKey = contentKey || blockId;
+    if (!resolvedContentKey) {
+      setError('Missing content key');
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
     try {
       // Get current page path
-      const pagePath = location.pathname === '/' ? 'home' : location.pathname.replace(/^\//, '').replace(/\//g, '-');
-      
-      // Get existing content for this page
-      const existingResponse = await api.get(`/page-content/${pagePath}`);
-      const existingContent = existingResponse.data.content;
-      
-      // Prepare content blocks
-      let contentBlocks = existingContent?.contentBlocks || [];
-      
-      // Find if this block already exists
-      const blockIndex = contentBlocks.findIndex(block => block.blockId === blockId);
-      
-      const blockData = {
-        blockId,
+      const pagePath = page || (location.pathname === '/' ? 'home' : location.pathname.replace(/^\//, '').replace(/\//g, '-'));
+
+      const response = await api.put('/text-content', {
+        contentKey: resolvedContentKey,
+        page: pagePath,
+        section: section || metadata.section || '',
+        textValue: content.trim(),
         blockType,
-        content: content.trim(),
-        htmlContent: content,
         metadata: {
           ...metadata,
           tag,
           className,
         },
-      };
-
-      if (blockIndex >= 0) {
-        // Update existing block
-        contentBlocks[blockIndex] = blockData;
-      } else {
-        // Add new block
-        contentBlocks.push(blockData);
-      }
-
-      // Save to backend
-      const response = await api.put(`/page-content/${pagePath}`, {
-        contentBlocks,
       });
 
       if (response.data.success) {
         setIsEditing(false);
         // Optionally trigger a page refresh or update parent component
         window.dispatchEvent(new CustomEvent('contentUpdated', { 
-          detail: { blockId, content: content.trim() } 
+          detail: { blockId: resolvedContentKey, content: content.trim() } 
         }));
       } else {
         setError(response.data.message || 'Failed to save content');
@@ -195,6 +183,8 @@ const EditableContent = ({
   // Handle click on the content itself when in edit mode
   const handleContentClick = (e) => {
     if (isAdmin && isEditMode && !isEditing) {
+      e.preventDefault();
+      e.stopPropagation();
       // Don't trigger if clicking the edit button
       if (!e.target.closest('.edit-button')) {
         handleEdit();
@@ -236,6 +226,7 @@ const EditableContent = ({
         <button
           onClick={(e) => {
             e.stopPropagation();
+            e.preventDefault();
             handleEdit();
           }}
           className="edit-button"

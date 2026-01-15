@@ -6,7 +6,7 @@ import api from '../utils/axios';
  * Custom hook to fetch and manage page content
  * @returns {object} { content, loading, error, refresh }
  */
-export const usePageContent = () => {
+export const usePageContent = (pageOverride = null) => {
   const location = useLocation();
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,18 +17,18 @@ export const usePageContent = () => {
       setLoading(true);
       setError(null);
       
-      const pagePath = location.pathname === '/' ? 'home' : location.pathname.replace(/^\//, '').replace(/\//g, '-');
-      const response = await api.get(`/page-content/${pagePath}`);
-      
+      const pagePath = pageOverride || (location.pathname === '/' ? 'home' : location.pathname.replace(/^\//, '').replace(/\//g, '-'));
+      const response = await api.get(`/text-content/page/${pagePath}`);
+
       if (response.data.success) {
-        setContent(response.data.content);
+        setContent(response.data.content || []);
       } else {
-        setContent(null);
+        setContent([]);
       }
     } catch (err) {
       console.error('Error fetching page content:', err);
       setError(err.response?.data?.message || 'Failed to load page content');
-      setContent(null);
+      setContent([]);
     } finally {
       setLoading(false);
     }
@@ -47,7 +47,7 @@ export const usePageContent = () => {
     return () => {
       window.removeEventListener('contentUpdated', handleContentUpdate);
     };
-  }, [location.pathname]);
+  }, [location.pathname, pageOverride]);
 
   return { content, loading, error, refresh: fetchContent };
 };
@@ -59,10 +59,10 @@ export const usePageContent = () => {
  * @returns {string|null} The content for the block or null if not found
  */
 export const getBlockContent = (pageContent, blockId) => {
-  if (!pageContent || !pageContent.contentBlocks) {
+  if (!pageContent || !Array.isArray(pageContent)) {
     return null;
   }
-  
-  const block = pageContent.contentBlocks.find(b => b.blockId === blockId);
-  return block ? block.content : null;
+
+  const block = pageContent.find((b) => b.contentKey === blockId || b.blockId === blockId);
+  return block ? (block.textValue ?? block.content) : null;
 };
