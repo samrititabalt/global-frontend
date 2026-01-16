@@ -80,6 +80,9 @@ import MergeSpreadsheetsPro from './pages/solutions/MergeSpreadsheetsPro';
 import Forecasts from './pages/solutions/Forecasts';
 import LinkedInHelper from './pages/solutions/LinkedInHelper';
 import LinkedInHelperPro from './pages/solutions/LinkedInHelperPro';
+import LinkedInHelperDashboard from './pages/linkedin-helper/Dashboard';
+import LinkedInHelperConnectAccount from './pages/linkedin-helper/ConnectAccount';
+import LinkedInHelperInbox from './pages/linkedin-helper/Inbox';
 import ErrorBoundary from './components/ErrorBoundary';
 import RiskFraud from './pages/solutions/RiskFraud';
 import Hiring from './pages/solutions/Hiring';
@@ -178,6 +181,31 @@ function App() {
                   <ProAccessGuard requiredRole="customer">
                     <ErrorBoundary><LinkedInHelperPro /></ErrorBoundary>
                   </ProAccessGuard>
+                </ProtectedRoute>
+              }
+            />
+            {/* LinkedIn Helper Routes */}
+            <Route
+              path="/linkedin-helper"
+              element={
+                <ProtectedRoute role="customer">
+                  <LinkedInHelperDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/linkedin-helper/accounts/connect"
+              element={
+                <ProtectedRoute role="customer">
+                  <LinkedInHelperConnectAccount />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/linkedin-helper/accounts/:accountId/inbox"
+              element={
+                <ProtectedRoute role="customer">
+                  <LinkedInHelperInbox />
                 </ProtectedRoute>
               }
             />
