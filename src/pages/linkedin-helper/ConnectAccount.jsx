@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Linkedin, AlertTriangle, Shield, LoaderIcon, Download, CheckCircle2 } from 'lucide-react';
+import { Linkedin, AlertTriangle, Shield, LoaderIcon, CheckCircle2, Monitor, RefreshCw } from 'lucide-react';
 import api from '../../utils/axios';
 import Loader from '../../components/Loader';
 
 const ConnectAccount = () => {
   const navigate = useNavigate();
-  const [hasExtension, setHasExtension] = useState(false);
-  const [extensionInstalled, setExtensionInstalled] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
+  const [loginStatus, setLoginStatus] = useState('idle'); // idle, waiting, checking, logged_in, error
   const [formData, setFormData] = useState({
     proxy: {
       host: '',
@@ -20,43 +20,36 @@ const ConnectAccount = () => {
   const [consentAccepted, setConsentAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [profileInfo, setProfileInfo] = useState(null);
 
-  // Check if extension is installed
+  // Poll for login status
   useEffect(() => {
-    // Check if we're in a browser that supports extensions
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      setHasExtension(true);
-      
-      // Try to detect extension by attempting to send a message
-      // Extension ID will be set after installation
-      const checkExtension = () => {
-        // Try common extension detection methods
-        const extensionId = localStorage.getItem('linkedinHelperExtensionId');
-        if (extensionId) {
-          try {
-            chrome.runtime.sendMessage(extensionId, { action: 'ping' }, (response) => {
-              if (chrome.runtime.lastError) {
-                // Extension not found, but chrome.runtime exists
-                setExtensionInstalled(false);
-              } else if (response) {
-                setExtensionInstalled(true);
-              }
-            });
-          } catch (e) {
-            setExtensionInstalled(false);
-          }
-        } else {
-          // No extension ID stored, show installation instructions
-          setExtensionInstalled(false);
-        }
-      };
-      
-      checkExtension();
-    }
-  }, []);
+    if (!sessionId || loginStatus === 'logged_in' || loginStatus === 'error') return;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    const checkStatus = async () => {
+      try {
+        const response = await api.get(`/linkedin-helper/accounts/login-session/${sessionId}/status`);
+        const status = response.data;
+
+        if (status.status === 'logged_in' && status.cookies === 'captured') {
+          setLoginStatus('logged_in');
+          setProfileInfo(status.profileInfo);
+        } else if (status.status === 'error') {
+          setLoginStatus('error');
+          setError(status.error || 'Login failed');
+        } else {
+          setLoginStatus('waiting');
+        }
+      } catch (err) {
+        console.error('Error checking status:', err);
+      }
+    };
+
+    const interval = setInterval(checkStatus, 2000); // Check every 2 seconds
+    return () => clearInterval(interval);
+  }, [sessionId, loginStatus]);
+
+  const handleStartLogin = async () => {
     setError('');
 
     if (!consentAccepted) {
@@ -65,10 +58,32 @@ const ConnectAccount = () => {
     }
 
     setLoading(true);
+    setLoginStatus('waiting');
+    try {
+      const response = await api.post('/linkedin-helper/accounts/login-session', {
+        consentAccepted: true
+      });
+      
+      if (response.data.success) {
+        setSessionId(response.data.sessionId);
+        setLoginStatus('waiting');
+        // Browser window should open automatically
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to start login session');
+      setLoginStatus('error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConnect = async () => {
+    if (!sessionId) return;
+
+    setLoading(true);
     try {
       const payload = {
-        consentAccepted: true,
-        connectionMethod: 'extension'
+        sessionId
       };
 
       if (formData.proxy.host && formData.proxy.port) {
@@ -78,19 +93,9 @@ const ConnectAccount = () => {
         };
       }
 
-      const response = await api.post('/linkedin-helper/accounts', payload);
+      const response = await api.post('/linkedin-helper/accounts/connect', payload);
       
       if (response.data.success) {
-        // Store auth token in extension if available
-        if (extensionInstalled && window.chrome?.runtime) {
-          const token = localStorage.getItem('token');
-          if (token) {
-            chrome.runtime.sendMessage('linkedin-helper-extension-id', {
-              action: 'setAuthToken',
-              token
-            });
-          }
-        }
         navigate('/solutions/linkedin-helper/dashboard');
       }
     } catch (err) {
@@ -141,41 +146,66 @@ const ConnectAccount = () => {
             </div>
           </div>
 
-          {/* Extension Installation */}
+          {/* Browser Session Login */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
             <div className="flex items-start gap-4 mb-4">
-              <Download className="h-6 w-6 text-blue-600 mt-1 flex-shrink-0" />
+              <Monitor className="h-6 w-6 text-blue-600 mt-1 flex-shrink-0" />
               <div className="flex-1">
-                <h3 className="font-semibold text-blue-900 mb-2">Install Browser Extension</h3>
+                <h3 className="font-semibold text-blue-900 mb-2">Secure Browser Login</h3>
                 <p className="text-sm text-blue-800 mb-4">
-                  Connect your LinkedIn account securely using our browser extension. No need to share cookies!
+                  We'll open a secure browser window where you can log in to LinkedIn normally. 
+                  Your session will be captured securely - no passwords or cookies shared!
                 </p>
                 
-                {extensionInstalled ? (
-                  <div className="flex items-center gap-2 text-green-700 bg-green-100 px-4 py-2 rounded-lg">
-                    <CheckCircle2 className="h-5 w-5" />
-                    <span className="font-medium">Extension is installed and ready!</span>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="bg-white rounded-lg p-4 border border-blue-200">
-                      <h4 className="font-semibold text-blue-900 mb-2">Installation Steps:</h4>
-                      <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
-                        <li>Download the extension from the link below</li>
-                        <li>Open Chrome/Edge and go to <code className="bg-blue-100 px-1 rounded">chrome://extensions</code></li>
-                        <li>Enable "Developer mode" (top right)</li>
-                        <li>Click "Load unpacked" and select the extension folder</li>
-                        <li>Return here and click "Connect Account"</li>
-                      </ol>
+                {loginStatus === 'idle' && (
+                  <button
+                    onClick={handleStartLogin}
+                    disabled={loading || !consentAccepted}
+                    className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Monitor className="h-5 w-5" />
+                    {loading ? 'Opening browser...' : 'Open Login Browser'}
+                  </button>
+                )}
+
+                {loginStatus === 'waiting' && (
+                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                    <div className="flex items-center gap-3 mb-3">
+                      <LoaderIcon className="h-5 w-5 text-blue-600 animate-spin" />
+                      <span className="font-medium text-blue-900">Waiting for login...</span>
                     </div>
-                    <a
-                      href="/linkedin-helper-extension.zip"
-                      download
-                      className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    <p className="text-sm text-blue-800">
+                      A browser window has opened. Please log in to LinkedIn in that window. 
+                      We'll detect when you're logged in automatically.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setLoginStatus('checking');
+                        // Force status check
+                      }}
+                      className="mt-3 inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
                     >
-                      <Download className="h-5 w-5" />
-                      Download Extension
-                    </a>
+                      <RefreshCw className="h-4 w-4" />
+                      Check Status
+                    </button>
+                  </div>
+                )}
+
+                {loginStatus === 'logged_in' && profileInfo && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 text-green-700 mb-2">
+                      <CheckCircle2 className="h-5 w-5" />
+                      <span className="font-medium">Login Successful!</span>
+                    </div>
+                    <p className="text-sm text-green-800">
+                      Logged in as: <strong>{profileInfo.name}</strong>
+                    </p>
+                  </div>
+                )}
+
+                {loginStatus === 'error' && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-sm text-red-800">{error || 'Login failed. Please try again.'}</p>
                   </div>
                 )}
               </div>
@@ -188,14 +218,7 @@ const ConnectAccount = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {!extensionInstalled && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-sm text-yellow-800">
-                  <strong>Note:</strong> Please install the browser extension first to connect your account securely.
-                </p>
-              </div>
-            )}
+          <form onSubmit={(e) => { e.preventDefault(); handleConnect(); }} className="space-y-6">
 
             {/* Proxy Settings (Optional) */}
             <div className="border-t border-gray-200 pt-6">
@@ -257,7 +280,7 @@ const ConnectAccount = () => {
             <div className="flex items-center gap-4 pt-4">
               <button
                 type="submit"
-                disabled={loading || !consentAccepted}
+                disabled={loading || !consentAccepted || loginStatus !== 'logged_in'}
                 className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
@@ -268,7 +291,7 @@ const ConnectAccount = () => {
                 ) : (
                   <>
                     <Shield className="h-5 w-5" />
-                    Connect Account
+                    Complete Connection
                   </>
                 )}
               </button>
