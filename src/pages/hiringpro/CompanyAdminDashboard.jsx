@@ -431,13 +431,33 @@ const CompanyAdminDashboard = () => {
               </button>
               {offerContent && (
                 <div className="space-y-3 pt-4 border-t border-gray-200">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Generated Content</label>
-                  <textarea
-                    value={offerContent}
-                    onChange={(e) => setOfferContent(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    rows={10}
-                  />
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Edit Offer Letter Content
+                    </label>
+                    <span className="text-xs text-gray-500">
+                      Use <strong>**text**</strong> for bold formatting
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <textarea
+                      value={offerContent}
+                      onChange={(e) => setOfferContent(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors font-mono text-sm leading-relaxed resize-y"
+                      rows={16}
+                      placeholder="Edit the offer letter content here..."
+                      style={{ minHeight: '400px' }}
+                    />
+                    <div className="absolute bottom-3 right-3 text-xs text-gray-400">
+                      {offerContent.length} characters
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs text-blue-800">
+                      <strong>Tip:</strong> Use <code className="bg-blue-100 px-1 rounded">**text**</code> to make text bold in the PDF. 
+                      Headings will be automatically bold. Keep content concise to fit on one page.
+                    </p>
+                  </div>
                   <button
                     onClick={handleSaveOffer}
                     className="w-full rounded-lg bg-indigo-600 text-white px-4 py-3 font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
