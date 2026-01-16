@@ -37,32 +37,14 @@ const CompanyAdminDashboard = () => {
     return new Blob([response.data], { type: response.headers?.['content-type'] || 'application/octet-stream' });
   };
 
-  const handleViewDocument = async (documentId) => {
-    setError('');
-    const previewWindow = window.open('', '_blank', 'noopener,noreferrer');
-    if (!previewWindow) {
-      setError('Pop-up blocked. Please allow pop-ups to view the document.');
-      return;
-    }
-    try {
-      const blob = await fetchDocumentBlob(documentId, 'view');
-      const url = window.URL.createObjectURL(blob);
-      previewWindow.location = url;
-      setTimeout(() => window.URL.revokeObjectURL(url), 2000);
-    } catch (err) {
-      previewWindow.close();
-      setError(err.response?.data?.message || 'Unable to open document');
-    }
-  };
-
-  const handleDownloadDocument = async (documentId, title) => {
+  const handleDownloadDocument = async (documentId, fileName) => {
     setError('');
     try {
       const blob = await fetchDocumentBlob(documentId, 'download');
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${(title || 'document').replace(/\s+/g, '-')}`;
+      link.download = `${(fileName || 'document').replace(/\s+/g, '-')}`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -450,14 +432,7 @@ const CompanyAdminDashboard = () => {
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => handleViewDocument(doc._id)}
-                          className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
-                        >
-                          View
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDownloadDocument(doc._id, doc.title)}
+                          onClick={() => handleDownloadDocument(doc._id, doc.fileName || doc.title)}
                           className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
                         >
                           Download
