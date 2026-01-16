@@ -613,13 +613,6 @@ const EmployeeDashboard = () => {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => handleViewOfferLetter(letter._id)}
-                        className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
-                      >
-                        View
-                      </button>
-                      <button
-                        type="button"
                         onClick={() => handleDownloadOfferLetter(letter._id, letter.candidateName)}
                         className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
                       >
