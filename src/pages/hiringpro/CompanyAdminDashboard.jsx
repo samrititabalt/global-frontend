@@ -1,6 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import api from '../../utils/axios';
 import { useAuth } from '../../context/AuthContext';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import Loader from '../../components/Loader';
 import { 
   FileText, 
   Users, 
@@ -16,7 +21,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  Loader
+  Loader as LoaderIcon
 } from 'lucide-react';
 
 const CompanyAdminDashboard = () => {
@@ -44,26 +49,42 @@ const CompanyAdminDashboard = () => {
   const [error, setError] = useState('');
   const [offerActionError, setOfferActionError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [generatingOffer, setGeneratingOffer] = useState(false);
+  const [savingOffer, setSavingOffer] = useState(false);
+  const [loadingData, setLoadingData] = useState(false);
   const [autoLoggingIn, setAutoLoggingIn] = useState(false);
   const [viewingOffer, setViewingOffer] = useState(null);
   const [viewingOfferUrl, setViewingOfferUrl] = useState(null);
-  const [loadingOffer, setLoadingOffer] = useState(false);
+  const [loadingOfferView, setLoadingOfferView] = useState(false);
+  const [downloadingOffer, setDownloadingOffer] = useState(null);
+  const [deletingOffer, setDeletingOffer] = useState(null);
+  const [updatingTimesheet, setUpdatingTimesheet] = useState(null);
+  const [updatingHoliday, setUpdatingHoliday] = useState(null);
+  const [updatingExpense, setUpdatingExpense] = useState(null);
+  const [loadingEmployeeDetail, setLoadingEmployeeDetail] = useState(null);
 
   const loadCompanyData = async (authToken) => {
-    const [profile, employeeRes, offerRes, timesheetRes, holidayRes, expenseRes] = await Promise.all([
-      api.get('/hiring-pro/company/profile', { headers: { Authorization: `Bearer ${authToken}` } }),
-      api.get('/hiring-pro/company/employees', { headers: { Authorization: `Bearer ${authToken}` } }),
-      api.get('/hiring-pro/company/offer-letters', { headers: { Authorization: `Bearer ${authToken}` } }),
-      api.get('/hiring-pro/company/timesheets', { headers: { Authorization: `Bearer ${authToken}` } }),
-      api.get('/hiring-pro/company/holidays', { headers: { Authorization: `Bearer ${authToken}` } }),
-      api.get('/hiring-pro/company/expenses', { headers: { Authorization: `Bearer ${authToken}` } })
-    ]);
-    setCompany(profile.data.company);
-    setEmployees(employeeRes.data.employees || []);
-    setOfferLetters(offerRes.data.offerLetters || []);
-    setTimesheets(timesheetRes.data.timesheets || []);
-    setHolidays(holidayRes.data.holidays || []);
-    setExpenses(expenseRes.data.expenses || []);
+    setLoadingData(true);
+    try {
+      const [profile, employeeRes, offerRes, timesheetRes, holidayRes, expenseRes] = await Promise.all([
+        api.get('/hiring-pro/company/profile', { headers: { Authorization: `Bearer ${authToken}` } }),
+        api.get('/hiring-pro/company/employees', { headers: { Authorization: `Bearer ${authToken}` } }),
+        api.get('/hiring-pro/company/offer-letters', { headers: { Authorization: `Bearer ${authToken}` } }),
+        api.get('/hiring-pro/company/timesheets', { headers: { Authorization: `Bearer ${authToken}` } }),
+        api.get('/hiring-pro/company/holidays', { headers: { Authorization: `Bearer ${authToken}` } }),
+        api.get('/hiring-pro/company/expenses', { headers: { Authorization: `Bearer ${authToken}` } })
+      ]);
+      setCompany(profile.data.company);
+      setEmployees(employeeRes.data.employees || []);
+      setOfferLetters(offerRes.data.offerLetters || []);
+      setTimesheets(timesheetRes.data.timesheets || []);
+      setHolidays(holidayRes.data.holidays || []);
+      setExpenses(expenseRes.data.expenses || []);
+    } catch (error) {
+      console.error('Error loading company data:', error);
+    } finally {
+      setLoadingData(false);
+    }
   };
 
   const handleLogin = async (e) => {
@@ -87,22 +108,45 @@ const CompanyAdminDashboard = () => {
 
   const handleGenerateOffer = async () => {
     setError('');
+    setGeneratingOffer(true);
     try {
       const response = await api.post('/hiring-pro/company/offer-letter/generate', offerForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setOfferContent(response.data.content || '');
+      // Convert plain text to HTML for WYSIWYG editor
+      const htmlContent = response.data.content 
+        ? response.data.content.split('\n').map(line => {
+            // Convert **bold** to <strong>bold</strong>
+            let htmlLine = line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            // Wrap headings in <h3> tags
+            if (/^[A-Z][A-Z\s]+:?$/.test(line.trim()) || /^(Offer Overview|Compensation|Joining Details|Sign-off|Acceptance|Best regards)/i.test(line.trim())) {
+              htmlLine = `<h3>${htmlLine.replace(/:/g, '')}</h3>`;
+            } else {
+              htmlLine = `<p>${htmlLine}</p>`;
+            }
+            return htmlLine;
+          }).join('')
+        : '';
+      setOfferContent(htmlContent);
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to generate offer letter');
+    } finally {
+      setGeneratingOffer(false);
     }
   };
 
   const handleSaveOffer = async () => {
     setError('');
+    setSavingOffer(true);
     try {
+      // Convert HTML back to plain text for backend
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = offerContent;
+      const plainText = tempDiv.textContent || tempDiv.innerText || '';
+      
       const response = await api.post('/hiring-pro/company/offer-letter', {
         ...offerForm,
-        content: offerContent
+        content: plainText
       }, { headers: { Authorization: `Bearer ${token}` } });
       setOfferLetters(prev => [response.data.offerLetter, ...prev]);
       setOfferContent('');
@@ -116,6 +160,8 @@ const CompanyAdminDashboard = () => {
       });
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to save offer letter');
+    } finally {
+      setSavingOffer(false);
     }
   };
 
@@ -123,6 +169,7 @@ const CompanyAdminDashboard = () => {
     const confirmDelete = window.confirm('Delete this offer letter? This cannot be undone.');
     if (!confirmDelete) return;
     setError('');
+    setDeletingOffer(offerId);
     try {
       await api.delete(`/hiring-pro/company/offer-letters/${offerId}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -130,6 +177,8 @@ const CompanyAdminDashboard = () => {
       setOfferLetters(prev => prev.filter(letter => letter._id !== offerId));
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to delete offer letter');
+    } finally {
+      setDeletingOffer(null);
     }
   };
 
@@ -143,7 +192,7 @@ const CompanyAdminDashboard = () => {
 
   const handleViewOffer = async (offerId) => {
     setOfferActionError('');
-    setLoadingOffer(true);
+    setLoadingOfferView(true);
     setViewingOffer(offerId);
     try {
       const blob = await fetchOfferPdf(offerId);
@@ -153,7 +202,7 @@ const CompanyAdminDashboard = () => {
       setOfferActionError(err.response?.data?.message || 'Unable to open offer letter');
       setViewingOffer(null);
     } finally {
-      setLoadingOffer(false);
+      setLoadingOfferView(false);
     }
   };
 
@@ -168,6 +217,7 @@ const CompanyAdminDashboard = () => {
 
   const handleDownloadOffer = async (offerId, candidateName) => {
     setOfferActionError('');
+    setDownloadingOffer(offerId);
     try {
       const blob = await fetchOfferPdf(offerId);
       const url = window.URL.createObjectURL(blob);
@@ -180,10 +230,13 @@ const CompanyAdminDashboard = () => {
       setTimeout(() => window.URL.revokeObjectURL(url), 1000);
     } catch (err) {
       setOfferActionError(err.response?.data?.message || 'Unable to download offer letter');
+    } finally {
+      setDownloadingOffer(null);
     }
   };
 
   const handleEmployeeDetail = async (employeeId) => {
+    setLoadingEmployeeDetail(employeeId);
     try {
       const response = await api.get(`/hiring-pro/company/employees/${employeeId}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -191,10 +244,13 @@ const CompanyAdminDashboard = () => {
       setEmployeeDetail(response.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to load employee profile');
+    } finally {
+      setLoadingEmployeeDetail(null);
     }
   };
 
   const handleTimesheetUpdate = async (timesheetId, updates) => {
+    setUpdatingTimesheet(timesheetId);
     try {
       const response = await api.put(`/hiring-pro/company/timesheets/${timesheetId}`, updates, {
         headers: { Authorization: `Bearer ${token}` }
@@ -202,10 +258,13 @@ const CompanyAdminDashboard = () => {
       setTimesheets(prev => prev.map(item => item._id === timesheetId ? response.data.timesheet : item));
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to update timesheet');
+    } finally {
+      setUpdatingTimesheet(null);
     }
   };
 
   const handleHolidayUpdate = async (holidayId, updates) => {
+    setUpdatingHoliday(holidayId);
     try {
       const response = await api.put(`/hiring-pro/company/holidays/${holidayId}`, updates, {
         headers: { Authorization: `Bearer ${token}` }
@@ -213,10 +272,13 @@ const CompanyAdminDashboard = () => {
       setHolidays(prev => prev.map(item => item._id === holidayId ? response.data.holiday : item));
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to update holiday');
+    } finally {
+      setUpdatingHoliday(null);
     }
   };
 
   const handleExpenseUpdate = async (expenseId, updates) => {
+    setUpdatingExpense(expenseId);
     try {
       const response = await api.put(`/hiring-pro/company/expenses/${expenseId}`, updates, {
         headers: { Authorization: `Bearer ${token}` }
@@ -224,6 +286,8 @@ const CompanyAdminDashboard = () => {
       setExpenses(prev => prev.map(item => item._id === expenseId ? response.data.expense : item));
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to update expense');
+    } finally {
+      setUpdatingExpense(null);
     }
   };
 
@@ -282,10 +346,7 @@ const CompanyAdminDashboard = () => {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl border border-gray-200 p-8">
           {autoLoggingIn ? (
-            <div className="flex flex-col items-center justify-center py-10">
-              <Loader className="h-10 w-10 text-indigo-600 animate-spin" />
-              <p className="mt-4 text-sm text-gray-600 font-medium">Opening Hiring Platform...</p>
-            </div>
+            <Loader size="lg" text="Opening Hiring Platform..." />
           ) : (
             <>
               <div className="text-center mb-6">
@@ -328,7 +389,7 @@ const CompanyAdminDashboard = () => {
                 >
                   {loading ? (
                     <>
-                      <Loader className="h-4 w-4 animate-spin" />
+                      <LoaderIcon className="h-4 w-4 animate-spin" />
                       Signing in...
                     </>
                   ) : (
@@ -343,8 +404,31 @@ const CompanyAdminDashboard = () => {
     );
   }
 
+  // Quill editor modules configuration
+  const quillModules = useMemo(() => ({
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['clean']
+    ]
+  }), []);
+
+  if (loadingData && !company) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
+        <Loader size="lg" text="Loading company data..." />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      {loadingData && (
+        <div className="fixed inset-0 z-40 bg-white/50 backdrop-blur-sm flex items-center justify-center">
+          <Loader size="lg" text="Refreshing data..." />
+        </div>
+      )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -388,19 +472,56 @@ const CompanyAdminDashboard = () => {
             )}
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {['candidateName', 'roleTitle', 'startDate', 'salaryPackage'].map(field => (
-                  <div key={field}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {field.replace(/([A-Z])/g, ' $1').trim()}
-                    </label>
-                    <input
-                      value={offerForm[field]}
-                      onChange={(e) => setOfferForm(prev => ({ ...prev, [field]: e.target.value }))}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                      placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
-                    />
-                  </div>
-                ))}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Candidate Name
+                  </label>
+                  <input
+                    value={offerForm.candidateName}
+                    onChange={(e) => setOfferForm(prev => ({ ...prev, candidateName: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    placeholder="Enter candidate name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Role Title
+                  </label>
+                  <input
+                    value={offerForm.roleTitle}
+                    onChange={(e) => setOfferForm(prev => ({ ...prev, roleTitle: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    placeholder="Enter role title"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Start Date
+                  </label>
+                  <DatePicker
+                    selected={offerForm.startDate ? new Date(offerForm.startDate) : null}
+                    onChange={(date) => setOfferForm(prev => ({ 
+                      ...prev, 
+                      startDate: date ? date.toISOString().split('T')[0] : '' 
+                    }))}
+                    dateFormat="dd/MM/yyyy"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    placeholderText="Select start date"
+                    minDate={new Date()}
+                    wrapperClassName="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Salary Package
+                  </label>
+                  <input
+                    value={offerForm.salaryPackage}
+                    onChange={(e) => setOfferForm(prev => ({ ...prev, salaryPackage: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    placeholder="Enter salary package"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">CTC Breakdown</label>
@@ -424,10 +545,20 @@ const CompanyAdminDashboard = () => {
               </div>
               <button
                 onClick={handleGenerateOffer}
-                className="w-full rounded-lg bg-gray-900 text-white px-4 py-3 font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                disabled={generatingOffer || !offerForm.candidateName || !offerForm.roleTitle || !offerForm.startDate || !offerForm.salaryPackage}
+                className="w-full rounded-lg bg-gray-900 text-white px-4 py-3 font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FileText className="h-5 w-5" />
-                Generate Offer Letter
+                {generatingOffer ? (
+                  <>
+                    <LoaderIcon className="h-5 w-5 animate-spin" />
+                    <span>Generating...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-5 w-5" />
+                    Generate Offer Letter
+                  </>
+                )}
               </button>
               {offerContent && (
                 <div className="space-y-3 pt-4 border-t border-gray-200">
@@ -435,35 +566,47 @@ const CompanyAdminDashboard = () => {
                     <label className="block text-sm font-medium text-gray-700">
                       Edit Offer Letter Content
                     </label>
-                    <span className="text-xs text-gray-500">
-                      Use <strong>**text**</strong> for bold formatting
-                    </span>
                   </div>
                   <div className="relative">
-                    <textarea
+                    <ReactQuill
+                      theme="snow"
                       value={offerContent}
-                      onChange={(e) => setOfferContent(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors font-mono text-sm leading-relaxed resize-y"
-                      rows={16}
-                      placeholder="Edit the offer letter content here..."
+                      onChange={setOfferContent}
+                      modules={{
+                        toolbar: [
+                          [{ 'header': [1, 2, 3, false] }],
+                          ['bold', 'italic', 'underline'],
+                          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                          ['clean']
+                        ]
+                      }}
+                      formats={['header', 'bold', 'italic', 'underline', 'list']}
+                      className="bg-white rounded-lg"
                       style={{ minHeight: '400px' }}
                     />
-                    <div className="absolute bottom-3 right-3 text-xs text-gray-400">
-                      {offerContent.length} characters
-                    </div>
                   </div>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <p className="text-xs text-blue-800">
-                      <strong>Tip:</strong> Use <code className="bg-blue-100 px-1 rounded">**text**</code> to make text bold in the PDF. 
-                      Headings will be automatically bold. Keep content concise to fit on one page.
+                      <strong>Tip:</strong> Use the toolbar to format your text. Headings, bold text, and lists will be preserved in the PDF. 
+                      Keep content concise to fit on one page.
                     </p>
                   </div>
                   <button
                     onClick={handleSaveOffer}
-                    className="w-full rounded-lg bg-indigo-600 text-white px-4 py-3 font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                    disabled={savingOffer || !offerContent.trim()}
+                    className="w-full rounded-lg bg-indigo-600 text-white px-4 py-3 font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <CheckCircle2 className="h-5 w-5" />
-                    Save Offer Letter
+                    {savingOffer ? (
+                      <>
+                        <LoaderIcon className="h-5 w-5 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-5 w-5" />
+                        Save Offer Letter
+                      </>
+                    )}
                   </button>
                 </div>
               )}
@@ -495,9 +638,17 @@ const CompanyAdminDashboard = () => {
                     </div>
                     <button
                       onClick={() => handleEmployeeDetail(employee._id)}
-                      className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
+                      disabled={loadingEmployeeDetail === employee._id}
+                      className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
-                      View profile
+                      {loadingEmployeeDetail === employee._id ? (
+                        <>
+                          <LoaderIcon className="h-4 w-4 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        'View profile'
+                      )}
                     </button>
                   </div>
                 ))
@@ -556,21 +707,27 @@ const CompanyAdminDashboard = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <input
-                        type="number"
-                        defaultValue={timesheet.hoursWorked}
-                        className="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        onBlur={(e) => handleTimesheetUpdate(timesheet._id, { hoursWorked: e.target.value })}
-                      />
-                      <select
-                        defaultValue={timesheet.status}
-                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        onChange={(e) => handleTimesheetUpdate(timesheet._id, { status: e.target.value })}
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="edited">Edited</option>
-                      </select>
+                      {updatingTimesheet === timesheet._id ? (
+                        <LoaderIcon className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <input
+                            type="number"
+                            defaultValue={timesheet.hoursWorked}
+                            className="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            onBlur={(e) => handleTimesheetUpdate(timesheet._id, { hoursWorked: e.target.value })}
+                          />
+                          <select
+                            defaultValue={timesheet.status}
+                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            onChange={(e) => handleTimesheetUpdate(timesheet._id, { status: e.target.value })}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="edited">Edited</option>
+                          </select>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -608,15 +765,19 @@ const CompanyAdminDashboard = () => {
                         )}
                       </div>
                     </div>
-                    <select
-                      defaultValue={holiday.status}
-                      className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      onChange={(e) => handleHolidayUpdate(holiday._id, { status: e.target.value })}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                    </select>
+                    {updatingHoliday === holiday._id ? (
+                      <LoaderIcon className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <select
+                        defaultValue={holiday.status}
+                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        onChange={(e) => handleHolidayUpdate(holiday._id, { status: e.target.value })}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    )}
                   </div>
                 </div>
               ))
@@ -648,15 +809,19 @@ const CompanyAdminDashboard = () => {
                         <p className="text-sm text-gray-600">£{expense.amount} • {expense.description}</p>
                       </div>
                     </div>
-                    <select
-                      defaultValue={expense.status}
-                      className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      onChange={(e) => handleExpenseUpdate(expense._id, { status: e.target.value })}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                    </select>
+                    {updatingExpense === expense._id ? (
+                      <LoaderIcon className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <select
+                        defaultValue={expense.status}
+                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        onChange={(e) => handleExpenseUpdate(expense._id, { status: e.target.value })}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    )}
                   </div>
                 </div>
               ))
@@ -696,18 +861,38 @@ const CompanyAdminDashboard = () => {
                           <button
                             type="button"
                             onClick={() => handleViewOffer(letter._id)}
-                            className="inline-flex items-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
+                            disabled={loadingOfferView && viewingOffer === letter._id}
+                            className="inline-flex items-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <Eye className="h-4 w-4" />
-                            View
+                            {loadingOfferView && viewingOffer === letter._id ? (
+                              <>
+                                <LoaderIcon className="h-4 w-4 animate-spin" />
+                                Loading...
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-4 w-4" />
+                                View
+                              </>
+                            )}
                           </button>
                           <button
                             type="button"
                             onClick={() => handleDownloadOffer(letter._id, letter.candidateName)}
-                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                            disabled={downloadingOffer === letter._id}
+                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <Download className="h-4 w-4" />
-                            Download
+                            {downloadingOffer === letter._id ? (
+                              <>
+                                <LoaderIcon className="h-4 w-4 animate-spin" />
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="h-4 w-4" />
+                                Download
+                              </>
+                            )}
                           </button>
                         </>
                       ) : (
@@ -715,10 +900,20 @@ const CompanyAdminDashboard = () => {
                       )}
                       <button
                         onClick={() => handleDeleteOffer(letter._id)}
-                        className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 transition-colors"
+                        disabled={deletingOffer === letter._id}
+                        className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
+                        {deletingOffer === letter._id ? (
+                          <>
+                            <LoaderIcon className="h-4 w-4 animate-spin" />
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -743,12 +938,9 @@ const CompanyAdminDashboard = () => {
               </button>
             </div>
             <div className="flex-1 overflow-hidden">
-              {loadingOffer ? (
+              {loadingOfferView ? (
                 <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <Loader className="h-8 w-8 text-indigo-600 animate-spin mx-auto mb-3" />
-                    <p className="text-sm text-gray-600">Loading offer letter...</p>
-                  </div>
+                  <Loader size="lg" text="Loading offer letter..." />
                 </div>
               ) : viewingOfferUrl ? (
                 <iframe
