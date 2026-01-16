@@ -29,41 +29,65 @@ const CompanyAdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [autoLoggingIn, setAutoLoggingIn] = useState(false);
 
-  const getDocumentDownloadUrl = (fileUrl) => {
-    if (!fileUrl) return '';
-    if (fileUrl.includes('/upload/')) {
-      return fileUrl.replace('/upload/', '/upload/fl_attachment/');
-    }
-    return fileUrl;
+  const fetchDocumentBlob = async (documentId, action = 'view') => {
+    const response = await api.get(`/hiring-pro/company/documents/${documentId}/${action}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'blob'
+    });
+    return new Blob([response.data], { type: response.headers?.['content-type'] || 'application/octet-stream' });
   };
 
-  const handleViewDocument = (fileUrl) => {
+  const handleViewDocument = async (documentId) => {
     setError('');
-    if (!fileUrl) {
-      setError('Document file is missing.');
-      return;
-    }
-    const previewWindow = window.open(fileUrl, '_blank', 'noopener,noreferrer');
+    const previewWindow = window.open('', '_blank', 'noopener,noreferrer');
     if (!previewWindow) {
       setError('Pop-up blocked. Please allow pop-ups to view the document.');
+      return;
+    }
+    try {
+      const blob = await fetchDocumentBlob(documentId, 'view');
+      const url = window.URL.createObjectURL(blob);
+      previewWindow.location = url;
+      setTimeout(() => window.URL.revokeObjectURL(url), 2000);
+    } catch (err) {
+      previewWindow.close();
+      setError(err.response?.data?.message || 'Unable to open document');
     }
   };
 
-  const handleDownloadDocument = (fileUrl, title) => {
+  const handleDownloadDocument = async (documentId, title) => {
     setError('');
-    if (!fileUrl) {
-      setError('Document file is missing.');
-      return;
+    try {
+      const blob = await fetchDocumentBlob(documentId, 'download');
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${(title || 'document').replace(/\s+/g, '-')}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to download document');
     }
-    const downloadUrl = getDocumentDownloadUrl(fileUrl);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.target = '_blank';
-    link.rel = 'noreferrer';
-    link.download = `${(title || 'document').replace(/\s+/g, '-')}`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    setError('');
+    try {
+      await api.delete(`/hiring-pro/company/documents/${documentId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setEmployeeDetail((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          documents: prev.documents?.filter((doc) => doc._id !== documentId) || []
+        };
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to delete document');
+    }
   };
 
   const loadCompanyData = async (authToken) => {
@@ -426,17 +450,24 @@ const CompanyAdminDashboard = () => {
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => handleViewDocument(doc.fileUrl)}
+                          onClick={() => handleViewDocument(doc._id)}
                           className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
                         >
                           View
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDownloadDocument(doc.fileUrl, doc.title)}
+                          onClick={() => handleDownloadDocument(doc._id, doc.title)}
                           className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
                         >
                           Download
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteDocument(doc._id)}
+                          className="rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:border-red-300"
+                        >
+                          Delete
                         </button>
                       </div>
                     </div>

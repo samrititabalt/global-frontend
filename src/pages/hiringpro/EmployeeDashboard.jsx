@@ -26,6 +26,8 @@ const EmployeeDashboard = () => {
   const [employeeInfo, setEmployeeInfo] = useState({ name: '', email: '' });
   const [profileImagePreview, setProfileImagePreview] = useState('');
   const [profileImageUploading, setProfileImageUploading] = useState(false);
+  const [offerLetterFile, setOfferLetterFile] = useState(null);
+  const [offerLetterUploading, setOfferLetterUploading] = useState(false);
   const [timesheetForm, setTimesheetForm] = useState({ weekStart: '', weekEnd: '', hoursWorked: '' });
   const [holidayForm, setHolidayForm] = useState({ startDate: '', endDate: '', reason: '' });
   const [documentForm, setDocumentForm] = useState({ title: '', type: '', file: null });
@@ -157,41 +159,128 @@ const EmployeeDashboard = () => {
     }
   };
 
-  const getDocumentDownloadUrl = (fileUrl) => {
-    if (!fileUrl) return '';
-    if (fileUrl.includes('/upload/')) {
-      return fileUrl.replace('/upload/', '/upload/fl_attachment/');
-    }
-    return fileUrl;
+  const fetchDocumentBlob = async (documentId, action = 'view') => {
+    const response = await api.get(`/hiring-pro/employee/documents/${documentId}/${action}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'blob'
+    });
+    return new Blob([response.data], { type: response.headers?.['content-type'] || 'application/octet-stream' });
   };
 
-  const handleViewDocument = (fileUrl) => {
+  const handleViewDocument = async (documentId) => {
     setError('');
-    if (!fileUrl) {
-      setError('Document file is missing.');
-      return;
-    }
-    const previewWindow = window.open(fileUrl, '_blank', 'noopener,noreferrer');
+    const previewWindow = window.open('', '_blank', 'noopener,noreferrer');
     if (!previewWindow) {
       setError('Pop-up blocked. Please allow pop-ups to view the document.');
+      return;
+    }
+    try {
+      const blob = await fetchDocumentBlob(documentId, 'view');
+      const url = window.URL.createObjectURL(blob);
+      previewWindow.location = url;
+      setTimeout(() => window.URL.revokeObjectURL(url), 2000);
+    } catch (err) {
+      previewWindow.close();
+      setError(err.response?.data?.message || 'Unable to open document');
     }
   };
 
-  const handleDownloadDocument = (fileUrl, title) => {
+  const handleDownloadDocument = async (documentId, title) => {
     setError('');
-    if (!fileUrl) {
-      setError('Document file is missing.');
+    try {
+      const blob = await fetchDocumentBlob(documentId, 'download');
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${(title || 'document').replace(/\s+/g, '-')}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to download document');
+    }
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    setError('');
+    try {
+      await api.delete(`/hiring-pro/employee/documents/${documentId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDocuments(prev => prev.filter(doc => doc._id !== documentId));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to delete document');
+    }
+  };
+
+  const fetchOfferLetterBlob = async (offerId, action = 'view') => {
+    const response = await api.get(`/hiring-pro/employee/offer-letters/${offerId}/${action}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'blob'
+    });
+    return new Blob([response.data], { type: 'application/pdf' });
+  };
+
+  const handleViewOfferLetter = async (offerId) => {
+    setError('');
+    const previewWindow = window.open('', '_blank', 'noopener,noreferrer');
+    if (!previewWindow) {
+      setError('Pop-up blocked. Please allow pop-ups to view the offer letter.');
       return;
     }
-    const downloadUrl = getDocumentDownloadUrl(fileUrl);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.target = '_blank';
-    link.rel = 'noreferrer';
-    link.download = `${(title || 'document').replace(/\s+/g, '-')}`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    try {
+      const blob = await fetchOfferLetterBlob(offerId, 'view');
+      const url = window.URL.createObjectURL(blob);
+      previewWindow.location = url;
+      setTimeout(() => window.URL.revokeObjectURL(url), 2000);
+    } catch (err) {
+      previewWindow.close();
+      setError(err.response?.data?.message || 'Unable to open offer letter');
+    }
+  };
+
+  const handleDownloadOfferLetter = async (offerId, candidateName) => {
+    setError('');
+    try {
+      const blob = await fetchOfferLetterBlob(offerId, 'download');
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `offer-letter-${(candidateName || 'document').replace(/\s+/g, '-')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to download offer letter');
+    }
+  };
+
+  const handleOfferLetterUpload = async () => {
+    if (!offerLetterFile) {
+      setError('Please choose a PDF offer letter to upload.');
+      return;
+    }
+    setError('');
+    setSuccess('');
+    setOfferLetterUploading(true);
+    try {
+      const payload = new FormData();
+      payload.append('offerLetter', offerLetterFile);
+      const response = await api.post('/hiring-pro/employee/offer-letters/upload', payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.offerLetter) {
+        setOfferLetters(prev => [response.data.offerLetter, ...prev]);
+        setOfferLetterFile(null);
+        setSuccess('Offer letter uploaded successfully.');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to upload offer letter');
+    } finally {
+      setOfferLetterUploading(false);
+    }
   };
 
   useEffect(() => {
@@ -504,17 +593,24 @@ const EmployeeDashboard = () => {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => handleViewDocument(doc.fileUrl)}
+                      onClick={() => handleViewDocument(doc._id)}
                       className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
                     >
                       View
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDownloadDocument(doc.fileUrl, doc.title)}
+                      onClick={() => handleDownloadDocument(doc._id, doc.title)}
                       className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
                     >
                       Download
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteDocument(doc._id)}
+                      className="rounded-md border border-red-200 px-3 py-1 text-xs font-semibold text-red-600 hover:border-red-300"
+                    >
+                      Delete
                     </button>
                   </div>
                 </div>
@@ -532,12 +628,52 @@ const EmployeeDashboard = () => {
                 <p className="text-sm text-gray-600">No offer letters available yet.</p>
               )}
               {offerLetters.map(letter => (
-                <div key={letter._id} className="rounded-lg border border-gray-200 p-4">
-                  <p className="font-semibold">{letter.candidateName} — {letter.roleTitle}</p>
-                  <p className="text-sm text-gray-600">Start Date: {letter.startDate}</p>
-                  <p className="text-sm text-gray-600">Status: {letter.status}</p>
+                <div key={letter._id} className="rounded-lg border border-gray-200 p-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold">{letter.candidateName} — {letter.roleTitle}</p>
+                    <p className="text-sm text-gray-600">Start Date: {letter.startDate}</p>
+                    <p className="text-sm text-gray-600">Status: {letter.status}</p>
+                  </div>
+                  {letter.fileUrl && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleViewOfferLetter(letter._id)}
+                        className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
+                      >
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadOfferLetter(letter._id, letter.candidateName)}
+                        className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
+                      >
+                        Download
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
+            </div>
+            <div className="mt-6 border-t border-gray-200 pt-4">
+              <p className="text-sm font-semibold text-gray-900 mb-2">Upload your offer letter</p>
+              <div className="flex flex-col md:flex-row md:items-center gap-3">
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setOfferLetterFile(e.target.files?.[0] || null)}
+                  className="rounded-lg border border-gray-300 px-4 py-2"
+                />
+                <button
+                  type="button"
+                  onClick={handleOfferLetterUpload}
+                  disabled={offerLetterUploading}
+                  className={`rounded-lg px-4 py-2 font-semibold ${offerLetterUploading ? 'bg-gray-300 text-gray-600' : 'bg-indigo-600 text-white'}`}
+                >
+                  {offerLetterUploading ? 'Uploading...' : 'Upload Offer Letter'}
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-gray-500">PDF only. This file will be visible to your company admin.</p>
             </div>
           </section>
         </div>
