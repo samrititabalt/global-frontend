@@ -25,6 +25,7 @@ const CompanyAdminDashboard = () => {
   });
   const [offerContent, setOfferContent] = useState('');
   const [error, setError] = useState('');
+  const [offerActionError, setOfferActionError] = useState('');
   const [loading, setLoading] = useState(false);
   const [autoLoggingIn, setAutoLoggingIn] = useState(false);
 
@@ -112,19 +113,25 @@ const CompanyAdminDashboard = () => {
   };
 
   const handleViewOffer = async (offerId) => {
-    setError('');
+    setOfferActionError('');
+    const previewWindow = window.open('', '_blank', 'noopener,noreferrer');
+    if (!previewWindow) {
+      setOfferActionError('Pop-up blocked. Please allow pop-ups to view the offer letter.');
+      return;
+    }
     try {
       const blob = await fetchOfferPdf(offerId);
       const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank', 'noopener,noreferrer');
-      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      previewWindow.location = url;
+      setTimeout(() => window.URL.revokeObjectURL(url), 2000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Unable to open offer letter');
+      previewWindow.close();
+      setOfferActionError(err.response?.data?.message || 'Unable to open offer letter');
     }
   };
 
   const handleDownloadOffer = async (offerId, candidateName) => {
-    setError('');
+    setOfferActionError('');
     try {
       const blob = await fetchOfferPdf(offerId);
       const url = window.URL.createObjectURL(blob);
@@ -136,7 +143,7 @@ const CompanyAdminDashboard = () => {
       link.remove();
       setTimeout(() => window.URL.revokeObjectURL(url), 1000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Unable to download offer letter');
+      setOfferActionError(err.response?.data?.message || 'Unable to download offer letter');
     }
   };
 
@@ -492,6 +499,7 @@ const CompanyAdminDashboard = () => {
 
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
         <h3 className="text-xl font-semibold text-gray-900 mb-4">Offer Letters</h3>
+        {offerActionError && <div className="mb-3 text-sm text-red-600">{offerActionError}</div>}
         <div className="space-y-3">
           {offerLetters.map(letter => (
             <div key={letter._id} className="rounded-lg border border-gray-200 p-4">
