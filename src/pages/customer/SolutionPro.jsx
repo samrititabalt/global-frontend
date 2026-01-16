@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, LineChart, AreaChart, Palette, Eye, EyeOff, ChevronRight, ChevronLeft, Image as ImageIcon, MessageCircle, Send, Minimize2, Maximize2, Filter, Search } from 'lucide-react';
+import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, LineChart, AreaChart, Palette, Eye, EyeOff, ChevronRight, ChevronLeft, Image as ImageIcon, MessageCircle, Send, Minimize2, Maximize2, Filter, Search, Type, Heading, List, Quote, Plus, GripVertical, Move, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, Link as LinkIcon, Video, Code, Layout, Sparkles, Minus, ArrowUp, ArrowDown } from 'lucide-react';
 import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart as RechartsLineChart, Line, AreaChart as RechartsAreaChart, Area, LabelList, Text } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -117,6 +117,305 @@ const FilterMultiSelect = ({ filter, uniqueValues, onUpdate }) => {
   );
 };
 
+// Block Editor Component (Gamma-like)
+const BlockEditor = ({ block, slideIndex, isSelected, onSelect, onUpdate, onDelete, onMoveUp, onMoveDown, chartConfigs, renderChart }) => {
+  const blockRef = React.useRef(null);
+
+  const renderBlockContent = () => {
+    switch (block.type) {
+      case 'heading':
+        return (
+          <input
+            type="text"
+            value={block.text || ''}
+            onChange={(e) => onUpdate({ text: e.target.value })}
+            className="w-full bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+            style={{ 
+              fontSize: `${block.fontSize || 32}px`,
+              fontWeight: 'bold',
+              color: block.color || '#000000',
+              textAlign: block.align || 'left',
+            }}
+            placeholder="Heading"
+          />
+        );
+      case 'text':
+        return (
+          <textarea
+            value={block.text || ''}
+            onChange={(e) => onUpdate({ text: e.target.value })}
+            className="w-full bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 resize-none"
+            style={{ 
+              fontSize: `${block.fontSize || 16}px`,
+              color: block.color || '#333333',
+              textAlign: block.align || 'left',
+              minHeight: '60px',
+            }}
+            placeholder="Start typing..."
+          />
+        );
+      case 'image':
+        return (
+          <div className="space-y-2">
+            {block.url ? (
+              <img src={block.url} alt={block.alt} className="max-w-full h-auto rounded" />
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded p-8 text-center">
+                <ImageIcon className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                <input
+                  type="url"
+                  placeholder="Image URL"
+                  value={block.url || ''}
+                  onChange={(e) => onUpdate({ url: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded"
+                />
+              </div>
+            )}
+          </div>
+        );
+      case 'chart':
+        return (
+          <div className="border border-gray-200 rounded p-4 bg-white">
+            {block.chartId ? (
+              <div style={{ height: `${block.height || 300}px` }}>
+                {renderChart(chartConfigs.find(c => c.id === block.chartId) || chartConfigs[0])}
+              </div>
+            ) : (
+              <div className="text-center text-gray-400 py-8">
+                <BarChart3 className="h-12 w-12 mx-auto mb-2" />
+                <p>Select a chart from dashboard</p>
+              </div>
+            )}
+          </div>
+        );
+      case 'list':
+        return (
+          <div className="space-y-2">
+            {(block.items || []).map((item, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                {block.ordered ? <span className="text-gray-600">{idx + 1}.</span> : <span className="text-gray-600">•</span>}
+                <input
+                  type="text"
+                  value={item}
+                  onChange={(e) => {
+                    const newItems = [...(block.items || [])];
+                    newItems[idx] = e.target.value;
+                    onUpdate({ items: newItems });
+                  }}
+                  className="flex-1 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                  placeholder="List item"
+                />
+              </div>
+            ))}
+            <button
+              onClick={() => onUpdate({ items: [...(block.items || []), 'New item'] })}
+              className="text-sm text-blue-600 hover:text-blue-700 mt-2"
+            >
+              + Add item
+            </button>
+          </div>
+        );
+      case 'quote':
+        return (
+          <div className="border-l-4 border-gray-300 pl-4">
+            <textarea
+              value={block.text || ''}
+              onChange={(e) => onUpdate({ text: e.target.value })}
+              className="w-full bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 italic"
+              placeholder="Quote text"
+              style={{ fontSize: `${block.fontSize || 18}px` }}
+            />
+            {block.author && (
+              <input
+                type="text"
+                value={block.author}
+                onChange={(e) => onUpdate({ author: e.target.value })}
+                className="w-full bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 mt-2 text-sm"
+                placeholder="Author"
+              />
+            )}
+          </div>
+        );
+      case 'divider':
+        return (
+          <div className="py-4">
+            <hr style={{ borderColor: block.color || '#E5E7EB', borderStyle: block.style || 'solid' }} />
+          </div>
+        );
+      default:
+        return <div className="text-gray-400">Unknown block type</div>;
+    }
+  };
+
+  return (
+    <div
+      ref={blockRef}
+      onClick={onSelect}
+      className={`relative group border-2 rounded-lg p-4 transition-all ${
+        isSelected ? 'border-blue-500 bg-blue-50' : 'border-transparent hover:border-gray-300 bg-white'
+      }`}
+    >
+      {/* Block Controls */}
+      {isSelected && (
+        <div className="absolute -left-10 top-0 flex flex-col gap-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
+            className="p-1 bg-white border border-gray-300 rounded hover:bg-gray-50"
+            title="Move up"
+          >
+            <ArrowUp className="h-4 w-4" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
+            className="p-1 bg-white border border-gray-300 rounded hover:bg-gray-50"
+            title="Move down"
+          >
+            <ArrowDown className="h-4 w-4" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="p-1 bg-white border border-red-300 rounded hover:bg-red-50 text-red-600"
+            title="Delete"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Block Type Badge */}
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <span className="text-xs px-2 py-1 bg-gray-100 rounded text-gray-600 capitalize">{block.type}</span>
+      </div>
+
+      {/* Block Content */}
+      {renderBlockContent()}
+
+      {/* Block Properties (when selected) */}
+      {isSelected && block.type !== 'divider' && (
+        <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-gray-600">Align</label>
+              <div className="flex gap-1 mt-1">
+                {['left', 'center', 'right'].map((align) => (
+                  <button
+                    key={align}
+                    onClick={() => onUpdate({ align })}
+                    className={`p-1 border rounded ${block.align === align ? 'bg-blue-500 text-white' : 'bg-white'}`}
+                  >
+                    {align === 'left' ? <AlignLeft className="h-4 w-4" /> : 
+                     align === 'center' ? <AlignCenter className="h-4 w-4" /> : 
+                     <AlignRight className="h-4 w-4" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {(block.type === 'heading' || block.type === 'text') && (
+              <div>
+                <label className="text-xs text-gray-600">Font Size</label>
+                <input
+                  type="number"
+                  value={block.fontSize || 16}
+                  onChange={(e) => onUpdate({ fontSize: parseInt(e.target.value) || 16 })}
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded mt-1"
+                  min="12"
+                  max="72"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Slide Preview Component
+const SlidePreview = ({ slide, chartConfigs, renderChart, template }) => {
+  if (!slide) return null;
+
+  const defaultPreview = {
+    backgroundColor: '#FFFFFF',
+    titleColor: '#1F2937',
+    textColor: '#374151',
+    fontFamily: 'Inter, sans-serif',
+    primaryColor: '#3B82F6',
+  };
+
+  const preview = template?.preview || defaultPreview;
+
+  return (
+    <div
+      className="bg-white rounded-lg shadow-2xl overflow-hidden"
+      style={{
+        aspectRatio: '16/9',
+        backgroundColor: slide.backgroundColor || preview.backgroundColor,
+        fontFamily: slide.template?.fontFamily || preview.fontFamily,
+      }}
+    >
+      <div className="h-full p-12 flex flex-col">
+        {(slide.blocks || []).map((block) => (
+          <div key={block.id} className="mb-4">
+            {block.type === 'heading' && (
+              <h1
+                style={{
+                  fontSize: `${block.fontSize || 32}px`,
+                  fontWeight: 'bold',
+                  color: block.color || slide.titleColor || preview.titleColor,
+                  textAlign: block.align || 'left',
+                }}
+              >
+                {block.text || 'Heading'}
+              </h1>
+            )}
+            {block.type === 'text' && (
+              <p
+                style={{
+                  fontSize: `${block.fontSize || 16}px`,
+                  color: block.color || slide.textColor || preview.textColor,
+                  textAlign: block.align || 'left',
+                }}
+              >
+                {block.text || 'Text'}
+              </p>
+            )}
+            {block.type === 'image' && block.url && (
+              <img src={block.url} alt={block.alt} className="max-w-full h-auto rounded" />
+            )}
+            {block.type === 'chart' && block.chartId && (
+              <div style={{ height: `${block.height || 300}px` }}>
+                {renderChart(chartConfigs.find(c => c.id === block.chartId) || chartConfigs[0])}
+              </div>
+            )}
+            {block.type === 'list' && (
+              <ul className={block.ordered ? 'list-decimal' : 'list-disc'} style={{ textAlign: block.align || 'left' }}>
+                {(block.items || []).map((item, idx) => (
+                  <li key={idx} style={{ color: slide.textColor || preview.textColor }}>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {block.type === 'quote' && (
+              <blockquote className="border-l-4 pl-4 italic" style={{ borderColor: preview.primaryColor }}>
+                <p style={{ fontSize: `${block.fontSize || 18}px`, color: slide.textColor || preview.textColor }}>
+                  {block.text || 'Quote'}
+                </p>
+                {block.author && (
+                  <cite className="text-sm mt-2 block">— {block.author}</cite>
+                )}
+              </blockquote>
+            )}
+            {block.type === 'divider' && (
+              <hr style={{ borderColor: block.color || '#E5E7EB', borderStyle: block.style || 'solid' }} />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const SolutionPro = () => {
   const [gridData, setGridData] = useState(() => {
     // Initialize 1000 rows x 20 columns
@@ -138,6 +437,14 @@ const SolutionPro = () => {
   const [showPptBuilder, setShowPptBuilder] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showTemplateGallery, setShowTemplateGallery] = useState(false);
+  // Gamma-like block-based editor state
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [selectedBlockId, setSelectedBlockId] = useState(null);
+  const [isDraggingBlock, setIsDraggingBlock] = useState(false);
+  const [dragOverBlockId, setDragOverBlockId] = useState(null);
+  const [showBlockToolbar, setShowBlockToolbar] = useState(false);
+  const [blockToolbarPosition, setBlockToolbarPosition] = useState({ x: 0, y: 0 });
+  const [editorMode, setEditorMode] = useState('split'); // 'split', 'editor', 'preview'
   const [dashboardCharts, setDashboardCharts] = useState([]); // Charts arranged on dashboard canvas
   const [chartConfigs, setChartConfigs] = useState(() => 
     Array(40).fill(null).map((_, idx) => ({
@@ -1279,6 +1586,154 @@ const SolutionPro = () => {
   }, [chartConfigs.map(c => c.xAxis.column + c.yAxis.column).join(',')]);
 
   // Get active charts only
+  // Block-based slide system (Gamma-like)
+  const generateBlockId = () => `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+  const createBlock = (type, content = {}) => {
+    const baseBlock = {
+      id: generateBlockId(),
+      type,
+      order: 0,
+      ...content,
+    };
+
+    switch (type) {
+      case 'heading':
+        return {
+          ...baseBlock,
+          text: content.text || 'Heading',
+          level: content.level || 1, // 1-6
+          align: content.align || 'left',
+          color: content.color || '#000000',
+          fontSize: content.fontSize || 32,
+        };
+      case 'text':
+        return {
+          ...baseBlock,
+          text: content.text || 'Start typing...',
+          align: content.align || 'left',
+          color: content.color || '#333333',
+          fontSize: content.fontSize || 16,
+          bold: false,
+          italic: false,
+          underline: false,
+        };
+      case 'image':
+        return {
+          ...baseBlock,
+          url: content.url || '',
+          alt: content.alt || '',
+          width: content.width || 100,
+          height: content.height || 'auto',
+          align: content.align || 'center',
+        };
+      case 'chart':
+        return {
+          ...baseBlock,
+          chartId: content.chartId || null,
+          width: content.width || 100,
+          height: content.height || 300,
+          align: content.align || 'center',
+        };
+      case 'list':
+        return {
+          ...baseBlock,
+          items: content.items || ['Item 1', 'Item 2'],
+          ordered: content.ordered || false,
+          align: content.align || 'left',
+        };
+      case 'quote':
+        return {
+          ...baseBlock,
+          text: content.text || 'Quote text',
+          author: content.author || '',
+          align: content.align || 'left',
+        };
+      case 'divider':
+        return {
+          ...baseBlock,
+          style: content.style || 'solid', // solid, dashed, dotted
+          color: content.color || '#E5E7EB',
+        };
+      default:
+        return baseBlock;
+    }
+  };
+
+  const addBlockToSlide = (slideIndex, blockType, afterBlockId = null) => {
+    const newSlides = [...pptSlides];
+    if (!newSlides[slideIndex]) return;
+
+    const newBlock = createBlock(blockType);
+    const blocks = newSlides[slideIndex].blocks || [];
+
+    if (afterBlockId) {
+      const afterIndex = blocks.findIndex(b => b.id === afterBlockId);
+      if (afterIndex >= 0) {
+        blocks.splice(afterIndex + 1, 0, newBlock);
+      } else {
+        blocks.push(newBlock);
+      }
+    } else {
+      blocks.push(newBlock);
+    }
+
+    // Update block orders
+    blocks.forEach((block, idx) => {
+      block.order = idx;
+    });
+
+    newSlides[slideIndex].blocks = blocks;
+    setPptSlides(newSlides);
+    setSelectedBlockId(newBlock.id);
+    return newBlock;
+  };
+
+  const updateBlock = (slideIndex, blockId, updates) => {
+    const newSlides = [...pptSlides];
+    if (!newSlides[slideIndex] || !newSlides[slideIndex].blocks) return;
+
+    const blockIndex = newSlides[slideIndex].blocks.findIndex(b => b.id === blockId);
+    if (blockIndex >= 0) {
+      newSlides[slideIndex].blocks[blockIndex] = {
+        ...newSlides[slideIndex].blocks[blockIndex],
+        ...updates,
+      };
+      setPptSlides(newSlides);
+    }
+  };
+
+  const deleteBlock = (slideIndex, blockId) => {
+    const newSlides = [...pptSlides];
+    if (!newSlides[slideIndex] || !newSlides[slideIndex].blocks) return;
+
+    newSlides[slideIndex].blocks = newSlides[slideIndex].blocks.filter(b => b.id !== blockId);
+    setPptSlides(newSlides);
+    setSelectedBlockId(null);
+  };
+
+  const moveBlock = (slideIndex, blockId, direction) => {
+    const newSlides = [...pptSlides];
+    if (!newSlides[slideIndex] || !newSlides[slideIndex].blocks) return;
+
+    const blocks = newSlides[slideIndex].blocks;
+    const blockIndex = blocks.findIndex(b => b.id === blockId);
+    if (blockIndex < 0) return;
+
+    if (direction === 'up' && blockIndex > 0) {
+      [blocks[blockIndex - 1], blocks[blockIndex]] = [blocks[blockIndex], blocks[blockIndex - 1]];
+    } else if (direction === 'down' && blockIndex < blocks.length - 1) {
+      [blocks[blockIndex], blocks[blockIndex + 1]] = [blocks[blockIndex + 1], blocks[blockIndex]];
+    }
+
+    blocks.forEach((block, idx) => {
+      block.order = idx;
+    });
+
+    newSlides[slideIndex].blocks = blocks;
+    setPptSlides(newSlides);
+  };
+
   // Apply template to all slides
   const applyTemplateToSlides = (template) => {
     if (!template || !pptSlides.length) return;
@@ -4440,7 +4895,7 @@ const SolutionPro = () => {
                       const template = selectedTemplate || PPT_TEMPLATES[0]; // Default to Corporate Blue
                       const preview = template.preview;
                       
-                      // Generate PPT structure based on dashboard charts with template
+                      // Generate PPT structure based on dashboard charts with template (block-based)
                       const coverSlide = { 
                         id: 'cover', 
                         type: 'cover', 
@@ -4459,6 +4914,10 @@ const SolutionPro = () => {
                           secondaryColor: preview.secondaryColor,
                           accentColor: preview.accentColor,
                         },
+                        blocks: [
+                          createBlock('heading', { text: 'Presentation Title', level: 1, align: 'center', fontSize: 48 }),
+                          createBlock('text', { text: 'Subtitle or description', align: 'center', fontSize: 20 }),
+                        ],
                       };
                       
                       // Generate agenda from dashboard charts
@@ -4482,15 +4941,20 @@ const SolutionPro = () => {
                           secondaryColor: preview.secondaryColor,
                           accentColor: preview.accentColor,
                         },
+                        blocks: [
+                          createBlock('heading', { text: 'Agenda', level: 1, align: 'center', fontSize: 36 }),
+                          createBlock('list', { items: agendaItems, ordered: false, align: 'left' }),
+                        ],
                       };
                       
-                      // Generate content slides from dashboard charts (one per chart)
+                      // Generate content slides from dashboard charts (one per chart) - block-based
                       const contentSlides = dashboardCharts.map((chart) => {
                         const chartIndex = chartConfigs.findIndex(c => c.id === chart.id);
+                        const chartTitle = chart.title || `Chart ${chartIndex + 1}`;
                         return {
                           id: `content-${chart.id}`,
                           type: 'content',
-                          title: chart.title || `Chart ${chartIndex + 1}`,
+                          title: chartTitle,
                           subtitle: '',
                           content: '',
                           chartId: chart.id,
@@ -4508,6 +4972,11 @@ const SolutionPro = () => {
                             secondaryColor: preview.secondaryColor,
                             accentColor: preview.accentColor,
                           },
+                          blocks: [
+                            createBlock('heading', { text: chartTitle, level: 2, align: 'left', fontSize: 32 }),
+                            createBlock('chart', { chartId: chart.id, width: 100, height: 400, align: 'center' }),
+                            createBlock('text', { text: 'Add your insights here...', align: 'left', fontSize: 16 }),
+                          ],
                         };
                       });
                       
@@ -4526,6 +4995,10 @@ const SolutionPro = () => {
                           secondaryColor: preview.secondaryColor,
                           accentColor: preview.accentColor,
                         },
+                        blocks: [
+                          createBlock('heading', { text: 'Thank You', level: 1, align: 'center', fontSize: 48 }),
+                          createBlock('text', { text: 'Email: info@tabalt.co.uk\nPhone: +44 7448614160\n3 Herron Court, Bromley, London, United Kingdom', align: 'center', fontSize: 16 }),
+                        ],
                       };
                       
                       const newSlides = [coverSlide, agendaSlide, ...contentSlides, thankYouSlide];
@@ -4966,8 +5439,141 @@ const SolutionPro = () => {
             )}
           </div>
 
-          {/* PPT Preview Mode */}
+          {/* Gamma-like Block Editor */}
           {pptPreviewMode && pptSlides.length > 0 && (
+            <div className="mt-8 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
+              {/* Top Toolbar */}
+              <div className="bg-gray-50 border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setEditorMode(editorMode === 'split' ? 'editor' : editorMode === 'editor' ? 'preview' : 'split')}
+                    className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    {editorMode === 'split' ? <><Eye className="h-4 w-4" /> Split</> : 
+                     editorMode === 'editor' ? <><EyeOff className="h-4 w-4" /> Editor</> : 
+                     <><Eye className="h-4 w-4" /> Preview</>}
+                  </button>
+                  <div className="h-6 w-px bg-gray-300"></div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentSlideIndex(Math.max(0, currentSlideIndex - 1))}
+                      disabled={currentSlideIndex === 0}
+                      className="p-1.5 text-gray-600 hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <span className="text-sm font-medium text-gray-700 px-3">
+                      Slide {currentSlideIndex + 1} of {pptSlides.length}
+                    </span>
+                    <button
+                      onClick={() => setCurrentSlideIndex(Math.min(pptSlides.length - 1, currentSlideIndex + 1))}
+                      disabled={currentSlideIndex === pptSlides.length - 1}
+                      className="p-1.5 text-gray-600 hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setPptPreviewMode(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+                  >
+                    Exit Editor
+                  </button>
+                </div>
+              </div>
+
+              {/* Gamma-like Editor Layout */}
+              <div className="flex h-[calc(100vh-300px)] min-h-[600px]">
+                {/* Left: Block Editor */}
+                {(editorMode === 'split' || editorMode === 'editor') && (
+                  <div className="flex-1 border-r border-gray-200 overflow-y-auto bg-gray-50">
+                    <div className="max-w-4xl mx-auto p-8">
+                      {/* Slide Editor */}
+                      {pptSlides[currentSlideIndex] && (
+                        <div className="space-y-4">
+                          {/* Block List */}
+                          {(pptSlides[currentSlideIndex].blocks || []).map((block, blockIdx) => (
+                            <BlockEditor
+                              key={block.id}
+                              block={block}
+                              slideIndex={currentSlideIndex}
+                              isSelected={selectedBlockId === block.id}
+                              onSelect={() => setSelectedBlockId(block.id)}
+                              onUpdate={(updates) => updateBlock(currentSlideIndex, block.id, updates)}
+                              onDelete={() => deleteBlock(currentSlideIndex, block.id)}
+                              onMoveUp={() => moveBlock(currentSlideIndex, block.id, 'up')}
+                              onMoveDown={() => moveBlock(currentSlideIndex, block.id, 'down')}
+                              chartConfigs={chartConfigs}
+                              renderChart={renderChart}
+                            />
+                          ))}
+
+                          {/* Add Block Button */}
+                          <div className="relative">
+                            <button
+                              onClick={() => setShowBlockToolbar(!showBlockToolbar)}
+                              className="w-full py-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center justify-center gap-2 text-gray-500 hover:text-blue-600"
+                            >
+                              <Plus className="h-5 w-5" />
+                              <span className="font-medium">Add Block</span>
+                            </button>
+                            
+                            {/* Block Type Selector */}
+                            {showBlockToolbar && (
+                              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl p-2 z-50">
+                                <div className="grid grid-cols-2 gap-2">
+                                  {[
+                                    { type: 'heading', icon: Heading, label: 'Heading' },
+                                    { type: 'text', icon: Type, label: 'Text' },
+                                    { type: 'image', icon: ImageIcon, label: 'Image' },
+                                    { type: 'chart', icon: BarChart3, label: 'Chart' },
+                                    { type: 'list', icon: List, label: 'List' },
+                                    { type: 'quote', icon: Quote, label: 'Quote' },
+                                    { type: 'divider', icon: Minus, label: 'Divider' },
+                                  ].map(({ type, icon: Icon, label }) => (
+                                    <button
+                                      key={type}
+                                      onClick={() => {
+                                        addBlockToSlide(currentSlideIndex, type);
+                                        setShowBlockToolbar(false);
+                                      }}
+                                      className="flex items-center gap-2 px-4 py-3 hover:bg-gray-50 rounded-lg text-left transition-colors"
+                                    >
+                                      <Icon className="h-5 w-5 text-gray-600" />
+                                      <span className="text-sm font-medium text-gray-700">{label}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Right: Live Preview */}
+                {(editorMode === 'split' || editorMode === 'preview') && (
+                  <div className="flex-1 overflow-y-auto bg-gray-100 flex items-center justify-center p-8">
+                    <div className="w-full max-w-5xl">
+                      <SlidePreview
+                        slide={pptSlides[currentSlideIndex]}
+                        chartConfigs={chartConfigs}
+                        renderChart={renderChart}
+                        template={selectedTemplate || PPT_TEMPLATES[0]}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* Old PPT Preview Mode (keeping for backward compatibility) */}
+          {pptPreviewMode && pptSlides.length > 0 && false && (
             <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-semibold text-gray-900">PPT Preview & Edit Mode</h2>
