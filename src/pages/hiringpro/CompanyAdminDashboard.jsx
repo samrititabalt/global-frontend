@@ -462,7 +462,7 @@ const CompanyAdminDashboard = () => {
                 <div>
                   {letter.fileUrl ? (
                     <a
-                      href={letter.fileUrl}
+                      href={`/api/hiring-pro/company/offer-letters/${letter._id}/download`}
                       target="_blank"
                       rel="noreferrer"
                       className="font-semibold text-indigo-600 hover:text-indigo-700"
@@ -478,7 +478,7 @@ const CompanyAdminDashboard = () => {
                   {letter.fileUrl ? (
                     <>
                       <a
-                        href={letter.fileUrl}
+                        href={`/api/hiring-pro/company/offer-letters/${letter._id}/download`}
                         target="_blank"
                         rel="noreferrer"
                         className="rounded-lg border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:border-gray-400"
@@ -486,7 +486,7 @@ const CompanyAdminDashboard = () => {
                         View
                       </a>
                       <a
-                        href={letter.fileUrl}
+                        href={`/api/hiring-pro/company/offer-letters/${letter._id}/download`}
                         target="_blank"
                         rel="noreferrer"
                         className="rounded-lg border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:border-gray-400"
