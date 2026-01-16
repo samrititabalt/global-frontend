@@ -103,6 +103,43 @@ const CompanyAdminDashboard = () => {
     }
   };
 
+  const fetchOfferPdf = async (offerId) => {
+    const response = await api.get(`/hiring-pro/company/offer-letters/${offerId}/download`, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'blob'
+    });
+    return new Blob([response.data], { type: 'application/pdf' });
+  };
+
+  const handleViewOffer = async (offerId) => {
+    setError('');
+    try {
+      const blob = await fetchOfferPdf(offerId);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to open offer letter');
+    }
+  };
+
+  const handleDownloadOffer = async (offerId, candidateName) => {
+    setError('');
+    try {
+      const blob = await fetchOfferPdf(offerId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `offer-letter-${(candidateName || 'document').replace(/\s+/g, '-')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to download offer letter');
+    }
+  };
+
   const handleEmployeeDetail = async (employeeId) => {
     try {
       const response = await api.get(`/hiring-pro/company/employees/${employeeId}`, {
@@ -461,14 +498,13 @@ const CompanyAdminDashboard = () => {
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   {letter.fileUrl ? (
-                    <a
-                      href={`/api/hiring-pro/company/offer-letters/${letter._id}/download`}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => handleViewOffer(letter._id)}
                       className="font-semibold text-indigo-600 hover:text-indigo-700"
                     >
                       {letter.candidateName} — {letter.roleTitle}
-                    </a>
+                    </button>
                   ) : (
                     <p className="font-semibold">{letter.candidateName} — {letter.roleTitle}</p>
                   )}
@@ -477,22 +513,20 @@ const CompanyAdminDashboard = () => {
                 <div className="flex flex-wrap items-center gap-2">
                   {letter.fileUrl ? (
                     <>
-                      <a
-                        href={`/api/hiring-pro/company/offer-letters/${letter._id}/download`}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => handleViewOffer(letter._id)}
                         className="rounded-lg border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:border-gray-400"
                       >
                         View
-                      </a>
-                      <a
-                        href={`/api/hiring-pro/company/offer-letters/${letter._id}/download`}
-                        target="_blank"
-                        rel="noreferrer"
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadOffer(letter._id, letter.candidateName)}
                         className="rounded-lg border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:border-gray-400"
                       >
                         Download
-                      </a>
+                      </button>
                     </>
                   ) : (
                     <span className="text-xs text-gray-500">Document not ready</span>
