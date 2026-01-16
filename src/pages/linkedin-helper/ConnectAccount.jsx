@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Linkedin, AlertTriangle, Shield, LoaderIcon, CheckCircle2, Monitor, RefreshCw } from 'lucide-react';
 import api from '../../utils/axios';
@@ -8,6 +8,7 @@ const ConnectAccount = () => {
   const navigate = useNavigate();
   const [sessionId, setSessionId] = useState(null);
   const [loginStatus, setLoginStatus] = useState('idle'); // idle, waiting, checking, logged_in, error
+  const pollingRef = useRef(false);
   const [formData, setFormData] = useState({
     proxy: {
       host: '',
@@ -22,31 +23,89 @@ const ConnectAccount = () => {
   const [error, setError] = useState('');
   const [profileInfo, setProfileInfo] = useState(null);
 
-  // Poll for login status
+  // Poll for login status - only when we have sessionId and status is waiting/checking
   useEffect(() => {
-    if (!sessionId || loginStatus === 'logged_in' || loginStatus === 'error') return;
+    // Early return if conditions not met
+    if (!sessionId || loginStatus === 'logged_in' || loginStatus === 'error' || loginStatus === 'idle') {
+      pollingRef.current = false;
+      return;
+    }
+
+    // Only poll when status is 'waiting' or 'checking'
+    if (loginStatus !== 'waiting' && loginStatus !== 'checking') {
+      pollingRef.current = false;
+      return;
+    }
+
+    pollingRef.current = true;
+    let isMounted = true;
+    let intervalId = null;
+    let timeoutId = null;
 
     const checkStatus = async () => {
+      // Double-check conditions before making API call
+      if (!isMounted || !pollingRef.current || !sessionId) {
+        return;
+      }
+      
+      // Check current status - stop if already logged in or error
+      if (loginStatus === 'logged_in' || loginStatus === 'error') {
+        pollingRef.current = false;
+        return;
+      }
+      
       try {
         const response = await api.get(`/linkedin-helper/accounts/login-session/${sessionId}/status`);
+        
+        if (!isMounted || !pollingRef.current) {
+          return;
+        }
+
         const status = response.data;
 
         if (status.status === 'logged_in' && status.cookies === 'captured') {
+          pollingRef.current = false;
           setLoginStatus('logged_in');
-          setProfileInfo(status.profileInfo);
+          if (status.profileInfo) {
+            setProfileInfo(status.profileInfo);
+          }
         } else if (status.status === 'error') {
+          pollingRef.current = false;
           setLoginStatus('error');
           setError(status.error || 'Login failed');
-        } else {
-          setLoginStatus('waiting');
         }
       } catch (err) {
+        if (!isMounted || !pollingRef.current) {
+          return;
+        }
         console.error('Error checking status:', err);
       }
     };
 
-    const interval = setInterval(checkStatus, 2000); // Check every 2 seconds
-    return () => clearInterval(interval);
+    // Initial check after a short delay
+    timeoutId = setTimeout(() => {
+      if (pollingRef.current) {
+        checkStatus();
+      }
+    }, 500);
+    
+    // Then poll every 2 seconds
+    intervalId = setInterval(() => {
+      if (pollingRef.current) {
+        checkStatus();
+      }
+    }, 2000);
+    
+    return () => {
+      isMounted = false;
+      pollingRef.current = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
   }, [sessionId, loginStatus]);
 
   const handleStartLogin = async () => {
