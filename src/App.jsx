@@ -82,6 +82,9 @@ import ErrorBoundary from './components/ErrorBoundary';
 import RiskFraud from './pages/solutions/RiskFraud';
 import Hiring from './pages/solutions/Hiring';
 import FacebookAdsQuickLaunch from './pages/solutions/FacebookAdsQuickLaunch';
+import LinkedInHelper from './pages/solutions/LinkedInHelper';
+import LinkedInHelperDashboard from './pages/linkedin-helper/Dashboard';
+import ConnectAccount from './pages/linkedin-helper/ConnectAccount';
 import SolutionPro from './pages/customer/SolutionPro';
 import ForecastsPro from './pages/customer/ForecastsPro';
 import RiskFraudPro from './pages/customer/RiskFraudPro';
@@ -167,6 +170,7 @@ function App() {
             <Route path="/solutions/risk-fraud" element={<RiskFraud />} />
             <Route path="/solutions/hiring" element={<Hiring />} />
             <Route path="/solutions/facebook-ads" element={<FacebookAdsQuickLaunch />} />
+            <Route path="/solutions/linkedin-helper" element={<LinkedInHelper />} />
             <Route path="/resume-builder" element={<ResumeBuilder />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
@@ -281,6 +285,23 @@ function App() {
                   <ProAccessGuard requiredRole="customer">
                     <HiringPro />
                   </ProAccessGuard>
+                </ProtectedRoute>
+              } 
+            />
+            {/* LinkedIn Helper Routes */}
+            <Route 
+              path="/solutions/linkedin-helper/dashboard" 
+              element={
+                <ProtectedRoute role="customer">
+                  <LinkedInHelperDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/solutions/linkedin-helper/connect" 
+              element={
+                <ProtectedRoute role="customer">
+                  <ConnectAccount />
                 </ProtectedRoute>
               } 
             />
