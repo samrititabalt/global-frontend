@@ -89,6 +89,20 @@ const CompanyAdminDashboard = () => {
     }
   };
 
+  const handleDeleteOffer = async (offerId) => {
+    const confirmDelete = window.confirm('Delete this offer letter? This cannot be undone.');
+    if (!confirmDelete) return;
+    setError('');
+    try {
+      await api.delete(`/hiring-pro/company/offer-letters/${offerId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOfferLetters(prev => prev.filter(letter => letter._id !== offerId));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to delete offer letter');
+    }
+  };
+
   const handleEmployeeDetail = async (employeeId) => {
     try {
       const response = await api.get(`/hiring-pro/company/employees/${employeeId}`, {
@@ -212,8 +226,23 @@ const CompanyAdminDashboard = () => {
   return (
     <div className="space-y-8">
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">{company?.name}</h2>
-        <p className="text-sm text-gray-600">Signing Authority: {company?.signingAuthority?.name} ({company?.signingAuthority?.title})</p>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
+            {company?.logoUrl && (
+              <img
+                src={company.logoUrl}
+                alt={`${company?.name || 'Company'} logo`}
+                className="h-14 w-14 rounded-lg object-contain border border-gray-200 bg-white p-1"
+              />
+            )}
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-900">{company?.name}</h2>
+              <p className="text-sm text-gray-600">
+                Signing Authority: {company?.signingAuthority?.name} ({company?.signingAuthority?.title})
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -429,8 +458,53 @@ const CompanyAdminDashboard = () => {
         <div className="space-y-3">
           {offerLetters.map(letter => (
             <div key={letter._id} className="rounded-lg border border-gray-200 p-4">
-              <p className="font-semibold">{letter.candidateName} — {letter.roleTitle}</p>
-              <p className="text-sm text-gray-600">Start Date: {letter.startDate}</p>
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  {letter.fileUrl ? (
+                    <a
+                      href={letter.fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-semibold text-indigo-600 hover:text-indigo-700"
+                    >
+                      {letter.candidateName} — {letter.roleTitle}
+                    </a>
+                  ) : (
+                    <p className="font-semibold">{letter.candidateName} — {letter.roleTitle}</p>
+                  )}
+                  <p className="text-sm text-gray-600">Start Date: {letter.startDate}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {letter.fileUrl ? (
+                    <>
+                      <a
+                        href={letter.fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-lg border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:border-gray-400"
+                      >
+                        View
+                      </a>
+                      <a
+                        href={letter.fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-lg border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:border-gray-400"
+                      >
+                        Download
+                      </a>
+                    </>
+                  ) : (
+                    <span className="text-xs text-gray-500">Document not ready</span>
+                  )}
+                  <button
+                    onClick={() => handleDeleteOffer(letter._id)}
+                    className="rounded-lg border border-red-200 px-3 py-1 text-sm font-semibold text-red-600 hover:border-red-300"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
         </div>
