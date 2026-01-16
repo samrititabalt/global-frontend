@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Linkedin, AlertTriangle, Shield, LoaderIcon } from 'lucide-react';
+import { Linkedin, AlertTriangle, Shield, LoaderIcon, Download, CheckCircle2 } from 'lucide-react';
 import api from '../../utils/axios';
 import Loader from '../../components/Loader';
 
 const ConnectAccount = () => {
   const navigate = useNavigate();
+  const [hasExtension, setHasExtension] = useState(false);
+  const [extensionInstalled, setExtensionInstalled] = useState(false);
   const [formData, setFormData] = useState({
-    liAt: '',
-    JSESSIONID: '',
     proxy: {
       host: '',
       port: '',
@@ -21,6 +21,40 @@ const ConnectAccount = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Check if extension is installed
+  useEffect(() => {
+    // Check if we're in a browser that supports extensions
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      setHasExtension(true);
+      
+      // Try to detect extension by attempting to send a message
+      // Extension ID will be set after installation
+      const checkExtension = () => {
+        // Try common extension detection methods
+        const extensionId = localStorage.getItem('linkedinHelperExtensionId');
+        if (extensionId) {
+          try {
+            chrome.runtime.sendMessage(extensionId, { action: 'ping' }, (response) => {
+              if (chrome.runtime.lastError) {
+                // Extension not found, but chrome.runtime exists
+                setExtensionInstalled(false);
+              } else if (response) {
+                setExtensionInstalled(true);
+              }
+            });
+          } catch (e) {
+            setExtensionInstalled(false);
+          }
+        } else {
+          // No extension ID stored, show installation instructions
+          setExtensionInstalled(false);
+        }
+      };
+      
+      checkExtension();
+    }
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -30,17 +64,11 @@ const ConnectAccount = () => {
       return;
     }
 
-    if (!formData.liAt || !formData.JSESSIONID) {
-      setError('Both li_at and JSESSIONID cookies are required');
-      return;
-    }
-
     setLoading(true);
     try {
       const payload = {
-        liAt: formData.liAt.trim(),
-        JSESSIONID: formData.JSESSIONID.trim(),
-        consentAccepted: true
+        consentAccepted: true,
+        connectionMethod: 'extension'
       };
 
       if (formData.proxy.host && formData.proxy.port) {
@@ -53,6 +81,16 @@ const ConnectAccount = () => {
       const response = await api.post('/linkedin-helper/accounts', payload);
       
       if (response.data.success) {
+        // Store auth token in extension if available
+        if (extensionInstalled && window.chrome?.runtime) {
+          const token = localStorage.getItem('token');
+          if (token) {
+            chrome.runtime.sendMessage('linkedin-helper-extension-id', {
+              action: 'setAuthToken',
+              token
+            });
+          }
+        }
         navigate('/solutions/linkedin-helper/dashboard');
       }
     } catch (err) {
@@ -103,18 +141,45 @@ const ConnectAccount = () => {
             </div>
           </div>
 
-          {/* How to Get Cookies */}
+          {/* Extension Installation */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-            <h3 className="font-semibold text-blue-900 mb-3">How to Get Your LinkedIn Cookies</h3>
-            <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
-              <li>Open LinkedIn in your browser and log in</li>
-              <li>Open Developer Tools (F12 or Right-click → Inspect)</li>
-              <li>Go to the "Application" tab (Chrome) or "Storage" tab (Firefox)</li>
-              <li>Find "Cookies" → "https://www.linkedin.com"</li>
-              <li>Copy the value of <code className="bg-blue-100 px-1 rounded">li_at</code> cookie</li>
-              <li>Copy the value of <code className="bg-blue-100 px-1 rounded">JSESSIONID</code> cookie</li>
-              <li>Paste both values below</li>
-            </ol>
+            <div className="flex items-start gap-4 mb-4">
+              <Download className="h-6 w-6 text-blue-600 mt-1 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900 mb-2">Install Browser Extension</h3>
+                <p className="text-sm text-blue-800 mb-4">
+                  Connect your LinkedIn account securely using our browser extension. No need to share cookies!
+                </p>
+                
+                {extensionInstalled ? (
+                  <div className="flex items-center gap-2 text-green-700 bg-green-100 px-4 py-2 rounded-lg">
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span className="font-medium">Extension is installed and ready!</span>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="bg-white rounded-lg p-4 border border-blue-200">
+                      <h4 className="font-semibold text-blue-900 mb-2">Installation Steps:</h4>
+                      <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
+                        <li>Download the extension from the link below</li>
+                        <li>Open Chrome/Edge and go to <code className="bg-blue-100 px-1 rounded">chrome://extensions</code></li>
+                        <li>Enable "Developer mode" (top right)</li>
+                        <li>Click "Load unpacked" and select the extension folder</li>
+                        <li>Return here and click "Connect Account"</li>
+                      </ol>
+                    </div>
+                    <a
+                      href="/linkedin-helper-extension.zip"
+                      download
+                      className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    >
+                      <Download className="h-5 w-5" />
+                      Download Extension
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {error && (
@@ -124,33 +189,13 @@ const ConnectAccount = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                li_at Cookie *
-              </label>
-              <input
-                type="text"
-                value={formData.liAt}
-                onChange={(e) => setFormData({ ...formData, liAt: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Paste your li_at cookie value here"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                JSESSIONID Cookie *
-              </label>
-              <input
-                type="text"
-                value={formData.JSESSIONID}
-                onChange={(e) => setFormData({ ...formData, JSESSIONID: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Paste your JSESSIONID cookie value here"
-                required
-              />
-            </div>
+            {!extensionInstalled && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-sm text-yellow-800">
+                  <strong>Note:</strong> Please install the browser extension first to connect your account securely.
+                </p>
+              </div>
+            )}
 
             {/* Proxy Settings (Optional) */}
             <div className="border-t border-gray-200 pt-6">
