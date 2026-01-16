@@ -78,11 +78,6 @@ import ExpenseMonitorPro from './pages/solutions/ExpenseMonitorPro';
 import MergeSpreadsheets from './pages/solutions/MergeSpreadsheets';
 import MergeSpreadsheetsPro from './pages/solutions/MergeSpreadsheetsPro';
 import Forecasts from './pages/solutions/Forecasts';
-import LinkedInHelper from './pages/solutions/LinkedInHelper';
-import LinkedInHelperPro from './pages/solutions/LinkedInHelperPro';
-import LinkedInHelperDashboard from './pages/linkedin-helper/Dashboard';
-import LinkedInHelperConnectAccount from './pages/linkedin-helper/ConnectAccount';
-import LinkedInHelperInbox from './pages/linkedin-helper/Inbox';
 import ErrorBoundary from './components/ErrorBoundary';
 import RiskFraud from './pages/solutions/RiskFraud';
 import Hiring from './pages/solutions/Hiring';
@@ -173,42 +168,6 @@ function App() {
             <Route path="/solutions/hiring" element={<Hiring />} />
             <Route path="/solutions/facebook-ads" element={<FacebookAdsQuickLaunch />} />
             <Route path="/resume-builder" element={<ResumeBuilder />} />
-            <Route path="/solutions/linkedin-helper" element={<LinkedInHelper />} />
-            <Route
-              path="/linkedin-helper-pro"
-              element={
-                <ProtectedRoute role="customer">
-                  <ProAccessGuard requiredRole="customer">
-                    <ErrorBoundary><LinkedInHelperPro /></ErrorBoundary>
-                  </ProAccessGuard>
-                </ProtectedRoute>
-              }
-            />
-            {/* LinkedIn Helper Routes */}
-            <Route
-              path="/linkedin-helper"
-              element={
-                <ProtectedRoute role="customer">
-                  <LinkedInHelperDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/linkedin-helper/accounts/connect"
-              element={
-                <ProtectedRoute role="customer">
-                  <LinkedInHelperConnectAccount />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/linkedin-helper/accounts/:accountId/inbox"
-              element={
-                <ProtectedRoute role="customer">
-                  <LinkedInHelperInbox />
-                </ProtectedRoute>
-              }
-            />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/data-deletion" element={<DataDeletion />} />
@@ -376,16 +335,6 @@ function App() {
               } 
             />
             <Route 
-              path="/customer/linkedin-helper-pro" 
-              element={
-                <ProtectedRoute role="customer">
-                  <ProAccessGuard requiredRole="customer">
-                    <ErrorBoundary><LinkedInHelperPro /></ErrorBoundary>
-                  </ProAccessGuard>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
               path="/resume-builder/create" 
               element={
                 <ProtectedRoute role="customer">
@@ -515,16 +464,6 @@ function App() {
                 <ProtectedRoute role="agent">
                   <ProAccessGuard requiredRole="agent">
                     <MergeSpreadsheetsPro />
-                  </ProAccessGuard>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/agent/linkedin-helper-pro" 
-              element={
-                <ProtectedRoute role="agent">
-                  <ProAccessGuard requiredRole="agent">
-                    <ErrorBoundary><LinkedInHelperPro /></ErrorBoundary>
                   </ProAccessGuard>
                 </ProtectedRoute>
               } 

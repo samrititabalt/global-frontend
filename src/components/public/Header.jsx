@@ -61,7 +61,6 @@ const Header = () => {
     { name: 'Hiring', path: '/solutions/hiring', key: 'common-solutions-hiring' },
     { name: 'Run Facebook Ads', path: '/solutions/facebook-ads', key: 'common-solutions-facebook-ads', isFacebook: true },
     { name: 'Resume Builder', path: '/resume-builder', key: 'common-solutions-resume-builder' },
-    { name: 'LinkedIn Helper', path: '/solutions/linkedin-helper', key: 'common-solutions-linkedin-helper' },
     { name: 'Industry Solutions', path: '/solutions/industry-solutions', key: 'common-solutions-industry' },
     { name: 'Document Converter & PDF Editor', path: '/solutions/document-converter', key: 'common-solutions-document-converter' },
   ];
