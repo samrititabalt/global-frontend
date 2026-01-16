@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, LineChart, AreaChart, Palette, Eye, EyeOff, ChevronRight, ChevronLeft, Image as ImageIcon, MessageCircle, Send, Minimize2, Maximize2, Filter, Search, Type, Heading, List, Quote, Plus, GripVertical, Move, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, Link as LinkIcon, Video, Code, Layout, Sparkles, Minus, ArrowUp, ArrowDown } from 'lucide-react';
+import { Download, Copy, Trash2, FileSpreadsheet, BarChart3, PieChart, Info, X, Settings, LineChart, AreaChart, Palette, Eye, EyeOff, ChevronRight, ChevronLeft, Image as ImageIcon, MessageCircle, Send, Minimize2, Maximize2, Filter, Search } from 'lucide-react';
 import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart as RechartsLineChart, Line, AreaChart as RechartsAreaChart, Area, LabelList, Text } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -117,577 +117,6 @@ const FilterMultiSelect = ({ filter, uniqueValues, onUpdate }) => {
   );
 };
 
-// Block Editor Component (Gamma-like)
-const BlockEditor = ({ block, slideIndex, isSelected, onSelect, onUpdate, onDelete, onMoveUp, onMoveDown, chartConfigs, renderChart }) => {
-  const blockRef = React.useRef(null);
-
-  const renderBlockContent = () => {
-    switch (block.type) {
-      case 'heading':
-        return (
-          <input
-            type="text"
-            value={block.text || ''}
-            onChange={(e) => onUpdate({ text: e.target.value })}
-            className="w-full bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
-            style={{ 
-              fontSize: `${block.fontSize || 32}px`,
-              fontWeight: 'bold',
-              color: block.color || '#000000',
-              textAlign: block.align || 'left',
-            }}
-            placeholder="Heading"
-          />
-        );
-      case 'text':
-        return (
-          <textarea
-            value={block.text || ''}
-            onChange={(e) => onUpdate({ text: e.target.value })}
-            className="w-full bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 resize-none"
-            style={{ 
-              fontSize: `${block.fontSize || 16}px`,
-              color: block.color || '#333333',
-              textAlign: block.align || 'left',
-              minHeight: '60px',
-            }}
-            placeholder="Start typing..."
-          />
-        );
-      case 'image':
-        return (
-          <div className="space-y-2">
-            {block.url ? (
-              <img src={block.url} alt={block.alt} className="max-w-full h-auto rounded" />
-            ) : (
-              <div className="border-2 border-dashed border-gray-300 rounded p-8 text-center">
-                <ImageIcon className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                <input
-                  type="url"
-                  placeholder="Image URL"
-                  value={block.url || ''}
-                  onChange={(e) => onUpdate({ url: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                />
-              </div>
-            )}
-          </div>
-        );
-      case 'chart':
-        return (
-          <div className="border border-gray-200 rounded p-4 bg-white">
-            {block.chartId ? (
-              <div style={{ height: `${block.height || 300}px` }}>
-                {renderChart(chartConfigs.find(c => c.id === block.chartId) || chartConfigs[0])}
-              </div>
-            ) : (
-              <div className="text-center text-gray-400 py-8">
-                <BarChart3 className="h-12 w-12 mx-auto mb-2" />
-                <p>Select a chart from dashboard</p>
-              </div>
-            )}
-          </div>
-        );
-      case 'list':
-        return (
-          <div className="space-y-2">
-            {(block.items || []).map((item, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                {block.ordered ? <span className="text-gray-600">{idx + 1}.</span> : <span className="text-gray-600">•</span>}
-                <input
-                  type="text"
-                  value={item}
-                  onChange={(e) => {
-                    const newItems = [...(block.items || [])];
-                    newItems[idx] = e.target.value;
-                    onUpdate({ items: newItems });
-                  }}
-                  className="flex-1 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
-                  placeholder="List item"
-                />
-              </div>
-            ))}
-            <button
-              onClick={() => onUpdate({ items: [...(block.items || []), 'New item'] })}
-              className="text-sm text-blue-600 hover:text-blue-700 mt-2"
-            >
-              + Add item
-            </button>
-          </div>
-        );
-      case 'quote':
-        return (
-          <div className="border-l-4 border-gray-300 pl-4">
-            <textarea
-              value={block.text || ''}
-              onChange={(e) => onUpdate({ text: e.target.value })}
-              className="w-full bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 italic"
-              placeholder="Quote text"
-              style={{ fontSize: `${block.fontSize || 18}px` }}
-            />
-            {block.author && (
-              <input
-                type="text"
-                value={block.author}
-                onChange={(e) => onUpdate({ author: e.target.value })}
-                className="w-full bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 mt-2 text-sm"
-                placeholder="Author"
-              />
-            )}
-          </div>
-        );
-      case 'divider':
-        return (
-          <div className="py-4">
-            <hr style={{ borderColor: block.color || '#E5E7EB', borderStyle: block.style || 'solid' }} />
-          </div>
-        );
-      default:
-        return <div className="text-gray-400">Unknown block type</div>;
-    }
-  };
-
-  return (
-    <div
-      ref={blockRef}
-      onClick={onSelect}
-      className={`relative group border-2 rounded-lg p-4 transition-all ${
-        isSelected ? 'border-blue-500 bg-blue-50' : 'border-transparent hover:border-gray-300 bg-white'
-      }`}
-    >
-      {/* Block Controls */}
-      {isSelected && (
-        <div className="absolute -left-10 top-0 flex flex-col gap-1">
-          <button
-            onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
-            className="p-1 bg-white border border-gray-300 rounded hover:bg-gray-50"
-            title="Move up"
-          >
-            <ArrowUp className="h-4 w-4" />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
-            className="p-1 bg-white border border-gray-300 rounded hover:bg-gray-50"
-            title="Move down"
-          >
-            <ArrowDown className="h-4 w-4" />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="p-1 bg-white border border-red-300 rounded hover:bg-red-50 text-red-600"
-            title="Delete"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-
-      {/* Block Type Badge */}
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <span className="text-xs px-2 py-1 bg-gray-100 rounded text-gray-600 capitalize">{block.type}</span>
-      </div>
-
-      {/* Block Content */}
-      {renderBlockContent()}
-
-      {/* Block Properties (when selected) */}
-      {isSelected && block.type !== 'divider' && (
-        <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-xs text-gray-600">Align</label>
-              <div className="flex gap-1 mt-1">
-                {['left', 'center', 'right'].map((align) => (
-                  <button
-                    key={align}
-                    onClick={() => onUpdate({ align })}
-                    className={`p-1 border rounded ${block.align === align ? 'bg-blue-500 text-white' : 'bg-white'}`}
-                  >
-                    {align === 'left' ? <AlignLeft className="h-4 w-4" /> : 
-                     align === 'center' ? <AlignCenter className="h-4 w-4" /> : 
-                     <AlignRight className="h-4 w-4" />}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {(block.type === 'heading' || block.type === 'text') && (
-              <div>
-                <label className="text-xs text-gray-600">Font Size</label>
-                <input
-                  type="number"
-                  value={block.fontSize || 16}
-                  onChange={(e) => onUpdate({ fontSize: parseInt(e.target.value) || 16 })}
-                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded mt-1"
-                  min="12"
-                  max="72"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Professional Slide Preview Component (Gamma-like)
-const SlidePreview = ({ slide, chartConfigs, renderChart, template }) => {
-  if (!slide) return null;
-
-  const defaultPreview = {
-    backgroundColor: '#FFFFFF',
-    titleColor: '#1F2937',
-    textColor: '#374151',
-    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    primaryColor: '#3B82F6',
-  };
-
-  const preview = template?.preview || defaultPreview;
-  const blocks = slide.blocks || [];
-  
-  // Calculate layout based on block types
-  const hasHeading = blocks.some(b => b.type === 'heading');
-  const hasChart = blocks.some(b => b.type === 'chart');
-  const hasImage = blocks.some(b => b.type === 'image');
-  const textBlocks = blocks.filter(b => b.type === 'text');
-  const listBlocks = blocks.filter(b => b.type === 'list');
-  
-  // Determine layout style
-  const isCoverSlide = slide.type === 'cover';
-  const isContentSlide = slide.type === 'content' && (hasChart || hasImage);
-  const isTextSlide = !hasChart && !hasImage && (hasHeading || textBlocks.length > 0);
-
-  return (
-    <div
-      className="bg-white rounded-xl shadow-2xl overflow-hidden relative"
-      style={{
-        aspectRatio: '16/9',
-        backgroundColor: slide.backgroundColor || preview.backgroundColor,
-        fontFamily: preview.fontFamily,
-        minHeight: '500px',
-      }}
-    >
-      {/* Professional gradient overlay for cover slides */}
-      {isCoverSlide && slide.coverGradient && (
-        <div 
-          className="absolute inset-0 opacity-5"
-          style={{ background: slide.coverGradient }}
-        />
-      )}
-
-      <div 
-        className={`h-full relative z-10 ${
-          isCoverSlide ? 'flex flex-col justify-center items-center' : 
-          isContentSlide ? 'grid grid-cols-2 gap-8' : 
-          'flex flex-col justify-start'
-        }`}
-        style={{
-          padding: isCoverSlide ? '80px' : isContentSlide ? '60px' : '64px',
-        }}
-      >
-        {/* Cover Slide Layout */}
-        {isCoverSlide && (
-          <div className="text-center space-y-6 max-w-4xl">
-            {blocks.map((block) => {
-              if (block.type === 'heading') {
-                return (
-                  <h1
-                    key={block.id}
-                    className="font-extrabold leading-tight"
-                    style={{
-                      fontSize: `${block.fontSize || 64}px`,
-                      color: block.color || slide.titleColor || preview.titleColor,
-                      letterSpacing: '-0.02em',
-                      lineHeight: '1.1',
-                      marginBottom: '24px',
-                    }}
-                  >
-                    {block.text || 'Presentation Title'}
-                  </h1>
-                );
-              }
-              if (block.type === 'text') {
-                return (
-                  <p
-                    key={block.id}
-                    className="font-normal opacity-90"
-                    style={{
-                      fontSize: `${block.fontSize || 24}px`,
-                      color: block.color || slide.subtitleColor || preview.secondaryColor || '#6B7280',
-                      lineHeight: '1.6',
-                      marginTop: '16px',
-                    }}
-                  >
-                    {block.text || 'Subtitle'}
-                  </p>
-                );
-              }
-              return null;
-            })}
-          </div>
-        )}
-
-        {/* Content Slide Layout (with chart/image) */}
-        {isContentSlide && (
-          <>
-            <div className="flex flex-col justify-center space-y-6">
-              {blocks.filter(b => b.type === 'heading').map((block) => (
-                <h2
-                  key={block.id}
-                  className="font-bold leading-tight"
-                  style={{
-                    fontSize: `${block.fontSize || 40}px`,
-                    color: block.color || slide.titleColor || preview.titleColor,
-                    letterSpacing: '-0.01em',
-                    lineHeight: '1.2',
-                    marginBottom: block.align === 'center' ? 'auto' : '0',
-                    textAlign: block.align || 'left',
-                  }}
-                >
-                  {block.text || 'Slide Title'}
-                </h2>
-              ))}
-              
-              {textBlocks.map((block) => (
-                <p
-                  key={block.id}
-                  className="leading-relaxed"
-                  style={{
-                    fontSize: `${block.fontSize || 18}px`,
-                    color: block.color || slide.textColor || preview.textColor,
-                    lineHeight: '1.7',
-                    textAlign: block.align || 'left',
-                    marginTop: '12px',
-                  }}
-                >
-                  {block.text || 'Content text'}
-                </p>
-              ))}
-
-              {listBlocks.map((block) => (
-                <ul
-                  key={block.id}
-                  className={`space-y-3 ${block.ordered ? 'list-decimal' : 'list-disc'} pl-6`}
-                  style={{
-                    color: slide.textColor || preview.textColor,
-                    fontSize: `${block.fontSize || 18}px`,
-                    lineHeight: '1.8',
-                  }}
-                >
-                  {(block.items || []).map((item, idx) => (
-                    <li key={idx} className="leading-relaxed">
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              ))}
-
-              {blocks.filter(b => b.type === 'quote').map((block) => (
-                <blockquote
-                  key={block.id}
-                  className="border-l-4 pl-6 py-2 italic"
-                  style={{
-                    borderColor: preview.primaryColor,
-                    fontSize: `${block.fontSize || 20}px`,
-                    color: slide.textColor || preview.textColor,
-                    lineHeight: '1.7',
-                  }}
-                >
-                  <p className="mb-2">{block.text || 'Quote'}</p>
-                  {block.author && (
-                    <cite className="text-sm not-italic opacity-75">— {block.author}</cite>
-                  )}
-                </blockquote>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-center">
-              {blocks.filter(b => b.type === 'chart').map((block) => (
-                <div
-                  key={block.id}
-                  className="w-full"
-                  style={{ height: `${block.height || 400}px` }}
-                >
-                  {renderChart(chartConfigs.find(c => c.id === block.chartId) || chartConfigs[0])}
-                </div>
-              ))}
-              
-              {blocks.filter(b => b.type === 'image').map((block) => (
-                <div key={block.id} className="w-full h-full flex items-center justify-center">
-                  <img
-                    src={block.url}
-                    alt={block.alt || 'Slide image'}
-                    className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
-                    style={{
-                      width: block.width === 100 ? '100%' : `${block.width}%`,
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Text-only Slide Layout */}
-        {isTextSlide && !isCoverSlide && (
-          <div className="space-y-6 max-w-4xl mx-auto">
-            {blocks.filter(b => b.type === 'heading').map((block) => (
-              <h2
-                key={block.id}
-                className="font-bold leading-tight"
-                style={{
-                  fontSize: `${block.fontSize || 48}px`,
-                  color: block.color || slide.titleColor || preview.titleColor,
-                  letterSpacing: '-0.01em',
-                  lineHeight: '1.2',
-                  marginBottom: '24px',
-                  textAlign: block.align || 'left',
-                }}
-              >
-                {block.text || 'Slide Title'}
-              </h2>
-            ))}
-
-            {textBlocks.map((block) => (
-              <p
-                key={block.id}
-                className="leading-relaxed"
-                style={{
-                  fontSize: `${block.fontSize || 20}px`,
-                  color: block.color || slide.textColor || preview.textColor,
-                  lineHeight: '1.75',
-                  textAlign: block.align || 'left',
-                  marginTop: '16px',
-                }}
-              >
-                {block.text || 'Content text'}
-              </p>
-            ))}
-
-            {listBlocks.map((block) => (
-              <ul
-                key={block.id}
-                className={`space-y-4 ${block.ordered ? 'list-decimal' : 'list-disc'} pl-8`}
-                style={{
-                  color: slide.textColor || preview.textColor,
-                  fontSize: `${block.fontSize || 20}px`,
-                  lineHeight: '1.8',
-                }}
-              >
-                {(block.items || []).map((item, idx) => (
-                  <li key={idx} className="leading-relaxed">
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            ))}
-
-            {blocks.filter(b => b.type === 'quote').map((block) => (
-              <blockquote
-                key={block.id}
-                className="border-l-4 pl-8 py-4 italic bg-gray-50 rounded-r-lg"
-                style={{
-                  borderColor: preview.primaryColor,
-                  fontSize: `${block.fontSize || 22}px`,
-                  color: slide.textColor || preview.textColor,
-                  lineHeight: '1.7',
-                }}
-              >
-                <p className="mb-3">{block.text || 'Quote'}</p>
-                {block.author && (
-                  <cite className="text-base not-italic opacity-75 font-medium">— {block.author}</cite>
-                )}
-              </blockquote>
-            ))}
-
-            {blocks.filter(b => b.type === 'divider').map((block) => (
-              <hr
-                key={block.id}
-                className="my-8"
-                style={{
-                  borderColor: block.color || '#E5E7EB',
-                  borderStyle: block.style || 'solid',
-                  borderWidth: '1px',
-                }}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Agenda Slide Special Layout */}
-        {slide.type === 'agenda' && (
-          <div className="space-y-8 max-w-3xl mx-auto">
-            <h2
-              className="font-bold text-center"
-              style={{
-                fontSize: '48px',
-                color: slide.titleColor || preview.titleColor,
-                letterSpacing: '-0.01em',
-                marginBottom: '48px',
-              }}
-            >
-              Agenda
-            </h2>
-            <ul className="space-y-6">
-              {(slide.items || []).map((item, idx) => (
-                <li
-                  key={idx}
-                  className="flex items-start gap-6"
-                  style={{
-                    fontSize: '24px',
-                    color: slide.textColor || preview.textColor,
-                    lineHeight: '1.6',
-                  }}
-                >
-                  <span
-                    className="font-bold flex-shrink-0"
-                    style={{
-                      color: preview.primaryColor,
-                      width: '40px',
-                    }}
-                  >
-                    {String(idx + 1).padStart(2, '0')}.
-                  </span>
-                  <span className="flex-1">{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Thank You Slide */}
-        {slide.type === 'thankyou' && (
-          <div className="flex flex-col items-center justify-center text-center space-y-8 h-full">
-            <h1
-              className="font-extrabold"
-              style={{
-                fontSize: '64px',
-                color: slide.titleColor || preview.titleColor,
-                letterSpacing: '-0.02em',
-              }}
-            >
-              {slide.message || 'Thank You'}
-            </h1>
-            {slide.contact && (
-              <div
-                className="space-y-2 opacity-80"
-                style={{
-                  fontSize: '18px',
-                  color: slide.textColor || preview.textColor,
-                  lineHeight: '1.8',
-                  whiteSpace: 'pre-line',
-                }}
-              >
-                {slide.contact}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 const SolutionPro = () => {
   const [gridData, setGridData] = useState(() => {
     // Initialize 1000 rows x 20 columns
@@ -707,18 +136,7 @@ const SolutionPro = () => {
   const [fillStartCell, setFillStartCell] = useState(null);
   const [pptSlides, setPptSlides] = useState([]);
   const [showPptBuilder, setShowPptBuilder] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
-  // Gamma-like block-based editor state
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const [selectedBlockId, setSelectedBlockId] = useState(null);
-  const [isDraggingBlock, setIsDraggingBlock] = useState(false);
-  const [dragOverBlockId, setDragOverBlockId] = useState(null);
-  const [showBlockToolbar, setShowBlockToolbar] = useState(false);
-  const [blockToolbarPosition, setBlockToolbarPosition] = useState({ x: 0, y: 0 });
-  const [editorMode, setEditorMode] = useState('split'); // 'split', 'editor', 'preview'
   const [dashboardCharts, setDashboardCharts] = useState([]); // Charts arranged on dashboard canvas
-  const [generatingAISlides, setGeneratingAISlides] = useState(false);
   const [chartConfigs, setChartConfigs] = useState(() => 
     Array(40).fill(null).map((_, idx) => ({
       id: `chart-${idx + 1}`,
@@ -796,146 +214,6 @@ const SolutionPro = () => {
     { value: 'mean', label: 'Mean' },
     { value: 'median', label: 'Median' },
     { value: 'cagr', label: 'CAGR (Time Series)' },
-  ];
-
-  // Professional PPT Templates
-  const PPT_TEMPLATES = [
-    {
-      id: 'corporate-blue',
-      name: 'Corporate Blue',
-      category: 'Business',
-      description: 'Professional corporate design with blue accents',
-      preview: {
-        backgroundColor: '#FFFFFF',
-        primaryColor: '#1E40AF',
-        secondaryColor: '#3B82F6',
-        accentColor: '#60A5FA',
-        textColor: '#1F2937',
-        titleColor: '#1E40AF',
-        fontFamily: 'Inter, sans-serif',
-        coverGradient: 'linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%)',
-      },
-      icon: '💼',
-    },
-    {
-      id: 'modern-minimal',
-      name: 'Modern Minimal',
-      category: 'Creative',
-      description: 'Clean and minimal design with subtle colors',
-      preview: {
-        backgroundColor: '#FAFAFA',
-        primaryColor: '#000000',
-        secondaryColor: '#4B5563',
-        accentColor: '#9CA3AF',
-        textColor: '#111827',
-        titleColor: '#000000',
-        fontFamily: 'Helvetica, sans-serif',
-        coverGradient: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)',
-      },
-      icon: '✨',
-    },
-    {
-      id: 'creative-purple',
-      name: 'Creative Purple',
-      category: 'Creative',
-      description: 'Bold and vibrant purple theme for creative presentations',
-      preview: {
-        backgroundColor: '#FFFFFF',
-        primaryColor: '#7C3AED',
-        secondaryColor: '#A78BFA',
-        accentColor: '#C4B5FD',
-        textColor: '#1F2937',
-        titleColor: '#7C3AED',
-        fontFamily: 'Poppins, sans-serif',
-        coverGradient: 'linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)',
-      },
-      icon: '🎨',
-    },
-    {
-      id: 'executive-dark',
-      name: 'Executive Dark',
-      category: 'Business',
-      description: 'Sophisticated dark theme for executive presentations',
-      preview: {
-        backgroundColor: '#1F2937',
-        primaryColor: '#FFFFFF',
-        secondaryColor: '#F3F4F6',
-        accentColor: '#60A5FA',
-        textColor: '#F9FAFB',
-        titleColor: '#FFFFFF',
-        fontFamily: 'Roboto, sans-serif',
-        coverGradient: 'linear-gradient(135deg, #111827 0%, #1F2937 100%)',
-      },
-      icon: '👔',
-    },
-    {
-      id: 'tech-green',
-      name: 'Tech Green',
-      category: 'Technology',
-      description: 'Modern tech theme with green accents',
-      preview: {
-        backgroundColor: '#FFFFFF',
-        primaryColor: '#059669',
-        secondaryColor: '#10B981',
-        accentColor: '#34D399',
-        textColor: '#1F2937',
-        titleColor: '#059669',
-        fontFamily: 'SF Pro, sans-serif',
-        coverGradient: 'linear-gradient(135deg, #059669 0%, #10B981 100%)',
-      },
-      icon: '💻',
-    },
-    {
-      id: 'warm-orange',
-      name: 'Warm Orange',
-      category: 'Creative',
-      description: 'Energetic orange theme for engaging presentations',
-      preview: {
-        backgroundColor: '#FFF7ED',
-        primaryColor: '#EA580C',
-        secondaryColor: '#F97316',
-        accentColor: '#FB923C',
-        textColor: '#1F2937',
-        titleColor: '#EA580C',
-        fontFamily: 'Montserrat, sans-serif',
-        coverGradient: 'linear-gradient(135deg, #EA580C 0%, #F97316 100%)',
-      },
-      icon: '🔥',
-    },
-    {
-      id: 'elegant-gold',
-      name: 'Elegant Gold',
-      category: 'Luxury',
-      description: 'Premium gold theme for luxury brands',
-      preview: {
-        backgroundColor: '#FEFBF3',
-        primaryColor: '#D97706',
-        secondaryColor: '#F59E0B',
-        accentColor: '#FBBF24',
-        textColor: '#1F2937',
-        titleColor: '#D97706',
-        fontFamily: 'Playfair Display, serif',
-        coverGradient: 'linear-gradient(135deg, #D97706 0%, #F59E0B 100%)',
-      },
-      icon: '👑',
-    },
-    {
-      id: 'ocean-blue',
-      name: 'Ocean Blue',
-      category: 'Nature',
-      description: 'Calming ocean blue theme',
-      preview: {
-        backgroundColor: '#F0F9FF',
-        primaryColor: '#0284C7',
-        secondaryColor: '#0EA5E9',
-        accentColor: '#38BDF8',
-        textColor: '#1F2937',
-        titleColor: '#0284C7',
-        fontFamily: 'Open Sans, sans-serif',
-        coverGradient: 'linear-gradient(135deg, #0284C7 0%, #0EA5E9 100%)',
-      },
-      icon: '🌊',
-    },
   ];
 
   // Process grid data and generate chart data
@@ -1859,208 +1137,6 @@ const SolutionPro = () => {
   }, [chartConfigs.map(c => c.xAxis.column + c.yAxis.column).join(',')]);
 
   // Get active charts only
-  // Block-based slide system (Gamma-like)
-  const generateBlockId = () => `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-  const createBlock = (type, content = {}) => {
-    const baseBlock = {
-      id: generateBlockId(),
-      type,
-      order: 0,
-      ...content,
-    };
-
-    switch (type) {
-      case 'heading':
-        return {
-          ...baseBlock,
-          text: content.text || 'Heading',
-          level: content.level || 1, // 1-6
-          align: content.align || 'left',
-          color: content.color || '#000000',
-          fontSize: content.fontSize || 32,
-        };
-      case 'text':
-        return {
-          ...baseBlock,
-          text: content.text || 'Start typing...',
-          align: content.align || 'left',
-          color: content.color || '#333333',
-          fontSize: content.fontSize || 16,
-          bold: false,
-          italic: false,
-          underline: false,
-        };
-      case 'image':
-        return {
-          ...baseBlock,
-          url: content.url || '',
-          alt: content.alt || '',
-          width: content.width || 100,
-          height: content.height || 'auto',
-          align: content.align || 'center',
-        };
-      case 'chart':
-        return {
-          ...baseBlock,
-          chartId: content.chartId || null,
-          width: content.width || 100,
-          height: content.height || 300,
-          align: content.align || 'center',
-        };
-      case 'list':
-        return {
-          ...baseBlock,
-          items: content.items || ['Item 1', 'Item 2'],
-          ordered: content.ordered || false,
-          align: content.align || 'left',
-        };
-      case 'quote':
-        return {
-          ...baseBlock,
-          text: content.text || 'Quote text',
-          author: content.author || '',
-          align: content.align || 'left',
-        };
-      case 'divider':
-        return {
-          ...baseBlock,
-          style: content.style || 'solid', // solid, dashed, dotted
-          color: content.color || '#E5E7EB',
-        };
-      default:
-        return baseBlock;
-    }
-  };
-
-  const addBlockToSlide = (slideIndex, blockType, afterBlockId = null) => {
-    const newSlides = [...pptSlides];
-    if (!newSlides[slideIndex]) return;
-
-    const newBlock = createBlock(blockType);
-    const blocks = newSlides[slideIndex].blocks || [];
-
-    if (afterBlockId) {
-      const afterIndex = blocks.findIndex(b => b.id === afterBlockId);
-      if (afterIndex >= 0) {
-        blocks.splice(afterIndex + 1, 0, newBlock);
-      } else {
-        blocks.push(newBlock);
-      }
-    } else {
-      blocks.push(newBlock);
-    }
-
-    // Update block orders
-    blocks.forEach((block, idx) => {
-      block.order = idx;
-    });
-
-    newSlides[slideIndex].blocks = blocks;
-    setPptSlides(newSlides);
-    setSelectedBlockId(newBlock.id);
-    return newBlock;
-  };
-
-  const updateBlock = (slideIndex, blockId, updates) => {
-    const newSlides = [...pptSlides];
-    if (!newSlides[slideIndex] || !newSlides[slideIndex].blocks) return;
-
-    const blockIndex = newSlides[slideIndex].blocks.findIndex(b => b.id === blockId);
-    if (blockIndex >= 0) {
-      newSlides[slideIndex].blocks[blockIndex] = {
-        ...newSlides[slideIndex].blocks[blockIndex],
-        ...updates,
-      };
-      setPptSlides(newSlides);
-    }
-  };
-
-  const deleteBlock = (slideIndex, blockId) => {
-    const newSlides = [...pptSlides];
-    if (!newSlides[slideIndex] || !newSlides[slideIndex].blocks) return;
-
-    newSlides[slideIndex].blocks = newSlides[slideIndex].blocks.filter(b => b.id !== blockId);
-    setPptSlides(newSlides);
-    setSelectedBlockId(null);
-  };
-
-  const moveBlock = (slideIndex, blockId, direction) => {
-    const newSlides = [...pptSlides];
-    if (!newSlides[slideIndex] || !newSlides[slideIndex].blocks) return;
-
-    const blocks = newSlides[slideIndex].blocks;
-    const blockIndex = blocks.findIndex(b => b.id === blockId);
-    if (blockIndex < 0) return;
-
-    if (direction === 'up' && blockIndex > 0) {
-      [blocks[blockIndex - 1], blocks[blockIndex]] = [blocks[blockIndex], blocks[blockIndex - 1]];
-    } else if (direction === 'down' && blockIndex < blocks.length - 1) {
-      [blocks[blockIndex], blocks[blockIndex + 1]] = [blocks[blockIndex + 1], blocks[blockIndex]];
-    }
-
-    blocks.forEach((block, idx) => {
-      block.order = idx;
-    });
-
-    newSlides[slideIndex].blocks = blocks;
-    setPptSlides(newSlides);
-  };
-
-  // Apply template to all slides
-  const applyTemplateToSlides = (template) => {
-    if (!template || !pptSlides.length) return;
-    
-    const updatedSlides = pptSlides.map((slide) => {
-      const updated = { ...slide };
-      const preview = template.preview;
-      
-      // Apply template colors based on slide type
-      switch (slide.type) {
-        case 'cover':
-          updated.backgroundColor = preview.backgroundColor;
-          updated.titleColor = preview.titleColor;
-          updated.subtitleColor = preview.secondaryColor;
-          updated.coverGradient = preview.coverGradient;
-          break;
-        case 'agenda':
-          updated.backgroundColor = preview.backgroundColor;
-          updated.titleColor = preview.titleColor;
-          updated.textColor = preview.textColor;
-          updated.primaryColor = preview.primaryColor;
-          break;
-        case 'content':
-          updated.backgroundColor = preview.backgroundColor;
-          updated.titleColor = preview.titleColor;
-          updated.textColor = preview.textColor;
-          updated.primaryColor = preview.primaryColor;
-          break;
-        case 'thankyou':
-          updated.backgroundColor = preview.backgroundColor;
-          updated.titleColor = preview.titleColor;
-          updated.textColor = preview.textColor;
-          break;
-        default:
-          updated.backgroundColor = preview.backgroundColor;
-          updated.titleColor = preview.titleColor;
-          updated.textColor = preview.textColor;
-      }
-      
-      // Store template info for rendering
-      updated.template = {
-        id: template.id,
-        fontFamily: preview.fontFamily,
-        primaryColor: preview.primaryColor,
-        secondaryColor: preview.secondaryColor,
-        accentColor: preview.accentColor,
-      };
-      
-      return updated;
-    });
-    
-    setPptSlides(updatedSlides);
-  };
-
   const getActiveCharts = () => {
     return chartConfigs.filter(config => activeChartIds.has(config.id) && config.enabled);
   };
@@ -3495,57 +2571,36 @@ const SolutionPro = () => {
       
       <div className="pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Professional Header Section */}
-          <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-3xl shadow-2xl mb-8 overflow-hidden">
-            {/* Decorative Elements */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full -mr-48 -mt-48"></div>
-              <div className="absolute bottom-0 left-0 w-72 h-72 bg-white rounded-full -ml-36 -mb-36"></div>
-            </div>
-            
-            <div className="relative p-8 md:p-12 text-white">
+          {/* Rich Header Section */}
+          <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-2xl mb-8 overflow-hidden">
+            <div className="p-8 md:p-12 text-white">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div className="flex-1 z-10">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="bg-white/20 backdrop-blur-md p-3 rounded-2xl">
-                      <BarChart3 className="h-8 w-8 md:h-10 md:w-10" />
-                    </div>
-                    <div>
-                      <h1 className="text-3xl md:text-5xl font-extrabold mb-1">Sam's Smart Reports Pro</h1>
-                      <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full">PRO</span>
-                        <span className="text-sm text-white/90">Professional Data Visualization Suite</span>
-                      </div>
-                    </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <BarChart3 className="h-10 w-10 md:h-12 md:w-12" />
+                    <h1 className="text-3xl md:text-5xl font-bold">Sam's Smart Reports Pro</h1>
                   </div>
-                  <p className="text-lg md:text-xl text-white/90 mb-6 max-w-2xl">Transform your data into stunning, professional presentations with AI-powered insights and beautiful templates</p>
-                  <div className="flex flex-wrap gap-3">
-                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md px-5 py-3 rounded-xl border border-white/30 hover:bg-white/30 transition-all">
+                  <p className="text-lg md:text-xl text-blue-100 mb-6">Transform your data into professional dashboards</p>
+                  <div className="flex flex-wrap gap-4">
+                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
                       <BarChart3 className="h-5 w-5" />
-                      <span className="text-sm font-semibold">Advanced Chart Builder</span>
+                      <span className="text-sm font-medium">Chart Builder</span>
                     </div>
-                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md px-5 py-3 rounded-xl border border-white/30 hover:bg-white/30 transition-all">
+                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
                       <FileSpreadsheet className="h-5 w-5" />
-                      <span className="text-sm font-semibold">Smart Data Tables</span>
+                      <span className="text-sm font-medium">Data Tables</span>
                     </div>
-                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md px-5 py-3 rounded-xl border border-white/30 hover:bg-white/30 transition-all">
-                      <Palette className="h-5 w-5" />
-                      <span className="text-sm font-semibold">8+ Professional Templates</span>
-                    </div>
-                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md px-5 py-3 rounded-xl border border-white/30 hover:bg-white/30 transition-all">
+                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
                       <Download className="h-5 w-5" />
-                      <span className="text-sm font-semibold">One-Click PPT Export</span>
+                      <span className="text-sm font-medium">PPT Export</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex-shrink-0 z-10">
-                  <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 shadow-xl">
+                <div className="flex-shrink-0">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
                     <div className="text-center">
-                      <div className="text-5xl font-extrabold mb-2 bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
-                        {availableColumns.length}
-                      </div>
-                      <div className="text-sm font-semibold text-white/90">Columns Detected</div>
-                      <div className="mt-2 text-xs text-white/70">Ready for Analysis</div>
+                      <div className="text-4xl font-bold mb-2">{availableColumns.length}</div>
+                      <div className="text-sm text-blue-100">Columns Detected</div>
                     </div>
                   </div>
                 </div>
@@ -5074,84 +4129,15 @@ const SolutionPro = () => {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <FileSpreadsheet className="h-6 w-6 text-blue-600" />
-                <h2 className="text-2xl font-semibold text-gray-900">Professional PPT Builder</h2>
+                <h2 className="text-2xl font-semibold text-gray-900">PPT Builder</h2>
               </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowTemplateGallery(!showTemplateGallery)}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md flex items-center gap-2"
-                >
-                  <Palette className="h-4 w-4" />
-                  {selectedTemplate ? `Template: ${selectedTemplate.name}` : 'Choose Template'}
-                </button>
-                <button
-                  onClick={() => setShowPptBuilder(!showPptBuilder)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  {showPptBuilder ? 'Hide Builder' : 'Show Builder'}
-                </button>
-              </div>
+              <button
+                onClick={() => setShowPptBuilder(!showPptBuilder)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                {showPptBuilder ? 'Hide Builder' : 'Show Builder'}
+              </button>
             </div>
-
-            {/* Template Gallery */}
-            {showTemplateGallery && (
-              <div className="mb-6 p-6 bg-gradient-to-br from-gray-50 to-white rounded-xl border-2 border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <Palette className="h-5 w-5 text-purple-600" />
-                    Choose Professional Template
-                  </h3>
-                  <button
-                    onClick={() => setShowTemplateGallery(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                <p className="text-sm text-gray-600 mb-6">Select a professional template to style your entire presentation</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {PPT_TEMPLATES.map((template) => (
-                    <div
-                      key={template.id}
-                      onClick={() => {
-                        setSelectedTemplate(template);
-                        setShowTemplateGallery(false);
-                        // Apply template to existing slides if any
-                        if (pptSlides.length > 0) {
-                          applyTemplateToSlides(template);
-                        }
-                      }}
-                      className={`relative cursor-pointer rounded-xl border-2 transition-all transform hover:scale-105 ${
-                        selectedTemplate?.id === template.id
-                          ? 'border-purple-600 shadow-xl ring-4 ring-purple-200'
-                          : 'border-gray-200 hover:border-purple-400'
-                      }`}
-                    >
-                      <div
-                        className="p-6 rounded-t-xl"
-                        style={{
-                          background: template.preview.coverGradient,
-                          minHeight: '120px',
-                        }}
-                      >
-                        <div className="text-4xl mb-2">{template.icon}</div>
-                        <div className="text-white font-bold text-lg">{template.name}</div>
-                        <div className="text-white/80 text-xs mt-1">{template.category}</div>
-                      </div>
-                      <div className="p-4 bg-white rounded-b-xl">
-                        <p className="text-xs text-gray-600 line-clamp-2">{template.description}</p>
-                        {selectedTemplate?.id === template.id && (
-                          <div className="mt-3 flex items-center gap-2 text-purple-600 text-xs font-semibold">
-                            <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
-                            Selected
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {showPptBuilder && (
               <div className="space-y-6">
@@ -5164,11 +4150,7 @@ const SolutionPro = () => {
                         return;
                       }
                       
-                      // Get template or use default
-                      const template = selectedTemplate || PPT_TEMPLATES[0]; // Default to Corporate Blue
-                      const preview = template.preview;
-                      
-                      // Generate PPT structure based on dashboard charts with template (block-based)
+                      // Generate PPT structure based on dashboard charts
                       const coverSlide = { 
                         id: 'cover', 
                         type: 'cover', 
@@ -5176,21 +4158,9 @@ const SolutionPro = () => {
                         subtitle: '', 
                         author: '', 
                         images: [],
-                        backgroundColor: preview.backgroundColor,
-                        titleColor: preview.titleColor,
-                        subtitleColor: preview.secondaryColor,
-                        coverGradient: preview.coverGradient,
-                        template: {
-                          id: template.id,
-                          fontFamily: preview.fontFamily,
-                          primaryColor: preview.primaryColor,
-                          secondaryColor: preview.secondaryColor,
-                          accentColor: preview.accentColor,
-                        },
-                        blocks: [
-                          createBlock('heading', { text: 'Presentation Title', level: 1, align: 'center', fontSize: 48 }),
-                          createBlock('text', { text: 'Subtitle or description', align: 'center', fontSize: 20 }),
-                        ],
+                        backgroundColor: '#FFFFFF',
+                        titleColor: '#1F2937',
+                        subtitleColor: '#6B7280',
                       };
                       
                       // Generate agenda from dashboard charts
@@ -5202,54 +4172,25 @@ const SolutionPro = () => {
                       const agendaSlide = { 
                         id: 'agenda', 
                         type: 'agenda', 
-                        items: agendaItems,
-                        backgroundColor: preview.backgroundColor,
-                        titleColor: preview.titleColor,
-                        textColor: preview.textColor,
-                        primaryColor: preview.primaryColor,
-                        template: {
-                          id: template.id,
-                          fontFamily: preview.fontFamily,
-                          primaryColor: preview.primaryColor,
-                          secondaryColor: preview.secondaryColor,
-                          accentColor: preview.accentColor,
-                        },
-                        blocks: [
-                          createBlock('heading', { text: 'Agenda', level: 1, align: 'center', fontSize: 36 }),
-                          createBlock('list', { items: agendaItems, ordered: false, align: 'left' }),
-                        ],
+                        items: agendaItems
                       };
                       
-                      // Generate content slides from dashboard charts (one per chart) - block-based
+                      // Generate content slides from dashboard charts (one per chart)
                       const contentSlides = dashboardCharts.map((chart) => {
                         const chartIndex = chartConfigs.findIndex(c => c.id === chart.id);
-                        const chartTitle = chart.title || `Chart ${chartIndex + 1}`;
                         return {
                           id: `content-${chart.id}`,
                           type: 'content',
-                          title: chartTitle,
+                          title: chart.title || `Chart ${chartIndex + 1}`,
                           subtitle: '',
                           content: '',
                           chartId: chart.id,
                           commentary: '',
                           images: [],
                           icons: [],
-                          backgroundColor: preview.backgroundColor,
-                          titleColor: preview.titleColor,
-                          textColor: preview.textColor,
-                          primaryColor: preview.primaryColor,
-                          template: {
-                            id: template.id,
-                            fontFamily: preview.fontFamily,
-                            primaryColor: preview.primaryColor,
-                            secondaryColor: preview.secondaryColor,
-                            accentColor: preview.accentColor,
-                          },
-                          blocks: [
-                            createBlock('heading', { text: chartTitle, level: 2, align: 'left', fontSize: 32 }),
-                            createBlock('chart', { chartId: chart.id, width: 100, height: 400, align: 'center' }),
-                            createBlock('text', { text: 'Add your insights here...', align: 'left', fontSize: 16 }),
-                          ],
+                          backgroundColor: '#FFFFFF',
+                          titleColor: '#1F2937',
+                          textColor: '#374151',
                         };
                       });
                       
@@ -5258,281 +4199,17 @@ const SolutionPro = () => {
                         type: 'thankyou',
                         message: 'Thank You',
                         contact: 'Email: info@tabalt.co.uk\nPhone: +44 7448614160\n3 Herron Court, Bromley, London, United Kingdom',
-                        backgroundColor: preview.backgroundColor,
-                        titleColor: preview.titleColor,
-                        textColor: preview.textColor,
-                        template: {
-                          id: template.id,
-                          fontFamily: preview.fontFamily,
-                          primaryColor: preview.primaryColor,
-                          secondaryColor: preview.secondaryColor,
-                          accentColor: preview.accentColor,
-                        },
-                        blocks: [
-                          createBlock('heading', { text: 'Thank You', level: 1, align: 'center', fontSize: 48 }),
-                          createBlock('text', { text: 'Email: info@tabalt.co.uk\nPhone: +44 7448614160\n3 Herron Court, Bromley, London, United Kingdom', align: 'center', fontSize: 16 }),
-                        ],
+                        backgroundColor: '#FFFFFF',
                       };
                       
                       const newSlides = [coverSlide, agendaSlide, ...contentSlides, thankYouSlide];
                       setPptSlides(newSlides);
                       setPptPreviewMode(true); // Automatically enter preview mode
-                      
-                      // If no template was selected, set the default
-                      if (!selectedTemplate) {
-                        setSelectedTemplate(template);
-                      }
                     }}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                   >
                     Generate PPT from Dashboard ({dashboardCharts.length} charts)
                   </button>
-                  
-                  {/* AI-Powered Generation */}
-                  <button
-                    onClick={async () => {
-                      if (dashboardCharts.length === 0) {
-                        alert('Please add charts to the Dashboard Canvas first.');
-                        return;
-                      }
-                      
-                      setGeneratingAISlides(true);
-                      try {
-                        // Get chart titles and data for AI context
-                        const chartContext = dashboardCharts.map((chart) => {
-                          const chartIndex = chartConfigs.findIndex(c => c.id === chart.id);
-                          const config = chartConfigs[chartIndex];
-                          return {
-                            title: config.title || `Chart ${chartIndex + 1}`,
-                            type: config.chartType,
-                            xAxis: config.xAxis.columns?.[0] || '',
-                            yAxis: config.yAxis.columns?.[0] || '',
-                          };
-                        });
-
-                        const prompt = `Generate a professional presentation structure for a data-driven business presentation. 
-                        
-Charts to include:
-${chartContext.map((c, i) => `${i + 1}. ${c.title} (${c.chartType} chart showing ${c.xAxis} vs ${c.yAxis})`).join('\n')}
-
-Create a professional presentation with:
-1. A compelling cover slide with title and subtitle
-2. An agenda slide listing all topics
-3. One content slide per chart with professional headings and brief insights
-4. A thank you slide
-
-For each slide, provide:
-- Professional heading text (concise, impactful)
-- Brief text content (2-3 sentences of insights)
-- Proper structure for a business presentation
-
-Return JSON format:
-{
-  "cover": { "title": "...", "subtitle": "..." },
-  "agenda": ["item1", "item2", ...],
-  "slides": [
-    { "title": "...", "content": "...", "chartTitle": "..." }
-  ]
-}`;
-
-                        const response = await api.post('/public/chatbot-message', {
-                          message: prompt,
-                          chatHistory: [],
-                        });
-
-                        const aiContent = response.data.response || response.data.message || '';
-                        
-                        // Parse AI response (try to extract JSON)
-                        let parsedContent;
-                        try {
-                          // Try to extract JSON from markdown code blocks
-                          const jsonMatch = aiContent.match(/```json\s*([\s\S]*?)\s*```/) || aiContent.match(/```\s*([\s\S]*?)\s*```/);
-                          if (jsonMatch) {
-                            parsedContent = JSON.parse(jsonMatch[1]);
-                          } else {
-                            // Try parsing the whole response as JSON
-                            parsedContent = JSON.parse(aiContent);
-                          }
-                        } catch (e) {
-                          // Fallback: create structure from AI text
-                          parsedContent = {
-                            cover: { title: 'Data Insights Presentation', subtitle: 'Professional Analysis' },
-                            agenda: chartContext.map(c => c.title),
-                            slides: chartContext.map(c => ({
-                              title: c.title,
-                              content: `Key insights from ${c.title} analysis.`,
-                              chartTitle: c.title,
-                            })),
-                          };
-                        }
-
-                        // Generate slides with AI content
-                        const template = selectedTemplate || PPT_TEMPLATES[0];
-                        const preview = template.preview;
-
-                        const coverSlide = {
-                          id: 'cover',
-                          type: 'cover',
-                          title: parsedContent.cover?.title || 'Presentation Title',
-                          subtitle: parsedContent.cover?.subtitle || '',
-                          author: '',
-                          images: [],
-                          backgroundColor: preview.backgroundColor,
-                          titleColor: preview.titleColor,
-                          subtitleColor: preview.secondaryColor,
-                          coverGradient: preview.coverGradient,
-                          template: {
-                            id: template.id,
-                            fontFamily: preview.fontFamily,
-                            primaryColor: preview.primaryColor,
-                            secondaryColor: preview.secondaryColor,
-                            accentColor: preview.accentColor,
-                          },
-                          blocks: [
-                            createBlock('heading', {
-                              text: parsedContent.cover?.title || 'Presentation Title',
-                              level: 1,
-                              align: 'center',
-                              fontSize: 64,
-                            }),
-                            createBlock('text', {
-                              text: parsedContent.cover?.subtitle || '',
-                              align: 'center',
-                              fontSize: 24,
-                            }),
-                          ],
-                        };
-
-                        const agendaSlide = {
-                          id: 'agenda',
-                          type: 'agenda',
-                          items: parsedContent.agenda || chartContext.map(c => c.title),
-                          backgroundColor: preview.backgroundColor,
-                          titleColor: preview.titleColor,
-                          textColor: preview.textColor,
-                          primaryColor: preview.primaryColor,
-                          template: {
-                            id: template.id,
-                            fontFamily: preview.fontFamily,
-                            primaryColor: preview.primaryColor,
-                            secondaryColor: preview.secondaryColor,
-                            accentColor: preview.accentColor,
-                          },
-                          blocks: [
-                            createBlock('heading', {
-                              text: 'Agenda',
-                              level: 1,
-                              align: 'center',
-                              fontSize: 48,
-                            }),
-                            createBlock('list', {
-                              items: parsedContent.agenda || chartContext.map(c => c.title),
-                              ordered: false,
-                              align: 'left',
-                            }),
-                          ],
-                        };
-
-                        const contentSlides = dashboardCharts.map((chart, idx) => {
-                          const chartIndex = chartConfigs.findIndex(c => c.id === chart.id);
-                          const aiSlide = parsedContent.slides?.[idx] || {};
-                          const slideTitle = aiSlide.title || chart.title || `Chart ${chartIndex + 1}`;
-                          const slideContent = aiSlide.content || `Analysis of ${slideTitle}`;
-
-                          return {
-                            id: `content-${chart.id}`,
-                            type: 'content',
-                            title: slideTitle,
-                            subtitle: '',
-                            content: slideContent,
-                            chartId: chart.id,
-                            commentary: '',
-                            images: [],
-                            icons: [],
-                            backgroundColor: preview.backgroundColor,
-                            titleColor: preview.titleColor,
-                            textColor: preview.textColor,
-                            primaryColor: preview.primaryColor,
-                            template: {
-                              id: template.id,
-                              fontFamily: preview.fontFamily,
-                              primaryColor: preview.primaryColor,
-                              secondaryColor: preview.secondaryColor,
-                              accentColor: preview.accentColor,
-                            },
-                            blocks: [
-                              createBlock('heading', {
-                                text: slideTitle,
-                                level: 2,
-                                align: 'left',
-                                fontSize: 40,
-                              }),
-                              createBlock('chart', {
-                                chartId: chart.id,
-                                width: 100,
-                                height: 400,
-                                align: 'center',
-                              }),
-                              createBlock('text', {
-                                text: slideContent,
-                                align: 'left',
-                                fontSize: 18,
-                              }),
-                            ],
-                          };
-                        });
-
-                        const thankYouSlide = {
-                          id: 'thankyou',
-                          type: 'thankyou',
-                          message: 'Thank You',
-                          contact: 'Email: info@tabalt.co.uk\nPhone: +44 7448614160\n3 Herron Court, Bromley, London, United Kingdom',
-                          backgroundColor: preview.backgroundColor,
-                          titleColor: preview.titleColor,
-                          textColor: preview.textColor,
-                          template: {
-                            id: template.id,
-                            fontFamily: preview.fontFamily,
-                            primaryColor: preview.primaryColor,
-                            secondaryColor: preview.secondaryColor,
-                            accentColor: preview.accentColor,
-                          },
-                          blocks: [
-                            createBlock('heading', {
-                              text: 'Thank You',
-                              level: 1,
-                              align: 'center',
-                              fontSize: 64,
-                            }),
-                            createBlock('text', {
-                              text: 'Email: info@tabalt.co.uk\nPhone: +44 7448614160\n3 Herron Court, Bromley, London, United Kingdom',
-                              align: 'center',
-                              fontSize: 18,
-                            }),
-                          ],
-                        };
-
-                        const newSlides = [coverSlide, agendaSlide, ...contentSlides, thankYouSlide];
-                        setPptSlides(newSlides);
-                        setPptPreviewMode(true);
-                        if (!selectedTemplate) {
-                          setSelectedTemplate(template);
-                        }
-                      } catch (error) {
-                        console.error('AI generation error:', error);
-                        alert('Failed to generate AI slides. Using default structure.');
-                        // Fallback to regular generation
-                      } finally {
-                        setGeneratingAISlides(false);
-                      }
-                    }}
-                    disabled={generatingAISlides || dashboardCharts.length === 0}
-                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    {generatingAISlides ? 'Generating with AI...' : '✨ Generate with AI'}
-                  </button>
-                  
                   {pptSlides.length > 0 && (
                     <button
                       onClick={() => setPptPreviewMode(!pptPreviewMode)}
@@ -5958,141 +4635,8 @@ Return JSON format:
             )}
           </div>
 
-          {/* Gamma-like Block Editor */}
+          {/* PPT Preview Mode */}
           {pptPreviewMode && pptSlides.length > 0 && (
-            <div className="mt-8 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
-              {/* Top Toolbar */}
-              <div className="bg-gray-50 border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => setEditorMode(editorMode === 'split' ? 'editor' : editorMode === 'editor' ? 'preview' : 'split')}
-                    className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
-                  >
-                    {editorMode === 'split' ? <><Eye className="h-4 w-4" /> Split</> : 
-                     editorMode === 'editor' ? <><EyeOff className="h-4 w-4" /> Editor</> : 
-                     <><Eye className="h-4 w-4" /> Preview</>}
-                  </button>
-                  <div className="h-6 w-px bg-gray-300"></div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setCurrentSlideIndex(Math.max(0, currentSlideIndex - 1))}
-                      disabled={currentSlideIndex === 0}
-                      className="p-1.5 text-gray-600 hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    <span className="text-sm font-medium text-gray-700 px-3">
-                      Slide {currentSlideIndex + 1} of {pptSlides.length}
-                    </span>
-                    <button
-                      onClick={() => setCurrentSlideIndex(Math.min(pptSlides.length - 1, currentSlideIndex + 1))}
-                      disabled={currentSlideIndex === pptSlides.length - 1}
-                      className="p-1.5 text-gray-600 hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setPptPreviewMode(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
-                  >
-                    Exit Editor
-                  </button>
-                </div>
-              </div>
-
-              {/* Gamma-like Editor Layout */}
-              <div className="flex h-[calc(100vh-300px)] min-h-[600px]">
-                {/* Left: Block Editor */}
-                {(editorMode === 'split' || editorMode === 'editor') && (
-                  <div className="flex-1 border-r border-gray-200 overflow-y-auto bg-gray-50">
-                    <div className="max-w-4xl mx-auto p-8">
-                      {/* Slide Editor */}
-                      {pptSlides[currentSlideIndex] && (
-                        <div className="space-y-4">
-                          {/* Block List */}
-                          {(pptSlides[currentSlideIndex].blocks || []).map((block, blockIdx) => (
-                            <BlockEditor
-                              key={block.id}
-                              block={block}
-                              slideIndex={currentSlideIndex}
-                              isSelected={selectedBlockId === block.id}
-                              onSelect={() => setSelectedBlockId(block.id)}
-                              onUpdate={(updates) => updateBlock(currentSlideIndex, block.id, updates)}
-                              onDelete={() => deleteBlock(currentSlideIndex, block.id)}
-                              onMoveUp={() => moveBlock(currentSlideIndex, block.id, 'up')}
-                              onMoveDown={() => moveBlock(currentSlideIndex, block.id, 'down')}
-                              chartConfigs={chartConfigs}
-                              renderChart={renderChart}
-                            />
-                          ))}
-
-                          {/* Add Block Button */}
-                          <div className="relative">
-                            <button
-                              onClick={() => setShowBlockToolbar(!showBlockToolbar)}
-                              className="w-full py-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center justify-center gap-2 text-gray-500 hover:text-blue-600"
-                            >
-                              <Plus className="h-5 w-5" />
-                              <span className="font-medium">Add Block</span>
-                            </button>
-                            
-                            {/* Block Type Selector */}
-                            {showBlockToolbar && (
-                              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl p-2 z-50">
-                                <div className="grid grid-cols-2 gap-2">
-                                  {[
-                                    { type: 'heading', icon: Heading, label: 'Heading' },
-                                    { type: 'text', icon: Type, label: 'Text' },
-                                    { type: 'image', icon: ImageIcon, label: 'Image' },
-                                    { type: 'chart', icon: BarChart3, label: 'Chart' },
-                                    { type: 'list', icon: List, label: 'List' },
-                                    { type: 'quote', icon: Quote, label: 'Quote' },
-                                    { type: 'divider', icon: Minus, label: 'Divider' },
-                                  ].map(({ type, icon: Icon, label }) => (
-                                    <button
-                                      key={type}
-                                      onClick={() => {
-                                        addBlockToSlide(currentSlideIndex, type);
-                                        setShowBlockToolbar(false);
-                                      }}
-                                      className="flex items-center gap-2 px-4 py-3 hover:bg-gray-50 rounded-lg text-left transition-colors"
-                                    >
-                                      <Icon className="h-5 w-5 text-gray-600" />
-                                      <span className="text-sm font-medium text-gray-700">{label}</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Right: Live Preview */}
-                {(editorMode === 'split' || editorMode === 'preview') && (
-                  <div className="flex-1 overflow-y-auto bg-gray-100 flex items-center justify-center p-8">
-                    <div className="w-full max-w-5xl">
-                      <SlidePreview
-                        slide={pptSlides[currentSlideIndex]}
-                        chartConfigs={chartConfigs}
-                        renderChart={renderChart}
-                        template={selectedTemplate || PPT_TEMPLATES[0]}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          
-          {/* Old PPT Preview Mode (keeping for backward compatibility) */}
-          {pptPreviewMode && pptSlides.length > 0 && false && (
             <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-semibold text-gray-900">PPT Preview & Edit Mode</h2>
@@ -6126,13 +4670,7 @@ Return JSON format:
                     {/* Slide Preview */}
                     <div id={`preview-slide-${slide.id}`} className="bg-white p-8" style={{ aspectRatio: '16/9', minHeight: '400px', paddingBottom: '120px' }}>
                       {slide.type === 'cover' && (
-                        <div 
-                          className="h-full flex flex-col justify-center relative" 
-                          style={{ 
-                            background: slide.coverGradient || slide.backgroundColor || '#FFFFFF',
-                            fontFamily: slide.template?.fontFamily || 'Inter, sans-serif',
-                          }}
-                        >
+                        <div className="h-full flex flex-col justify-center relative" style={{ backgroundColor: slide.backgroundColor || '#FFFFFF' }}>
                           {/* Images on Cover Page */}
                           {slide.images && slide.images.length > 0 && (
                             <div className="absolute inset-0 pointer-events-none">
@@ -6247,13 +4785,7 @@ Return JSON format:
                       )}
                       
                       {slide.type === 'content' && (
-                        <div 
-                          className="h-full grid grid-cols-2 gap-6"
-                          style={{ 
-                            backgroundColor: slide.backgroundColor || '#FFFFFF',
-                            fontFamily: slide.template?.fontFamily || 'Inter, sans-serif',
-                          }}
-                        >
+                        <div className="h-full grid grid-cols-2 gap-6">
                           {/* Left: Chart */}
                           <div className="p-4 flex items-center justify-center">
                             {slide.chartId ? (
@@ -6278,9 +4810,8 @@ Return JSON format:
                                 newSlides[idx].title = e.target.value;
                                 setPptSlides(newSlides);
                               }}
-                              className="text-2xl font-bold bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 w-full"
+                              className="text-2xl font-bold text-gray-900 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 w-full"
                               placeholder="Slide Title"
-                              style={{ color: slide.titleColor || '#1F2937' }}
                             />
                             <input
                               type="text"
@@ -6432,21 +4963,15 @@ Return JSON format:
                       )}
                       
                       {slide.type === 'agenda' && (
-                        <div 
-                          className="h-full flex flex-col justify-center p-8"
-                          style={{ 
-                            backgroundColor: slide.backgroundColor || '#FFFFFF',
-                            fontFamily: slide.template?.fontFamily || 'Inter, sans-serif',
-                          }}
-                        >
-                          <h2 className="text-4xl font-bold mb-8 text-center" style={{ color: slide.titleColor || '#1F2937' }}>Agenda</h2>
+                        <div className="h-full flex flex-col justify-center p-8">
+                          <h2 className="text-4xl font-bold text-gray-900 mb-8 text-center">Agenda</h2>
                           <ul className="space-y-4">
                             {(slide.items || (dashboardCharts.length > 0 ? dashboardCharts.map(chart => {
                               const chartIndex = chartConfigs.findIndex(c => c.id === chart.id);
                               return chart.title || `Chart ${chartIndex + 1}`;
                             }) : [])).map((item, itemIdx) => (
-                              <li key={itemIdx} className="flex items-center gap-4 text-xl" style={{ color: slide.textColor || '#374151' }}>
-                                <span className="font-bold" style={{ color: slide.primaryColor || slide.template?.primaryColor || '#3B82F6' }}>{itemIdx + 1}.</span>
+                              <li key={itemIdx} className="flex items-center gap-4 text-xl text-gray-700">
+                                <span className="text-blue-600 font-bold">{itemIdx + 1}.</span>
                                 <input
                                   type="text"
                                   value={item}

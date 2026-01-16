@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { CalendarDays, ClipboardList, FileText, LayoutDashboard, UploadCloud, UserCircle, Wallet } from 'lucide-react';
 import api from '../../utils/axios';
+import Layout from '../../components/Layout';
 
 const EmployeeDashboard = () => {
   const legacyToken = localStorage.getItem('hiringProToken');
@@ -12,6 +14,8 @@ const EmployeeDashboard = () => {
   const [documents, setDocuments] = useState([]);
   const [salaryBreakdown, setSalaryBreakdown] = useState('');
   const [profile, setProfile] = useState({
+    profileImageUrl: '',
+    profileImagePublicId: '',
     phone: '',
     emergencyContact: '',
     bloodGroup: '',
@@ -20,11 +24,14 @@ const EmployeeDashboard = () => {
     previousEmployer: ''
   });
   const [employeeInfo, setEmployeeInfo] = useState({ name: '', email: '' });
+  const [profileImagePreview, setProfileImagePreview] = useState('');
+  const [profileImageUploading, setProfileImageUploading] = useState(false);
   const [timesheetForm, setTimesheetForm] = useState({ weekStart: '', weekEnd: '', hoursWorked: '' });
   const [holidayForm, setHolidayForm] = useState({ startDate: '', endDate: '', reason: '' });
   const [documentForm, setDocumentForm] = useState({ title: '', type: '', file: null });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const profileImageInputRef = useRef(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -102,6 +109,31 @@ const EmployeeDashboard = () => {
     }
   };
 
+  const handleProfileImageUpload = async (file) => {
+    if (!file) return;
+    setError('');
+    setSuccess('');
+    const previewUrl = URL.createObjectURL(file);
+    setProfileImagePreview(previewUrl);
+    setProfileImageUploading(true);
+    try {
+      const payload = new FormData();
+      payload.append('avatar', file);
+      const response = await api.post('/hiring-pro/employee/profile/image', payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.profile) {
+        setProfile(response.data.profile);
+        setProfileImagePreview('');
+        setSuccess('Profile image updated successfully.');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to upload profile image');
+    } finally {
+      setProfileImageUploading(false);
+    }
+  };
+
   const handleDocumentUpload = async () => {
     try {
       setError('');
@@ -160,6 +192,14 @@ const EmployeeDashboard = () => {
     loadData();
   }, [token]);
 
+  useEffect(() => {
+    return () => {
+      if (profileImagePreview) {
+        URL.revokeObjectURL(profileImagePreview);
+      }
+    };
+  }, [profileImagePreview]);
+
   if (!token) {
     return (
       <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
@@ -193,179 +233,260 @@ const EmployeeDashboard = () => {
     );
   }
 
+  const resolvedProfileImage = profileImagePreview || profile.profileImageUrl;
+
   return (
-    <div className="space-y-8">
-      {error && <div className="text-sm text-red-600">{error}</div>}
-      {success && <div className="text-sm text-green-600">{success}</div>}
-
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Weekly Timesheets</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <input
-            type="date"
-            value={timesheetForm.weekStart}
-            onChange={(e) => setTimesheetForm(prev => ({ ...prev, weekStart: e.target.value }))}
-            className="rounded-lg border border-gray-300 px-4 py-2"
-          />
-          <input
-            type="date"
-            value={timesheetForm.weekEnd}
-            onChange={(e) => setTimesheetForm(prev => ({ ...prev, weekEnd: e.target.value }))}
-            className="rounded-lg border border-gray-300 px-4 py-2"
-          />
-          <input
-            type="number"
-            value={timesheetForm.hoursWorked}
-            onChange={(e) => setTimesheetForm(prev => ({ ...prev, hoursWorked: e.target.value }))}
-            placeholder="Hours worked"
-            className="rounded-lg border border-gray-300 px-4 py-2"
-          />
-        </div>
-        <button
-          onClick={handleSubmitTimesheet}
-          className="rounded-lg bg-blue-600 text-white px-4 py-2 font-semibold"
-        >
-          Submit Timesheet
-        </button>
-        <div className="mt-4 space-y-2">
-          {timesheets.map(sheet => (
-            <div key={sheet._id} className="rounded-lg border border-gray-200 p-3 text-sm">
-              {new Date(sheet.weekStart).toLocaleDateString()} - {new Date(sheet.weekEnd).toLocaleDateString()} • {sheet.hoursWorked} hrs • {sheet.status}
+    <Layout>
+      <div className="bg-slate-50 min-h-screen">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+          <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-xl p-8">
+            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-indigo-50" />
+            <div className="absolute -left-12 bottom-0 h-32 w-32 rounded-full bg-blue-50" />
+            <div className="relative">
+              <div className="flex items-center gap-3 mb-3">
+                <LayoutDashboard className="h-8 w-8 text-indigo-600" />
+                <h1 className="text-3xl font-bold text-gray-900">Employee Dashboard</h1>
+              </div>
+              <p className="text-gray-600 max-w-2xl">
+                Access your personal profile, salary breakup, timesheets, and holiday requests in one secure place.
+                Keep your records updated and track approvals in real time.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-4">
+                <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3">
+                  <p className="text-xs text-indigo-600 font-semibold uppercase">Signed in as</p>
+                  <p className="text-sm font-semibold text-gray-900">{employeeInfo.name || 'Employee'}</p>
+                  <p className="text-xs text-gray-500">{employeeInfo.email}</p>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Holiday Applications</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <input
-            type="date"
-            value={holidayForm.startDate}
-            onChange={(e) => setHolidayForm(prev => ({ ...prev, startDate: e.target.value }))}
-            className="rounded-lg border border-gray-300 px-4 py-2"
-          />
-          <input
-            type="date"
-            value={holidayForm.endDate}
-            onChange={(e) => setHolidayForm(prev => ({ ...prev, endDate: e.target.value }))}
-            className="rounded-lg border border-gray-300 px-4 py-2"
-          />
-          <input
-            type="text"
-            value={holidayForm.reason}
-            onChange={(e) => setHolidayForm(prev => ({ ...prev, reason: e.target.value }))}
-            placeholder="Reason"
-            className="rounded-lg border border-gray-300 px-4 py-2"
-          />
-        </div>
-        <button
-          onClick={handleSubmitHoliday}
-          className="rounded-lg bg-indigo-600 text-white px-4 py-2 font-semibold"
-        >
-          Submit Holiday Request
-        </button>
-        <div className="mt-4 space-y-2">
-          {holidays.map(holiday => (
-            <div key={holiday._id} className="rounded-lg border border-gray-200 p-3 text-sm">
-              {new Date(holiday.startDate).toLocaleDateString()} - {new Date(holiday.endDate).toLocaleDateString()} • {holiday.status}
+          {(error || success) && (
+            <div className="flex flex-col gap-2">
+              {error && <div className="text-sm text-red-600">{error}</div>}
+              {success && <div className="text-sm text-green-600">{success}</div>}
             </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Personal Details</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <input
-            value={employeeInfo.name}
-            disabled
-            className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-600"
-            placeholder="Name"
-          />
-          <input
-            value={employeeInfo.email}
-            disabled
-            className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-600"
-            placeholder="Email"
-          />
-          {['phone', 'emergencyContact', 'bloodGroup', 'currentAddress', 'highestQualification', 'previousEmployer'].map(field => (
-            <input
-              key={field}
-              value={profile[field]}
-              onChange={(e) => setProfile(prev => ({ ...prev, [field]: e.target.value }))}
-              placeholder={field.replace(/([A-Z])/g, ' $1')}
-              className="rounded-lg border border-gray-300 px-4 py-2"
-            />
-          ))}
-        </div>
-        <button
-          onClick={handleProfileSave}
-          className="rounded-lg bg-gray-900 text-white px-4 py-2 font-semibold"
-        >
-          Save Details
-        </button>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Upload Documents</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <input
-            type="text"
-            value={documentForm.title}
-            onChange={(e) => setDocumentForm(prev => ({ ...prev, title: e.target.value }))}
-            placeholder="Document title"
-            className="rounded-lg border border-gray-300 px-4 py-2"
-          />
-          <input
-            type="text"
-            value={documentForm.type}
-            onChange={(e) => setDocumentForm(prev => ({ ...prev, type: e.target.value }))}
-            placeholder="Type (PAN, Photo, etc.)"
-            className="rounded-lg border border-gray-300 px-4 py-2"
-          />
-          <input
-            type="file"
-            onChange={(e) => setDocumentForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
-            className="rounded-lg border border-gray-300 px-4 py-2"
-          />
-        </div>
-        <button
-          onClick={handleDocumentUpload}
-          className="rounded-lg bg-blue-600 text-white px-4 py-2 font-semibold"
-        >
-          Upload Document
-        </button>
-        <div className="mt-4 space-y-2">
-          {documents.map(doc => (
-            <div key={doc._id} className="rounded-lg border border-gray-200 p-3 text-sm">
-              {doc.title} • {doc.type}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Offer Letters</h2>
-        <div className="space-y-3">
-          {offerLetters.length === 0 && (
-            <p className="text-sm text-gray-600">No offer letters available yet.</p>
           )}
-          {offerLetters.map(letter => (
-            <div key={letter._id} className="rounded-lg border border-gray-200 p-4">
-              <p className="font-semibold">{letter.candidateName} — {letter.roleTitle}</p>
-              <p className="text-sm text-gray-600">Start Date: {letter.startDate}</p>
-              <p className="text-sm text-gray-600">Status: {letter.status}</p>
+
+          <section className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <UserCircle className="h-6 w-6 text-indigo-600" />
+              <h2 className="text-2xl font-semibold text-gray-900">Personal Details</h2>
             </div>
-          ))}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <input
+                    value={employeeInfo.name}
+                    disabled
+                    className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-600"
+                    placeholder="Name"
+                  />
+                  <input
+                    value={employeeInfo.email}
+                    disabled
+                    className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-600"
+                    placeholder="Email"
+                  />
+                  {['phone', 'emergencyContact', 'bloodGroup', 'currentAddress', 'highestQualification', 'previousEmployer'].map(field => (
+                    <input
+                      key={field}
+                      value={profile[field]}
+                      onChange={(e) => setProfile(prev => ({ ...prev, [field]: e.target.value }))}
+                      placeholder={field.replace(/([A-Z])/g, ' $1')}
+                      className="rounded-lg border border-gray-300 px-4 py-2"
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={handleProfileSave}
+                  className="rounded-lg bg-gray-900 text-white px-4 py-2 font-semibold"
+                >
+                  Save Details
+                </button>
+              </div>
+              <div className="lg:col-span-1">
+                <div className="h-48 w-full rounded-2xl border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden">
+                  {resolvedProfileImage ? (
+                    <img src={resolvedProfileImage} alt="Employee profile" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="text-center text-sm text-gray-500 px-4">
+                      No profile image uploaded yet.
+                    </div>
+                  )}
+                </div>
+                <input
+                  ref={profileImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleProfileImageUpload(e.target.files?.[0])}
+                />
+                <button
+                  type="button"
+                  onClick={() => profileImageInputRef.current?.click()}
+                  disabled={profileImageUploading}
+                  className={`mt-4 inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold ${profileImageUploading ? 'border-gray-200 text-gray-400' : 'border-gray-300 text-gray-700 hover:border-gray-400'}`}
+                >
+                  <UploadCloud className="h-4 w-4" />
+                  {profileImageUploading ? 'Uploading...' : 'Add Image'}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <Wallet className="h-6 w-6 text-indigo-600" />
+              <h2 className="text-2xl font-semibold text-gray-900">Salary Breakup</h2>
+            </div>
+            <p className="text-sm text-gray-600 whitespace-pre-wrap">{salaryBreakdown || 'No salary breakup available yet.'}</p>
+          </section>
+
+          <section className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <ClipboardList className="h-6 w-6 text-blue-600" />
+              <h2 className="text-2xl font-semibold text-gray-900">Weekly Timesheets</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <input
+                type="date"
+                value={timesheetForm.weekStart}
+                onChange={(e) => setTimesheetForm(prev => ({ ...prev, weekStart: e.target.value }))}
+                className="rounded-lg border border-gray-300 px-4 py-2"
+              />
+              <input
+                type="date"
+                value={timesheetForm.weekEnd}
+                onChange={(e) => setTimesheetForm(prev => ({ ...prev, weekEnd: e.target.value }))}
+                className="rounded-lg border border-gray-300 px-4 py-2"
+              />
+              <input
+                type="number"
+                value={timesheetForm.hoursWorked}
+                onChange={(e) => setTimesheetForm(prev => ({ ...prev, hoursWorked: e.target.value }))}
+                placeholder="Hours worked"
+                className="rounded-lg border border-gray-300 px-4 py-2"
+              />
+            </div>
+            <button
+              onClick={handleSubmitTimesheet}
+              className="rounded-lg bg-blue-600 text-white px-4 py-2 font-semibold"
+            >
+              Submit Timesheet
+            </button>
+            <div className="mt-4 space-y-2">
+              {timesheets.map(sheet => (
+                <div key={sheet._id} className="rounded-lg border border-gray-200 p-3 text-sm">
+                  {new Date(sheet.weekStart).toLocaleDateString()} - {new Date(sheet.weekEnd).toLocaleDateString()} • {sheet.hoursWorked} hrs • {sheet.status}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <CalendarDays className="h-6 w-6 text-indigo-600" />
+              <h2 className="text-2xl font-semibold text-gray-900">Holiday Applications</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <input
+                type="date"
+                value={holidayForm.startDate}
+                onChange={(e) => setHolidayForm(prev => ({ ...prev, startDate: e.target.value }))}
+                className="rounded-lg border border-gray-300 px-4 py-2"
+              />
+              <input
+                type="date"
+                value={holidayForm.endDate}
+                onChange={(e) => setHolidayForm(prev => ({ ...prev, endDate: e.target.value }))}
+                className="rounded-lg border border-gray-300 px-4 py-2"
+              />
+              <input
+                type="text"
+                value={holidayForm.reason}
+                onChange={(e) => setHolidayForm(prev => ({ ...prev, reason: e.target.value }))}
+                placeholder="Reason"
+                className="rounded-lg border border-gray-300 px-4 py-2"
+              />
+            </div>
+            <button
+              onClick={handleSubmitHoliday}
+              className="rounded-lg bg-indigo-600 text-white px-4 py-2 font-semibold"
+            >
+              Submit Holiday Request
+            </button>
+            <div className="mt-4 space-y-2">
+              {holidays.map(holiday => (
+                <div key={holiday._id} className="rounded-lg border border-gray-200 p-3 text-sm">
+                  {new Date(holiday.startDate).toLocaleDateString()} - {new Date(holiday.endDate).toLocaleDateString()} • {holiday.status}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <UploadCloud className="h-6 w-6 text-blue-600" />
+              <h2 className="text-2xl font-semibold text-gray-900">Upload Documents</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <input
+                type="text"
+                value={documentForm.title}
+                onChange={(e) => setDocumentForm(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Document title"
+                className="rounded-lg border border-gray-300 px-4 py-2"
+              />
+              <input
+                type="text"
+                value={documentForm.type}
+                onChange={(e) => setDocumentForm(prev => ({ ...prev, type: e.target.value }))}
+                placeholder="Type (PAN, Photo, etc.)"
+                className="rounded-lg border border-gray-300 px-4 py-2"
+              />
+              <input
+                type="file"
+                onChange={(e) => setDocumentForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
+                className="rounded-lg border border-gray-300 px-4 py-2"
+              />
+            </div>
+            <button
+              onClick={handleDocumentUpload}
+              className="rounded-lg bg-blue-600 text-white px-4 py-2 font-semibold"
+            >
+              Upload Document
+            </button>
+            <div className="mt-4 space-y-2">
+              {documents.map(doc => (
+                <div key={doc._id} className="rounded-lg border border-gray-200 p-3 text-sm">
+                  {doc.title} • {doc.type}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <FileText className="h-6 w-6 text-indigo-600" />
+              <h2 className="text-2xl font-semibold text-gray-900">Offer Letters</h2>
+            </div>
+            <div className="space-y-3">
+              {offerLetters.length === 0 && (
+                <p className="text-sm text-gray-600">No offer letters available yet.</p>
+              )}
+              {offerLetters.map(letter => (
+                <div key={letter._id} className="rounded-lg border border-gray-200 p-4">
+                  <p className="font-semibold">{letter.candidateName} — {letter.roleTitle}</p>
+                  <p className="text-sm text-gray-600">Start Date: {letter.startDate}</p>
+                  <p className="text-sm text-gray-600">Status: {letter.status}</p>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       </div>
-
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Salary Breakup</h2>
-        <p className="text-sm text-gray-600 whitespace-pre-wrap">{salaryBreakdown || 'No salary breakup available yet.'}</p>
-      </div>
-    </div>
+    </Layout>
   );
 };
 

@@ -6,7 +6,6 @@ const EmployeeLogin = () => {
   const [mode, setMode] = useState('signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [companyId, setCompanyId] = useState('');
   const [companies, setCompanies] = useState([]);
@@ -60,17 +59,11 @@ const EmployeeLogin = () => {
       setCompanyError('Please select a company.');
       return;
     }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
     setLoading(true);
     try {
       const response = await api.post('/hiring-pro/employee/signup', {
         name: fullName,
         email,
-        password,
         companyId
       });
       if (response.data.success) {
@@ -90,8 +83,8 @@ const EmployeeLogin = () => {
       <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
         <h2 className="text-2xl font-semibold text-gray-900 mb-2">Employee Onboarding & Login</h2>
         <p className="text-sm text-gray-600 mb-6">
-          <span className="font-semibold">Important:</span> To access the Hiring Platform, you must create your employee profile using your email address.
-          You may use any personal or work email, but you must select the correct company name so the system knows where to place you.
+          <span className="font-semibold">Important:</span> Create your employee profile using your email address.
+          You will receive a temporary OTP/password by email after profile creation.
         </p>
         {error && <div className="mb-3 text-sm text-red-600">{error}</div>}
         <div className="flex gap-3 mb-6">
@@ -127,22 +120,6 @@ const EmployeeLogin = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-4 py-2"
               placeholder="Email Address"
-              required
-            />
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2"
-              placeholder="Password"
-              required
-            />
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2"
-              placeholder="Confirm Password"
               required
             />
             <div>

@@ -1,15 +1,11 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Linkedin, MessageSquare, Users, Send, CheckCircle, Zap, Shield, Clock, AlertTriangle } from 'lucide-react';
+import { Linkedin, MessageSquare, Users, Send, CheckCircle, Zap } from 'lucide-react';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
-import { useAuth } from '../../context/AuthContext';
+import AccessProButton from '../../components/solutions/AccessProButton';
 
 const LinkedInHelper = () => {
-  const { isAuthenticated } = useAuth();
-  const getStartedPath = isAuthenticated ? '/solutions/linkedin-helper/dashboard' : '/customer/login?redirect=/solutions/linkedin-helper/dashboard';
-
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -23,140 +19,146 @@ const LinkedInHelper = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-center"
           >
             <div className="flex justify-center mb-6">
-              <div className="h-20 w-20 rounded-full bg-blue-100 flex items-center justify-center">
-                <Linkedin className="h-10 w-10 text-blue-600" />
-              </div>
+              <Linkedin className="w-16 h-16 text-blue-600" />
             </div>
-            <h1 className="text-5xl font-bold text-gray-900 mb-6">
-              LinkedIn Helper
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+              <span className="text-blue-600">LinkedIn Helper</span>
             </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Automate your LinkedIn outreach with human-like behavior. Send messages, manage connections, and grow your network intelligently.
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+              Streamline your LinkedIn inbox management with intelligent message extraction and personalized bulk replies.
             </p>
-            <Link
-              to={getStartedPath}
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
-            >
-              <Zap className="h-5 w-5" />
-              Get Started
-            </Link>
+            <AccessProButton
+              customerProPath="/customer/linkedin-helper-pro"
+              agentProPath="/agent/linkedin-helper-pro"
+            />
           </motion.div>
+        </div>
+      </section>
+
+      {/* Background Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">About LinkedIn Helper</h2>
+            <p className="text-lg text-gray-600 leading-relaxed">
+              LinkedIn Helper is a personal productivity tool designed to help you efficiently manage your LinkedIn inbox. 
+              Instead of spending hours manually replying to messages, our tool allows you to extract inbox messages, 
+              select which conversations to respond to, and send personalized bulk replies that don't sound generic.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Functionality Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              LinkedIn Helper simplifies your inbox management with these key features:
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              { 
+                icon: MessageSquare, 
+                title: 'Read Inbox Messages', 
+                description: 'Extract and view all your LinkedIn inbox messages in one place' 
+              },
+              { 
+                icon: Users, 
+                title: 'Select Conversations', 
+                description: 'Choose which people you want to reply to from your inbox' 
+              },
+              { 
+                icon: Send, 
+                title: 'Bulk Replies', 
+                description: 'Send personalized replies to multiple conversations efficiently' 
+              },
+              { 
+                icon: CheckCircle, 
+                title: 'Customized Messages', 
+                description: 'Use templates with placeholders to make each reply feel personal' 
+              },
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}
+                className="p-6 bg-white rounded-lg hover:shadow-lg transition-shadow border border-gray-100"
+              >
+                <feature.icon className="h-12 w-12 text-blue-600 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                <p className="text-gray-600">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Features Section */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            Powerful LinkedIn Automation
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="bg-white rounded-xl p-6 shadow-lg border border-gray-200"
-            >
-              <MessageSquare className="h-12 w-12 text-blue-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Smart Messaging</h3>
-              <p className="text-gray-600">
-                Send personalized messages with AI-powered suggestions. Bulk reply with intelligent delays.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="bg-white rounded-xl p-6 shadow-lg border border-gray-200"
-            >
-              <Users className="h-12 w-12 text-indigo-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Connection Campaigns</h3>
-              <p className="text-gray-600">
-                Automate connection requests with personalized messages. Warm-up mode for new accounts.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="bg-white rounded-xl p-6 shadow-lg border border-gray-200"
-            >
-              <Shield className="h-12 w-12 text-green-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Safety First</h3>
-              <p className="text-gray-600">
-                Built-in safety features: daily limits, working hours, CAPTCHA detection, and auto-pause.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-              className="bg-white rounded-xl p-6 shadow-lg border border-gray-200"
-            >
-              <Clock className="h-12 w-12 text-purple-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Human-Like Behavior</h3>
-              <p className="text-gray-600">
-                Randomized delays, character-by-character typing, and natural mouse movements.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-              className="bg-white rounded-xl p-6 shadow-lg border border-gray-200"
-            >
-              <Send className="h-12 w-12 text-orange-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Inbox Management</h3>
-              <p className="text-gray-600">
-                Sync and manage your LinkedIn inbox. View conversations and reply efficiently.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.5 }}
-              className="bg-white rounded-xl p-6 shadow-lg border border-gray-200"
-            >
-              <CheckCircle className="h-12 w-12 text-teal-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">AI-Powered Replies</h3>
-              <p className="text-gray-600">
-                Get AI-generated reply suggestions. Always requires your approval before sending.
-              </p>
-            </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { icon: Zap, title: 'Smart Personalization', description: 'Use {first_name} and {full_name} placeholders to personalize each message automatically' },
+              { icon: CheckCircle, title: 'Human-in-the-Loop', description: 'Review and approve all messages before sending - you maintain full control' },
+              { icon: Linkedin, title: 'LinkedIn Native', description: 'Works with your existing LinkedIn session - no password handling required' },
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
+                className="p-6 bg-gray-50 rounded-lg hover:shadow-lg transition-shadow"
+              >
+                <feature.icon className="h-12 w-12 text-blue-600 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                <p className="text-gray-600">{feature.description}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Warning Section */}
-      <section className="py-12 bg-yellow-50 border-y border-yellow-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-start gap-4">
-            <AlertTriangle className="h-6 w-6 text-yellow-600 mt-1 flex-shrink-0" />
-            <div>
-              <h3 className="text-lg font-semibold text-yellow-900 mb-2">Important Disclaimer</h3>
-              <p className="text-yellow-800">
-                This tool automates LinkedIn actions and may violate LinkedIn's Terms of Service. 
-                Use at your own risk. We recommend using this tool responsibly and in compliance with 
-                LinkedIn's policies. Account restrictions or bans may occur.
-              </p>
-            </div>
-          </div>
+      {/* CTA Section */}
+      <section className="py-20 bg-gradient-to-br from-blue-600 to-indigo-600">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Ready to Streamline Your LinkedIn Inbox?
+            </h2>
+            <p className="text-xl text-blue-100 mb-8">
+              Start managing your LinkedIn messages more efficiently today.
+            </p>
+            <AccessProButton
+              customerProPath="/customer/linkedin-helper-pro"
+              agentProPath="/agent/linkedin-helper-pro"
+              className="bg-white text-blue-600 hover:bg-gray-100"
+            />
+          </motion.div>
         </div>
       </section>
 
@@ -166,4 +168,3 @@ const LinkedInHelper = () => {
 };
 
 export default LinkedInHelper;
-
