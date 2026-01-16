@@ -337,16 +337,6 @@ function App() {
               } 
             />
             <Route 
-              path="/customer/linkedin-helper-pro" 
-              element={
-                <ProtectedRoute role="customer">
-                  <ProAccessGuard requiredRole="customer">
-                    <ErrorBoundary><LinkedInHelperPro /></ErrorBoundary>
-                  </ProAccessGuard>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
               path="/resume-builder/create" 
               element={
                 <ProtectedRoute role="customer">
@@ -476,16 +466,6 @@ function App() {
                 <ProtectedRoute role="agent">
                   <ProAccessGuard requiredRole="agent">
                     <MergeSpreadsheetsPro />
-                  </ProAccessGuard>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/agent/linkedin-helper-pro" 
-              element={
-                <ProtectedRoute role="agent">
-                  <ProAccessGuard requiredRole="agent">
-                    <ErrorBoundary><LinkedInHelperPro /></ErrorBoundary>
                   </ProAccessGuard>
                 </ProtectedRoute>
               } 
