@@ -104,41 +104,47 @@ const CompanyAdminDashboard = () => {
     }
   };
 
-  const getDownloadUrl = (fileUrl) => {
-    if (!fileUrl) return '';
-    if (fileUrl.includes('/upload/')) {
-      return fileUrl.replace('/upload/', '/upload/fl_attachment/');
-    }
-    return fileUrl;
+  const fetchOfferPdf = async (offerId) => {
+    const response = await api.get(`/hiring-pro/company/offer-letters/${offerId}/download`, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'blob'
+    });
+    return new Blob([response.data], { type: 'application/pdf' });
   };
 
-  const handleViewOffer = (fileUrl) => {
+  const handleViewOffer = async (offerId) => {
     setOfferActionError('');
-    if (!fileUrl) {
-      setOfferActionError('Offer letter file is missing.');
-      return;
-    }
-    const previewWindow = window.open(fileUrl, '_blank', 'noopener,noreferrer');
+    const previewWindow = window.open('', '_blank', 'noopener,noreferrer');
     if (!previewWindow) {
       setOfferActionError('Pop-up blocked. Please allow pop-ups to view the offer letter.');
+      return;
+    }
+    try {
+      const blob = await fetchOfferPdf(offerId);
+      const url = window.URL.createObjectURL(blob);
+      previewWindow.location = url;
+      setTimeout(() => window.URL.revokeObjectURL(url), 2000);
+    } catch (err) {
+      previewWindow.close();
+      setOfferActionError(err.response?.data?.message || 'Unable to open offer letter');
     }
   };
 
-  const handleDownloadOffer = (fileUrl, candidateName) => {
+  const handleDownloadOffer = async (offerId, candidateName) => {
     setOfferActionError('');
-    if (!fileUrl) {
-      setOfferActionError('Offer letter file is missing.');
-      return;
+    try {
+      const blob = await fetchOfferPdf(offerId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `offer-letter-${(candidateName || 'document').replace(/\s+/g, '-')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setOfferActionError(err.response?.data?.message || 'Unable to download offer letter');
     }
-    const downloadUrl = getDownloadUrl(fileUrl);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.target = '_blank';
-    link.rel = 'noreferrer';
-    link.download = `offer-letter-${(candidateName || 'document').replace(/\s+/g, '-')}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
   };
 
   const handleEmployeeDetail = async (employeeId) => {
@@ -502,7 +508,7 @@ const CompanyAdminDashboard = () => {
                   {letter.fileUrl ? (
                     <button
                       type="button"
-                      onClick={() => handleViewOffer(letter.fileUrl)}
+                      onClick={() => handleViewOffer(letter._id)}
                       className="font-semibold text-indigo-600 hover:text-indigo-700"
                     >
                       {letter.candidateName} — {letter.roleTitle}
@@ -517,14 +523,14 @@ const CompanyAdminDashboard = () => {
                     <>
                       <button
                         type="button"
-                        onClick={() => handleViewOffer(letter.fileUrl)}
+                        onClick={() => handleViewOffer(letter._id)}
                         className="rounded-lg border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:border-gray-400"
                       >
                         View
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDownloadOffer(letter.fileUrl, letter.candidateName)}
+                        onClick={() => handleDownloadOffer(letter._id, letter.candidateName)}
                         className="rounded-lg border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:border-gray-400"
                       >
                         Download
