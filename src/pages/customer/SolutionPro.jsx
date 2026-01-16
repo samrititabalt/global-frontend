@@ -136,6 +136,8 @@ const SolutionPro = () => {
   const [fillStartCell, setFillStartCell] = useState(null);
   const [pptSlides, setPptSlides] = useState([]);
   const [showPptBuilder, setShowPptBuilder] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
   const [dashboardCharts, setDashboardCharts] = useState([]); // Charts arranged on dashboard canvas
   const [chartConfigs, setChartConfigs] = useState(() => 
     Array(40).fill(null).map((_, idx) => ({
@@ -214,6 +216,146 @@ const SolutionPro = () => {
     { value: 'mean', label: 'Mean' },
     { value: 'median', label: 'Median' },
     { value: 'cagr', label: 'CAGR (Time Series)' },
+  ];
+
+  // Professional PPT Templates
+  const PPT_TEMPLATES = [
+    {
+      id: 'corporate-blue',
+      name: 'Corporate Blue',
+      category: 'Business',
+      description: 'Professional corporate design with blue accents',
+      preview: {
+        backgroundColor: '#FFFFFF',
+        primaryColor: '#1E40AF',
+        secondaryColor: '#3B82F6',
+        accentColor: '#60A5FA',
+        textColor: '#1F2937',
+        titleColor: '#1E40AF',
+        fontFamily: 'Inter, sans-serif',
+        coverGradient: 'linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%)',
+      },
+      icon: '💼',
+    },
+    {
+      id: 'modern-minimal',
+      name: 'Modern Minimal',
+      category: 'Creative',
+      description: 'Clean and minimal design with subtle colors',
+      preview: {
+        backgroundColor: '#FAFAFA',
+        primaryColor: '#000000',
+        secondaryColor: '#4B5563',
+        accentColor: '#9CA3AF',
+        textColor: '#111827',
+        titleColor: '#000000',
+        fontFamily: 'Helvetica, sans-serif',
+        coverGradient: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)',
+      },
+      icon: '✨',
+    },
+    {
+      id: 'creative-purple',
+      name: 'Creative Purple',
+      category: 'Creative',
+      description: 'Bold and vibrant purple theme for creative presentations',
+      preview: {
+        backgroundColor: '#FFFFFF',
+        primaryColor: '#7C3AED',
+        secondaryColor: '#A78BFA',
+        accentColor: '#C4B5FD',
+        textColor: '#1F2937',
+        titleColor: '#7C3AED',
+        fontFamily: 'Poppins, sans-serif',
+        coverGradient: 'linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)',
+      },
+      icon: '🎨',
+    },
+    {
+      id: 'executive-dark',
+      name: 'Executive Dark',
+      category: 'Business',
+      description: 'Sophisticated dark theme for executive presentations',
+      preview: {
+        backgroundColor: '#1F2937',
+        primaryColor: '#FFFFFF',
+        secondaryColor: '#F3F4F6',
+        accentColor: '#60A5FA',
+        textColor: '#F9FAFB',
+        titleColor: '#FFFFFF',
+        fontFamily: 'Roboto, sans-serif',
+        coverGradient: 'linear-gradient(135deg, #111827 0%, #1F2937 100%)',
+      },
+      icon: '👔',
+    },
+    {
+      id: 'tech-green',
+      name: 'Tech Green',
+      category: 'Technology',
+      description: 'Modern tech theme with green accents',
+      preview: {
+        backgroundColor: '#FFFFFF',
+        primaryColor: '#059669',
+        secondaryColor: '#10B981',
+        accentColor: '#34D399',
+        textColor: '#1F2937',
+        titleColor: '#059669',
+        fontFamily: 'SF Pro, sans-serif',
+        coverGradient: 'linear-gradient(135deg, #059669 0%, #10B981 100%)',
+      },
+      icon: '💻',
+    },
+    {
+      id: 'warm-orange',
+      name: 'Warm Orange',
+      category: 'Creative',
+      description: 'Energetic orange theme for engaging presentations',
+      preview: {
+        backgroundColor: '#FFF7ED',
+        primaryColor: '#EA580C',
+        secondaryColor: '#F97316',
+        accentColor: '#FB923C',
+        textColor: '#1F2937',
+        titleColor: '#EA580C',
+        fontFamily: 'Montserrat, sans-serif',
+        coverGradient: 'linear-gradient(135deg, #EA580C 0%, #F97316 100%)',
+      },
+      icon: '🔥',
+    },
+    {
+      id: 'elegant-gold',
+      name: 'Elegant Gold',
+      category: 'Luxury',
+      description: 'Premium gold theme for luxury brands',
+      preview: {
+        backgroundColor: '#FEFBF3',
+        primaryColor: '#D97706',
+        secondaryColor: '#F59E0B',
+        accentColor: '#FBBF24',
+        textColor: '#1F2937',
+        titleColor: '#D97706',
+        fontFamily: 'Playfair Display, serif',
+        coverGradient: 'linear-gradient(135deg, #D97706 0%, #F59E0B 100%)',
+      },
+      icon: '👑',
+    },
+    {
+      id: 'ocean-blue',
+      name: 'Ocean Blue',
+      category: 'Nature',
+      description: 'Calming ocean blue theme',
+      preview: {
+        backgroundColor: '#F0F9FF',
+        primaryColor: '#0284C7',
+        secondaryColor: '#0EA5E9',
+        accentColor: '#38BDF8',
+        textColor: '#1F2937',
+        titleColor: '#0284C7',
+        fontFamily: 'Open Sans, sans-serif',
+        coverGradient: 'linear-gradient(135deg, #0284C7 0%, #0EA5E9 100%)',
+      },
+      icon: '🌊',
+    },
   ];
 
   // Process grid data and generate chart data
@@ -1137,6 +1279,60 @@ const SolutionPro = () => {
   }, [chartConfigs.map(c => c.xAxis.column + c.yAxis.column).join(',')]);
 
   // Get active charts only
+  // Apply template to all slides
+  const applyTemplateToSlides = (template) => {
+    if (!template || !pptSlides.length) return;
+    
+    const updatedSlides = pptSlides.map((slide) => {
+      const updated = { ...slide };
+      const preview = template.preview;
+      
+      // Apply template colors based on slide type
+      switch (slide.type) {
+        case 'cover':
+          updated.backgroundColor = preview.backgroundColor;
+          updated.titleColor = preview.titleColor;
+          updated.subtitleColor = preview.secondaryColor;
+          updated.coverGradient = preview.coverGradient;
+          break;
+        case 'agenda':
+          updated.backgroundColor = preview.backgroundColor;
+          updated.titleColor = preview.titleColor;
+          updated.textColor = preview.textColor;
+          updated.primaryColor = preview.primaryColor;
+          break;
+        case 'content':
+          updated.backgroundColor = preview.backgroundColor;
+          updated.titleColor = preview.titleColor;
+          updated.textColor = preview.textColor;
+          updated.primaryColor = preview.primaryColor;
+          break;
+        case 'thankyou':
+          updated.backgroundColor = preview.backgroundColor;
+          updated.titleColor = preview.titleColor;
+          updated.textColor = preview.textColor;
+          break;
+        default:
+          updated.backgroundColor = preview.backgroundColor;
+          updated.titleColor = preview.titleColor;
+          updated.textColor = preview.textColor;
+      }
+      
+      // Store template info for rendering
+      updated.template = {
+        id: template.id,
+        fontFamily: preview.fontFamily,
+        primaryColor: preview.primaryColor,
+        secondaryColor: preview.secondaryColor,
+        accentColor: preview.accentColor,
+      };
+      
+      return updated;
+    });
+    
+    setPptSlides(updatedSlides);
+  };
+
   const getActiveCharts = () => {
     return chartConfigs.filter(config => activeChartIds.has(config.id) && config.enabled);
   };
@@ -2571,36 +2767,57 @@ const SolutionPro = () => {
       
       <div className="pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Rich Header Section */}
-          <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-2xl mb-8 overflow-hidden">
-            <div className="p-8 md:p-12 text-white">
+          {/* Professional Header Section */}
+          <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-3xl shadow-2xl mb-8 overflow-hidden">
+            {/* Decorative Elements */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full -mr-48 -mt-48"></div>
+              <div className="absolute bottom-0 left-0 w-72 h-72 bg-white rounded-full -ml-36 -mb-36"></div>
+            </div>
+            
+            <div className="relative p-8 md:p-12 text-white">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <BarChart3 className="h-10 w-10 md:h-12 md:w-12" />
-                    <h1 className="text-3xl md:text-5xl font-bold">Sam's Smart Reports Pro</h1>
+                <div className="flex-1 z-10">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="bg-white/20 backdrop-blur-md p-3 rounded-2xl">
+                      <BarChart3 className="h-8 w-8 md:h-10 md:w-10" />
+                    </div>
+                    <div>
+                      <h1 className="text-3xl md:text-5xl font-extrabold mb-1">Sam's Smart Reports Pro</h1>
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full">PRO</span>
+                        <span className="text-sm text-white/90">Professional Data Visualization Suite</span>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-lg md:text-xl text-blue-100 mb-6">Transform your data into professional dashboards</p>
-                  <div className="flex flex-wrap gap-4">
-                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                  <p className="text-lg md:text-xl text-white/90 mb-6 max-w-2xl">Transform your data into stunning, professional presentations with AI-powered insights and beautiful templates</p>
+                  <div className="flex flex-wrap gap-3">
+                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md px-5 py-3 rounded-xl border border-white/30 hover:bg-white/30 transition-all">
                       <BarChart3 className="h-5 w-5" />
-                      <span className="text-sm font-medium">Chart Builder</span>
+                      <span className="text-sm font-semibold">Advanced Chart Builder</span>
                     </div>
-                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md px-5 py-3 rounded-xl border border-white/30 hover:bg-white/30 transition-all">
                       <FileSpreadsheet className="h-5 w-5" />
-                      <span className="text-sm font-medium">Data Tables</span>
+                      <span className="text-sm font-semibold">Smart Data Tables</span>
                     </div>
-                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md px-5 py-3 rounded-xl border border-white/30 hover:bg-white/30 transition-all">
+                      <Palette className="h-5 w-5" />
+                      <span className="text-sm font-semibold">8+ Professional Templates</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md px-5 py-3 rounded-xl border border-white/30 hover:bg-white/30 transition-all">
                       <Download className="h-5 w-5" />
-                      <span className="text-sm font-medium">PPT Export</span>
+                      <span className="text-sm font-semibold">One-Click PPT Export</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex-shrink-0">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <div className="flex-shrink-0 z-10">
+                  <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 shadow-xl">
                     <div className="text-center">
-                      <div className="text-4xl font-bold mb-2">{availableColumns.length}</div>
-                      <div className="text-sm text-blue-100">Columns Detected</div>
+                      <div className="text-5xl font-extrabold mb-2 bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
+                        {availableColumns.length}
+                      </div>
+                      <div className="text-sm font-semibold text-white/90">Columns Detected</div>
+                      <div className="mt-2 text-xs text-white/70">Ready for Analysis</div>
                     </div>
                   </div>
                 </div>
@@ -4129,15 +4346,84 @@ const SolutionPro = () => {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <FileSpreadsheet className="h-6 w-6 text-blue-600" />
-                <h2 className="text-2xl font-semibold text-gray-900">PPT Builder</h2>
+                <h2 className="text-2xl font-semibold text-gray-900">Professional PPT Builder</h2>
               </div>
-              <button
-                onClick={() => setShowPptBuilder(!showPptBuilder)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                {showPptBuilder ? 'Hide Builder' : 'Show Builder'}
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowTemplateGallery(!showTemplateGallery)}
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md flex items-center gap-2"
+                >
+                  <Palette className="h-4 w-4" />
+                  {selectedTemplate ? `Template: ${selectedTemplate.name}` : 'Choose Template'}
+                </button>
+                <button
+                  onClick={() => setShowPptBuilder(!showPptBuilder)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {showPptBuilder ? 'Hide Builder' : 'Show Builder'}
+                </button>
+              </div>
             </div>
+
+            {/* Template Gallery */}
+            {showTemplateGallery && (
+              <div className="mb-6 p-6 bg-gradient-to-br from-gray-50 to-white rounded-xl border-2 border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <Palette className="h-5 w-5 text-purple-600" />
+                    Choose Professional Template
+                  </h3>
+                  <button
+                    onClick={() => setShowTemplateGallery(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 mb-6">Select a professional template to style your entire presentation</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {PPT_TEMPLATES.map((template) => (
+                    <div
+                      key={template.id}
+                      onClick={() => {
+                        setSelectedTemplate(template);
+                        setShowTemplateGallery(false);
+                        // Apply template to existing slides if any
+                        if (pptSlides.length > 0) {
+                          applyTemplateToSlides(template);
+                        }
+                      }}
+                      className={`relative cursor-pointer rounded-xl border-2 transition-all transform hover:scale-105 ${
+                        selectedTemplate?.id === template.id
+                          ? 'border-purple-600 shadow-xl ring-4 ring-purple-200'
+                          : 'border-gray-200 hover:border-purple-400'
+                      }`}
+                    >
+                      <div
+                        className="p-6 rounded-t-xl"
+                        style={{
+                          background: template.preview.coverGradient,
+                          minHeight: '120px',
+                        }}
+                      >
+                        <div className="text-4xl mb-2">{template.icon}</div>
+                        <div className="text-white font-bold text-lg">{template.name}</div>
+                        <div className="text-white/80 text-xs mt-1">{template.category}</div>
+                      </div>
+                      <div className="p-4 bg-white rounded-b-xl">
+                        <p className="text-xs text-gray-600 line-clamp-2">{template.description}</p>
+                        {selectedTemplate?.id === template.id && (
+                          <div className="mt-3 flex items-center gap-2 text-purple-600 text-xs font-semibold">
+                            <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                            Selected
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {showPptBuilder && (
               <div className="space-y-6">
@@ -4150,7 +4436,11 @@ const SolutionPro = () => {
                         return;
                       }
                       
-                      // Generate PPT structure based on dashboard charts
+                      // Get template or use default
+                      const template = selectedTemplate || PPT_TEMPLATES[0]; // Default to Corporate Blue
+                      const preview = template.preview;
+                      
+                      // Generate PPT structure based on dashboard charts with template
                       const coverSlide = { 
                         id: 'cover', 
                         type: 'cover', 
@@ -4158,9 +4448,17 @@ const SolutionPro = () => {
                         subtitle: '', 
                         author: '', 
                         images: [],
-                        backgroundColor: '#FFFFFF',
-                        titleColor: '#1F2937',
-                        subtitleColor: '#6B7280',
+                        backgroundColor: preview.backgroundColor,
+                        titleColor: preview.titleColor,
+                        subtitleColor: preview.secondaryColor,
+                        coverGradient: preview.coverGradient,
+                        template: {
+                          id: template.id,
+                          fontFamily: preview.fontFamily,
+                          primaryColor: preview.primaryColor,
+                          secondaryColor: preview.secondaryColor,
+                          accentColor: preview.accentColor,
+                        },
                       };
                       
                       // Generate agenda from dashboard charts
@@ -4172,7 +4470,18 @@ const SolutionPro = () => {
                       const agendaSlide = { 
                         id: 'agenda', 
                         type: 'agenda', 
-                        items: agendaItems
+                        items: agendaItems,
+                        backgroundColor: preview.backgroundColor,
+                        titleColor: preview.titleColor,
+                        textColor: preview.textColor,
+                        primaryColor: preview.primaryColor,
+                        template: {
+                          id: template.id,
+                          fontFamily: preview.fontFamily,
+                          primaryColor: preview.primaryColor,
+                          secondaryColor: preview.secondaryColor,
+                          accentColor: preview.accentColor,
+                        },
                       };
                       
                       // Generate content slides from dashboard charts (one per chart)
@@ -4188,9 +4497,17 @@ const SolutionPro = () => {
                           commentary: '',
                           images: [],
                           icons: [],
-                          backgroundColor: '#FFFFFF',
-                          titleColor: '#1F2937',
-                          textColor: '#374151',
+                          backgroundColor: preview.backgroundColor,
+                          titleColor: preview.titleColor,
+                          textColor: preview.textColor,
+                          primaryColor: preview.primaryColor,
+                          template: {
+                            id: template.id,
+                            fontFamily: preview.fontFamily,
+                            primaryColor: preview.primaryColor,
+                            secondaryColor: preview.secondaryColor,
+                            accentColor: preview.accentColor,
+                          },
                         };
                       });
                       
@@ -4199,12 +4516,26 @@ const SolutionPro = () => {
                         type: 'thankyou',
                         message: 'Thank You',
                         contact: 'Email: info@tabalt.co.uk\nPhone: +44 7448614160\n3 Herron Court, Bromley, London, United Kingdom',
-                        backgroundColor: '#FFFFFF',
+                        backgroundColor: preview.backgroundColor,
+                        titleColor: preview.titleColor,
+                        textColor: preview.textColor,
+                        template: {
+                          id: template.id,
+                          fontFamily: preview.fontFamily,
+                          primaryColor: preview.primaryColor,
+                          secondaryColor: preview.secondaryColor,
+                          accentColor: preview.accentColor,
+                        },
                       };
                       
                       const newSlides = [coverSlide, agendaSlide, ...contentSlides, thankYouSlide];
                       setPptSlides(newSlides);
                       setPptPreviewMode(true); // Automatically enter preview mode
+                      
+                      // If no template was selected, set the default
+                      if (!selectedTemplate) {
+                        setSelectedTemplate(template);
+                      }
                     }}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                   >
@@ -4670,7 +5001,13 @@ const SolutionPro = () => {
                     {/* Slide Preview */}
                     <div id={`preview-slide-${slide.id}`} className="bg-white p-8" style={{ aspectRatio: '16/9', minHeight: '400px', paddingBottom: '120px' }}>
                       {slide.type === 'cover' && (
-                        <div className="h-full flex flex-col justify-center relative" style={{ backgroundColor: slide.backgroundColor || '#FFFFFF' }}>
+                        <div 
+                          className="h-full flex flex-col justify-center relative" 
+                          style={{ 
+                            background: slide.coverGradient || slide.backgroundColor || '#FFFFFF',
+                            fontFamily: slide.template?.fontFamily || 'Inter, sans-serif',
+                          }}
+                        >
                           {/* Images on Cover Page */}
                           {slide.images && slide.images.length > 0 && (
                             <div className="absolute inset-0 pointer-events-none">
@@ -4785,7 +5122,13 @@ const SolutionPro = () => {
                       )}
                       
                       {slide.type === 'content' && (
-                        <div className="h-full grid grid-cols-2 gap-6">
+                        <div 
+                          className="h-full grid grid-cols-2 gap-6"
+                          style={{ 
+                            backgroundColor: slide.backgroundColor || '#FFFFFF',
+                            fontFamily: slide.template?.fontFamily || 'Inter, sans-serif',
+                          }}
+                        >
                           {/* Left: Chart */}
                           <div className="p-4 flex items-center justify-center">
                             {slide.chartId ? (
@@ -4810,8 +5153,9 @@ const SolutionPro = () => {
                                 newSlides[idx].title = e.target.value;
                                 setPptSlides(newSlides);
                               }}
-                              className="text-2xl font-bold text-gray-900 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 w-full"
+                              className="text-2xl font-bold bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 w-full"
                               placeholder="Slide Title"
+                              style={{ color: slide.titleColor || '#1F2937' }}
                             />
                             <input
                               type="text"
@@ -4963,15 +5307,21 @@ const SolutionPro = () => {
                       )}
                       
                       {slide.type === 'agenda' && (
-                        <div className="h-full flex flex-col justify-center p-8">
-                          <h2 className="text-4xl font-bold text-gray-900 mb-8 text-center">Agenda</h2>
+                        <div 
+                          className="h-full flex flex-col justify-center p-8"
+                          style={{ 
+                            backgroundColor: slide.backgroundColor || '#FFFFFF',
+                            fontFamily: slide.template?.fontFamily || 'Inter, sans-serif',
+                          }}
+                        >
+                          <h2 className="text-4xl font-bold mb-8 text-center" style={{ color: slide.titleColor || '#1F2937' }}>Agenda</h2>
                           <ul className="space-y-4">
                             {(slide.items || (dashboardCharts.length > 0 ? dashboardCharts.map(chart => {
                               const chartIndex = chartConfigs.findIndex(c => c.id === chart.id);
                               return chart.title || `Chart ${chartIndex + 1}`;
                             }) : [])).map((item, itemIdx) => (
-                              <li key={itemIdx} className="flex items-center gap-4 text-xl text-gray-700">
-                                <span className="text-blue-600 font-bold">{itemIdx + 1}.</span>
+                              <li key={itemIdx} className="flex items-center gap-4 text-xl" style={{ color: slide.textColor || '#374151' }}>
+                                <span className="font-bold" style={{ color: slide.primaryColor || slide.template?.primaryColor || '#3B82F6' }}>{itemIdx + 1}.</span>
                                 <input
                                   type="text"
                                   value={item}
