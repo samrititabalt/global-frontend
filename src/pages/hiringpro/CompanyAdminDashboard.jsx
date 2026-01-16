@@ -29,6 +29,43 @@ const CompanyAdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [autoLoggingIn, setAutoLoggingIn] = useState(false);
 
+  const getDocumentDownloadUrl = (fileUrl) => {
+    if (!fileUrl) return '';
+    if (fileUrl.includes('/upload/')) {
+      return fileUrl.replace('/upload/', '/upload/fl_attachment/');
+    }
+    return fileUrl;
+  };
+
+  const handleViewDocument = (fileUrl) => {
+    setError('');
+    if (!fileUrl) {
+      setError('Document file is missing.');
+      return;
+    }
+    const previewWindow = window.open(fileUrl, '_blank', 'noopener,noreferrer');
+    if (!previewWindow) {
+      setError('Pop-up blocked. Please allow pop-ups to view the document.');
+    }
+  };
+
+  const handleDownloadDocument = (fileUrl, title) => {
+    setError('');
+    if (!fileUrl) {
+      setError('Document file is missing.');
+      return;
+    }
+    const downloadUrl = getDocumentDownloadUrl(fileUrl);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.target = '_blank';
+    link.rel = 'noreferrer';
+    link.download = `${(title || 'document').replace(/\s+/g, '-')}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
   const loadCompanyData = async (authToken) => {
     const [profile, employeeRes, offerRes, timesheetRes, holidayRes, expenseRes] = await Promise.all([
       api.get('/hiring-pro/company/profile', { headers: { Authorization: `Bearer ${authToken}` } }),
@@ -381,7 +418,28 @@ const CompanyAdminDashboard = () => {
                 <div className="rounded-lg border border-gray-200 p-3">
                   <p className="font-semibold text-gray-900 mb-2">Documents</p>
                   {employeeDetail.documents?.length ? employeeDetail.documents.map(doc => (
-                    <p key={doc._id} className="text-gray-600">{doc.title} • {doc.type}</p>
+                    <div key={doc._id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                      <div>
+                        <p className="text-gray-700 font-semibold">{doc.title}</p>
+                        <p className="text-xs text-gray-500">{doc.type}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleViewDocument(doc.fileUrl)}
+                          className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
+                        >
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadDocument(doc.fileUrl, doc.title)}
+                          className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
+                        >
+                          Download
+                        </button>
+                      </div>
+                    </div>
                   )) : <p className="text-gray-500">No documents</p>}
                 </div>
                 <div className="rounded-lg border border-gray-200 p-3">
