@@ -77,13 +77,14 @@ const Footer = () => {
                 </Link>
                 <Link to="/" className="block mb-4 flex justify-center">
                   {!logoError ? (
-                    <img
-                      src="/assets/Tabalt%20SamStudios.png"
-                      alt="Tabalt Logo"
-                      className="w-auto max-w-full object-contain"
-                      style={{ height: '2in', width: 'auto' }}
-                      onError={() => setLogoError(true)}
-                    />
+                    <div className="h-48 w-48 rounded-full overflow-hidden bg-white shadow-lg flex items-center justify-center">
+                      <img
+                        src="/assets/Tabalt%20SamStudios.png"
+                        alt="Tabalt Logo"
+                        className="h-full w-full object-contain"
+                        onError={() => setLogoError(true)}
+                      />
+                    </div>
                   ) : (
                     <EditableContent
                       blockId="common-footer-logo-text"
