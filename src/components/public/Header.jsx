@@ -115,55 +115,56 @@ const Header = () => {
       <header
         className={`fixed top-0 left-0 right-0 z-50 ${
           isHomePage
-            ? 'bg-transparent shadow-none'
+            ? 'bg-transparent shadow-none pointer-events-none'
             : 'bg-white shadow-md backdrop-blur-md bg-white/95'
         }`}
       >
         <nav className="w-full px-4 sm:px-6 lg:px-8 py-2">
           <div className="flex items-center justify-between min-h-[60px]">
-            {/* Logo */}
-            <Link to="/" className="flex items-start gap-3 group pt-1">
-            {!logoError ? (
-              <div className="flex flex-col items-center">
-                <img
-                  src="/assets/Tabalt%20SamStudios.png"
-                  alt="Tabalt Logo"
-                  className="h-10 w-auto object-contain"
-                  onError={() => setLogoError(true)}
-                />
-                <EditableContent
-                  blockId="common-logo-subtitle"
-                  blockType="text"
-                  tag="span"
-                  page="common"
-                  className="text-[10px] font-medium mt-0.5 text-center text-gray-600"
-                >
-                  {getCommon('common-logo-subtitle', 'Sam Studios')}
-                </EditableContent>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center">
-                <EditableContent
-                  blockId="common-logo-title"
-                  blockType="text"
-                  tag="span"
-                  page="common"
-                  className="text-xl font-bold group-hover:text-blue-600 transition-colors text-gray-900"
-                >
-                  {getCommon('common-logo-title', 'Tabalt')}
-                </EditableContent>
-                <EditableContent
-                  blockId="common-logo-subtitle"
-                  blockType="text"
-                  tag="span"
-                  page="common"
-                  className="text-[10px] font-medium mt-0.5 text-center text-gray-600"
-                >
-                  {getCommon('common-logo-subtitle', 'Sam Studios')}
-                </EditableContent>
-              </div>
+            {!isHomePage && (
+              <Link to="/" className="flex items-start gap-3 group pt-1">
+              {!logoError ? (
+                <div className="flex flex-col items-center">
+                  <img
+                    src="/assets/Tabalt%20SamStudios.png"
+                    alt="Tabalt Logo"
+                    className="h-14 w-auto object-contain"
+                    onError={() => setLogoError(true)}
+                  />
+                  <EditableContent
+                    blockId="common-logo-subtitle"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                    className="text-[10px] font-medium mt-0.5 text-center text-gray-600"
+                  >
+                    {getCommon('common-logo-subtitle', 'Sam Studios')}
+                  </EditableContent>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <EditableContent
+                    blockId="common-logo-title"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                    className="text-xl font-bold group-hover:text-blue-600 transition-colors text-gray-900"
+                  >
+                    {getCommon('common-logo-title', 'Tabalt')}
+                  </EditableContent>
+                  <EditableContent
+                    blockId="common-logo-subtitle"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                    className="text-[10px] font-medium mt-0.5 text-center text-gray-600"
+                  >
+                    {getCommon('common-logo-subtitle', 'Sam Studios')}
+                  </EditableContent>
+                </div>
+              )}
+            </Link>
             )}
-          </Link>
 
           {/* Desktop Navigation */}
           {!isHomePage && (
@@ -422,7 +423,7 @@ const Header = () => {
           </div>
           )}
           {isHomePage && (
-            <div className="hidden md:flex items-center">
+            <div className="hidden md:flex items-center pointer-events-auto">
               <Link
                 to="/customer/signup"
                 className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap"
@@ -439,7 +440,7 @@ const Header = () => {
             </div>
           )}
           {isHomePage && (
-            <div className="flex md:hidden items-center">
+            <div className="flex md:hidden items-center pointer-events-auto">
               <Link
                 to="/customer/signup"
                 className="bg-gray-900 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap text-sm"
