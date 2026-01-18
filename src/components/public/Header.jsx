@@ -122,7 +122,7 @@ const Header = () => {
             {!logoError ? (
               <div className="flex flex-col items-center">
                 <img
-                  src="/assets/tabalt-logo.png.jpg"
+                  src="/assets/Tabalt%20SamStudios.png"
                   alt="Tabalt Logo"
                   className="h-10 w-auto object-contain"
                   onError={() => setLogoError(true)}

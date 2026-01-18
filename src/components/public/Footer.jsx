@@ -78,7 +78,7 @@ const Footer = () => {
                 <Link to="/" className="block mb-4 flex justify-center">
                   {!logoError ? (
                     <img
-                      src="/assets/tabalt-logo.png.jpg"
+                      src="/assets/Tabalt%20SamStudios.png"
                       alt="Tabalt Logo"
                       className="w-auto max-w-full object-contain"
                       style={{ height: '2in', width: 'auto' }}
