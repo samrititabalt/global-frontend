@@ -22,6 +22,7 @@ const Header = () => {
   // Check if user is a customer/agent
   const isCustomer = isAuthenticated && user?.role === 'customer';
   const isAgent = isAuthenticated && user?.role === 'agent';
+  const isAdministrator = isAuthenticated && user?.role === 'admin';
   const agentInitials = isAgent
     ? (user?.name || user?.email || 'A')
         .split(' ')
@@ -53,8 +54,10 @@ const Header = () => {
   ];
 
   const solutions = [
-    { name: "Sam's Smart Reports", path: '/solutions/sams-smart-reports', key: 'common-solutions-smart-reports' },
+    { name: 'Ask Sam', path: '/ask-sam', key: 'common-solutions-ask-sam' },
     { name: 'Expense Monitor', path: '/solutions/expense-monitor', key: 'common-solutions-expense-monitor' },
+    { name: "Sam's Smart Reports", path: '/solutions/sams-smart-reports', key: 'common-solutions-smart-reports' },
+    { name: 'Sam Reports', path: '/solutions/sam-reports', key: 'common-solutions-sam-reports' },
     { name: 'Merge Spreadsheets', path: '/solutions/merge-spreadsheets', key: 'common-solutions-merge-spreadsheets' },
     { name: 'Forecasts', path: '/solutions/forecasts', key: 'common-solutions-forecasts' },
     { name: 'Risk & Fraud', path: '/solutions/risk-fraud', key: 'common-solutions-risk-fraud' },
@@ -97,11 +100,12 @@ const Header = () => {
 
   const navLinks = [
     { name: 'About Us', path: '/about-us', key: 'common-nav-about' },
-    { name: 'Ask Sam', path: '/ask-sam', key: 'common-nav-ask-sam' },
-    { name: 'Industry', path: '/industry', key: 'common-nav-industry' },
     { name: 'Case Studies', path: '/case-studies', key: 'common-nav-case-studies' },
     { name: 'Contact Us', path: '/contact-us', key: 'common-nav-contact' },
   ];
+  if (isAdministrator) {
+    navLinks.splice(1, 0, { name: 'Industry', path: '/industry', key: 'common-nav-industry' });
+  }
 
   const isActive = (path) => location.pathname === path;
 
@@ -200,63 +204,65 @@ const Header = () => {
             ))}
             
             {/* Services Dropdown */}
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setIsServicesDropdownOpen(!isServicesDropdownOpen)}
-                className={`flex items-center gap-1 text-sm font-medium transition-colors ${
-                  services.some(s => isActive(s.path))
-                    ? 'text-blue-600'
-                    : 'text-gray-700 hover:text-gray-900'
-                }`}
-              >
-                <EditableContent
-                  blockId="common-nav-services"
-                  blockType="text"
-                  tag="span"
-                  page="common"
+            {isAdministrator && (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsServicesDropdownOpen(!isServicesDropdownOpen)}
+                  className={`flex items-center gap-1 text-sm font-medium transition-colors ${
+                    services.some(s => isActive(s.path))
+                      ? 'text-blue-600'
+                      : 'text-gray-700 hover:text-gray-900'
+                  }`}
                 >
-                  {getCommon('common-nav-services', 'Services')}
-                </EditableContent>
-                <ChevronDown 
-                  className={`h-4 w-4 transition-transform duration-200 ${
-                    isServicesDropdownOpen ? 'rotate-180' : ''
-                  }`} 
-                />
-              </button>
-              
-              <AnimatePresence>
-                {isServicesDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-full left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                  <EditableContent
+                    blockId="common-nav-services"
+                    blockType="text"
+                    tag="span"
+                    page="common"
                   >
-                    {services.map((service) => (
-                      <Link
-                        key={service.path}
-                        to={service.path}
-                        className={`block px-4 py-2.5 text-sm transition-colors ${
-                          isActive(service.path)
-                            ? 'text-blue-600 bg-blue-50'
-                            : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-                        }`}
-                        onClick={() => setIsServicesDropdownOpen(false)}
-                      >
-                        <EditableContent
-                          blockId={service.key}
-                          blockType="text"
-                          tag="span"
-                          page="common"
+                    {getCommon('common-nav-services', 'Services')}
+                  </EditableContent>
+                  <ChevronDown 
+                    className={`h-4 w-4 transition-transform duration-200 ${
+                      isServicesDropdownOpen ? 'rotate-180' : ''
+                    }`} 
+                  />
+                </button>
+                
+                <AnimatePresence>
+                  {isServicesDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute top-full left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                    >
+                      {services.map((service) => (
+                        <Link
+                          key={service.path}
+                          to={service.path}
+                          className={`block px-4 py-2.5 text-sm transition-colors ${
+                            isActive(service.path)
+                              ? 'text-blue-600 bg-blue-50'
+                              : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                          }`}
+                          onClick={() => setIsServicesDropdownOpen(false)}
                         >
-                          {getCommon(service.key, service.name)}
-                        </EditableContent>
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                          <EditableContent
+                            blockId={service.key}
+                            blockType="text"
+                            tag="span"
+                            page="common"
+                          >
+                            {getCommon(service.key, service.name)}
+                          </EditableContent>
+                        </Link>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
 
             {/* Solutions Dropdown - Renamed to "Sam Studios" - Only visible to Admin and Customer */}
             {isAdminOrCustomer && (
@@ -459,68 +465,70 @@ const Header = () => {
               ))}
               
               {/* Mobile Services Dropdown */}
-              <div>
-                <button
-                  onClick={() => setIsMobileServicesOpen(!isMobileServicesOpen)}
-                  className={`flex items-center justify-between w-full text-base font-medium py-2 ${
-                    services.some(s => isActive(s.path))
-                      ? 'text-blue-600'
-                      : 'text-gray-700 hover:text-gray-900'
-                  }`}
-                >
-                  <EditableContent
-                    blockId="common-nav-services"
-                    blockType="text"
-                    tag="span"
-                    page="common"
+              {isAdministrator && (
+                <div>
+                  <button
+                    onClick={() => setIsMobileServicesOpen(!isMobileServicesOpen)}
+                    className={`flex items-center justify-between w-full text-base font-medium py-2 ${
+                      services.some(s => isActive(s.path))
+                        ? 'text-blue-600'
+                        : 'text-gray-700 hover:text-gray-900'
+                    }`}
                   >
-                    {getCommon('common-nav-services', 'Services')}
-                  </EditableContent>
-                  <ChevronDown 
-                    className={`h-5 w-5 transition-transform duration-200 ${
-                      isMobileServicesOpen ? 'rotate-180' : ''
-                    }`} 
-                  />
-                </button>
-                
-                <AnimatePresence>
-                  {isMobileServicesOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
+                    <EditableContent
+                      blockId="common-nav-services"
+                      blockType="text"
+                      tag="span"
+                      page="common"
                     >
-                      <div className="pl-4 pt-2 space-y-2">
-                        {services.map((service) => (
-                          <Link
-                            key={service.path}
-                            to={service.path}
-                            className={`block text-sm py-2 ${
-                              isActive(service.path)
-                                ? 'text-blue-600'
-                                : 'text-gray-600 hover:text-gray-900'
-                            }`}
-                            onClick={() => {
-                              setIsMobileMenuOpen(false);
-                              setIsMobileServicesOpen(false);
-                            }}
-                          >
-                            <EditableContent
-                              blockId={service.key}
-                              blockType="text"
-                              tag="span"
-                              page="common"
+                      {getCommon('common-nav-services', 'Services')}
+                    </EditableContent>
+                    <ChevronDown 
+                      className={`h-5 w-5 transition-transform duration-200 ${
+                        isMobileServicesOpen ? 'rotate-180' : ''
+                      }`} 
+                    />
+                  </button>
+                  
+                  <AnimatePresence>
+                    {isMobileServicesOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="pl-4 pt-2 space-y-2">
+                          {services.map((service) => (
+                            <Link
+                              key={service.path}
+                              to={service.path}
+                              className={`block text-sm py-2 ${
+                                isActive(service.path)
+                                  ? 'text-blue-600'
+                                  : 'text-gray-600 hover:text-gray-900'
+                              }`}
+                              onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                setIsMobileServicesOpen(false);
+                              }}
                             >
-                              {getCommon(service.key, service.name)}
-                            </EditableContent>
-                          </Link>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                              <EditableContent
+                                blockId={service.key}
+                                blockType="text"
+                                tag="span"
+                                page="common"
+                              >
+                                {getCommon(service.key, service.name)}
+                              </EditableContent>
+                            </Link>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
 
               {/* Mobile Solutions Dropdown - Renamed to "Sam Studios" - Only visible to Admin and Customer */}
               {isAdminOrCustomer && (
