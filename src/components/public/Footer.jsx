@@ -221,6 +221,49 @@ const Footer = () => {
                   </EditableContent>
                 </button>
               </form>
+            {isHomePage && (
+              <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link
+                  to="/agent/login"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                >
+                  <EditableContent
+                    blockId="common-footer-agent-login"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-footer-agent-login', 'Agent Login')}
+                  </EditableContent>
+                </Link>
+                <Link
+                  to="/hiring-pro/employee-login"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                >
+                  <EditableContent
+                    blockId="common-footer-employee-login"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-footer-employee-login', 'Employee Login')}
+                  </EditableContent>
+                </Link>
+                <Link
+                  to="/admin/login"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <EditableContent
+                    blockId="common-footer-admin-login"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-footer-admin-login', 'Administrator')}
+                  </EditableContent>
+                </Link>
+              </div>
+            )}
             </div>
           </div>
         </div>
@@ -272,49 +315,6 @@ const Footer = () => {
           </div>
         </div>
       </div>
-      {isHomePage && (
-        <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2">
-          <Link
-            to="/agent/login"
-            className="rounded-md border border-gray-300 bg-white/80 px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm backdrop-blur hover:bg-white"
-          >
-            <EditableContent
-              blockId="common-footer-agent-login"
-              blockType="text"
-              tag="span"
-              page="common"
-            >
-              {getCommon('common-footer-agent-login', 'Agent Login')}
-            </EditableContent>
-          </Link>
-          <Link
-            to="/hiring-pro/employee-login"
-            className="rounded-md border border-gray-300 bg-white/80 px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm backdrop-blur hover:bg-white"
-          >
-            <EditableContent
-              blockId="common-footer-employee-login"
-              blockType="text"
-              tag="span"
-              page="common"
-            >
-              {getCommon('common-footer-employee-login', 'Employee Login')}
-            </EditableContent>
-          </Link>
-          <Link
-            to="/admin/login"
-            className="rounded-md border border-gray-300 bg-white/80 px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm backdrop-blur hover:bg-white"
-          >
-            <EditableContent
-              blockId="common-footer-admin-login"
-              blockType="text"
-              tag="span"
-              page="common"
-            >
-              {getCommon('common-footer-admin-login', 'Administrator')}
-            </EditableContent>
-          </Link>
-        </div>
-      )}
     </footer>
   );
 };
