@@ -101,9 +101,7 @@ const Home = () => {
         See: global-frontend/src/components/public/HeroVideoSection.jsx
         ============================================
       */}
-      <div className="-mt-[60px]">
-        <HeroVideoSection />
-      </div>
+      <HeroVideoSection />
       
       {/* Hero Section - Template background starts here after video */}
       <section className="relative min-h-screen flex items-center pt-20 pb-16 overflow-hidden bg-white bg-gradient-to-b from-gray-50 to-white">
