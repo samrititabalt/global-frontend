@@ -111,7 +111,7 @@ const CustomerSignup = () => {
         <div className="max-w-md w-full bg-white/85 border border-white/60 backdrop-blur-xl rounded-3xl shadow-2xl p-10">
           <div className="text-center mb-8">
             <p className="text-sm font-semibold text-blue-600 tracking-[0.3em] uppercase">
-              Join Ask Sam
+              Join SamStudios
             </p>
             <h1 className="text-4xl font-bold text-gray-900 mt-2 mb-3">Create an Account</h1>
             <p className="text-gray-600">Get started in minutes and track your service minutes effortlessly.</p>
