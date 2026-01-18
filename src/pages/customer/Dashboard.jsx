@@ -241,29 +241,7 @@ const CustomerDashboard = () => {
 
   return (
     <Layout title="Customer Dashboard">
-      <div className="relative">
-        <aside className="hidden lg:block fixed left-4 top-[144px] z-30">
-          <div className="rounded-2xl bg-white/90 border border-white/70 shadow-lg backdrop-blur px-4 py-3 w-max max-w-[240px]">
-            <p className="text-[11px] uppercase tracking-[0.25em] text-gray-500 font-semibold">Sam Studios</p>
-            <ul className="mt-3 space-y-2 text-sm text-gray-700">
-              {samStudiosServices.map((service) => {
-                const route = samStudiosRoutes[service.key] || '#';
-                return (
-                  <li key={service.key}>
-                    <Link
-                      to={route}
-                      className="hover:text-gray-900 transition-colors whitespace-nowrap"
-                    >
-                      {service.label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </aside>
-
-        <div className="space-y-10 lg:pl-64">
+      <div className="space-y-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-gradient-to-r from-gray-900 via-gray-800 to-blue-900 text-white rounded-3xl p-8 shadow-2xl">
             <p className="text-sm uppercase tracking-[0.3em] text-blue-200 font-semibold">Overview</p>
@@ -457,6 +435,24 @@ const CustomerDashboard = () => {
                 ))
               )}
             </div>
+          </div>
+          <div className="bg-white/90 rounded-3xl shadow-xl border border-white/60 p-6 backdrop-blur">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-gray-500 font-semibold">Sam Studios</p>
+            <ul className="mt-4 space-y-2 text-sm text-gray-700">
+              {samStudiosServices.map((service) => {
+                const route = samStudiosRoutes[service.key] || '#';
+                return (
+                  <li key={service.key}>
+                    <Link
+                      to={route}
+                      className="hover:text-gray-900 transition-colors"
+                    >
+                      {service.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </div>
       </div>
