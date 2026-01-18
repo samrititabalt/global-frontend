@@ -35,25 +35,48 @@ const CustomerDashboard = () => {
   const [customRequest, setCustomRequest] = useState('');
   const [submittingCustomRequest, setSubmittingCustomRequest] = useState(false);
   const [hiringCompany, setHiringCompany] = useState(null);
+  const [samStudiosAccess, setSamStudiosAccess] = useState([]);
+  const [samStudiosServices, setSamStudiosServices] = useState([]);
   const navigate = useNavigate();
   const { user } = useAuth();
   const availableMinutes = Number(user?.tokenBalance ?? 0);
 
-  const samStudiosServices = [
-    { label: 'Ask Sam', to: '/ask-sam' },
-    { label: 'Expense Monitor', to: '/solutions/expense-monitor' },
-    { label: "Sam's Smart Reports", to: '/solutions/sams-smart-reports' },
-    { label: 'Sam Reports', to: '/solutions/sam-reports' },
-    { label: 'Merge Spreadsheets', to: '/solutions/merge-spreadsheets' },
-    { label: 'Forecasts', to: '/solutions/forecasts' },
-    { label: 'Risk & Fraud', to: '/solutions/risk-fraud' },
-    { label: 'Hiring', to: '/solutions/hiring' },
-    { label: 'Run Facebook Ads', to: '/solutions/facebook-ads' },
-    { label: 'Resume Builder', to: '/resume-builder' },
-    { label: 'LinkedIn Helper', to: '/solutions/linkedin-helper' },
-    { label: 'Industry Solutions', to: '/solutions/industry-solutions' },
-    { label: 'Document Converter & PDF Editor', to: '/solutions/document-converter' },
+  const fallbackSamStudiosServices = [
+    { key: 'ask_sam', label: 'Ask Sam' },
+    { key: 'expense_monitor', label: 'Expense Monitor' },
+    { key: 'sams_smart_reports', label: "Sam's Smart Reports" },
+    { key: 'sam_reports', label: 'Sam Reports' },
+    { key: 'merge_spreadsheets', label: 'Merge Spreadsheets' },
+    { key: 'forecasts', label: 'Forecasts' },
+    { key: 'risk_fraud', label: 'Risk & Fraud' },
+    { key: 'hiring', label: 'Hiring' },
+    { key: 'facebook_ads', label: 'Run Facebook Ads' },
+    { key: 'resume_builder', label: 'Resume Builder' },
+    { key: 'linkedin_helper', label: 'LinkedIn Helper' },
+    { key: 'industry_solutions', label: 'Industry Solutions' },
+    { key: 'document_converter', label: 'Document Converter & PDF Editor' },
   ];
+
+  const samStudiosRoutes = {
+    ask_sam: '/ask-sam',
+    expense_monitor: '/solutions/expense-monitor',
+    sams_smart_reports: '/solutions/sams-smart-reports',
+    sam_reports: '/solutions/sam-reports',
+    merge_spreadsheets: '/solutions/merge-spreadsheets',
+    forecasts: '/solutions/forecasts',
+    risk_fraud: '/solutions/risk-fraud',
+    hiring: '/solutions/hiring',
+    facebook_ads: '/solutions/facebook-ads',
+    resume_builder: '/resume-builder',
+    linkedin_helper: '/solutions/linkedin-helper',
+    industry_solutions: '/solutions/industry-solutions',
+    document_converter: '/solutions/document-converter'
+  };
+
+  const subscribedServices = samStudiosAccess
+    .filter((entry) => entry.enabled)
+    .map((entry) => samStudiosServices.find((service) => service.key === entry.key))
+    .filter(Boolean);
 
   // Icon mapping for services
   const getServiceIcon = (serviceName) => {
@@ -109,14 +132,17 @@ const CustomerDashboard = () => {
 
   const loadData = async () => {
     try {
-      const [servicesRes, chatsRes, hiringRes] = await Promise.all([
+      const [servicesRes, chatsRes, hiringRes, accessRes] = await Promise.all([
         customerAPI.getServices(),
         customerAPI.getChatSessions(),
-        api.get('/hiring-pro/customer/company').catch(() => ({ data: { company: null } }))
+        api.get('/hiring-pro/customer/company').catch(() => ({ data: { company: null } })),
+        api.get('/customer/sam-studios-access').catch(() => ({ data: { services: [], access: [] } }))
       ]);
       setServices(servicesRes.data.services);
       setChatSessions(chatsRes.data.chatSessions);
       setHiringCompany(hiringRes.data.company || null);
+      setSamStudiosServices(accessRes.data.services?.length ? accessRes.data.services : fallbackSamStudiosServices);
+      setSamStudiosAccess(accessRes.data.access || []);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -220,16 +246,19 @@ const CustomerDashboard = () => {
           <div className="rounded-2xl bg-white/90 border border-white/70 shadow-lg backdrop-blur px-4 py-3 w-max max-w-[240px]">
             <p className="text-[11px] uppercase tracking-[0.25em] text-gray-500 font-semibold">Sam Studios</p>
             <ul className="mt-3 space-y-2 text-sm text-gray-700">
-              {samStudiosServices.map((service) => (
-                <li key={service.to}>
-                  <Link
-                    to={service.to}
-                    className="hover:text-gray-900 transition-colors whitespace-nowrap"
-                  >
-                    {service.label}
-                  </Link>
-                </li>
-              ))}
+              {samStudiosServices.map((service) => {
+                const route = samStudiosRoutes[service.key] || '#';
+                return (
+                  <li key={service.key}>
+                    <Link
+                      to={route}
+                      className="hover:text-gray-900 transition-colors whitespace-nowrap"
+                    >
+                      {service.label}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </aside>
@@ -280,6 +309,16 @@ const CustomerDashboard = () => {
                 <p className="text-3xl font-bold text-gray-900">{chatSessions.length}</p>
                 <p className="text-sm text-gray-500">Chat sessions</p>
               </div>
+            </div>
+            <div className="mt-6 border-t border-gray-200 pt-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-[0.2em]">Subscribed Services</p>
+              {subscribedServices.length ? (
+                <p className="mt-2 text-sm text-gray-700">
+                  {subscribedServices.map((service) => service.label).join(', ')}
+                </p>
+              ) : (
+                <p className="mt-2 text-sm text-gray-500">No active subscriptions yet.</p>
+              )}
             </div>
           </div>
         </div>

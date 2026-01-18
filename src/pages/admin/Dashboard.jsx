@@ -9,6 +9,7 @@ import CRMCustomers from '../../components/admin/CRMCustomers';
 import CRMAgents from '../../components/admin/CRMAgents';
 import AgentManagement from '../../components/admin/AgentManagement';
 import ResumeBuilderUsage from '../../components/admin/ResumeBuilderUsage';
+import SamStudiosAccessCRM from '../../components/admin/SamStudiosAccessCRM';
 
 const AdminDashboard = () => {
   const [dashboard, setDashboard] = useState(null);
@@ -848,6 +849,9 @@ const AdminDashboard = () => {
             {crmTab === 'management' && <AgentManagement />}
           </div>
         </div>
+
+        {/* Sam Studios Access CRM */}
+        <SamStudiosAccessCRM />
 
         {/* Custom Service Requests */}
         <CustomServiceRequests />
