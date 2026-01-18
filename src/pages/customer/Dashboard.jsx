@@ -461,7 +461,7 @@ const CustomerDashboard = () => {
       {detailModalOpen && selectedServiceForDetail && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className={`${getServiceColor(services.findIndex(s => s._id === selectedServiceForDetail._id)).bg} p-6 text-white`}>
+            <div className={`${getServiceColor(services.findIndex((s) => s._id === selectedServiceForDetail._id)).bg} p-6 text-white`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="bg-white/20 p-3 rounded-xl">
@@ -480,7 +480,9 @@ const CustomerDashboard = () => {
             <div className="p-6">
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Description</h3>
-                <p className="text-gray-700 leading-relaxed">{selectedServiceForDetail.description || 'No description available.'}</p>
+                <p className="text-gray-700 leading-relaxed">
+                  {selectedServiceForDetail.description || 'No description available.'}
+                </p>
               </div>
               {selectedServiceForDetail.subServices && selectedServiceForDetail.subServices.length > 0 && (
                 <div>
@@ -566,7 +568,6 @@ const CustomerDashboard = () => {
           </div>
         </div>
       )}
-      </div>
     </Layout>
   );
 };
