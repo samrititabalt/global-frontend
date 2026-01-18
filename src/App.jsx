@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 
@@ -104,20 +104,13 @@ import { EditModeProvider } from './components/admin/EditModeToggle';
 import EditModeToggle from './components/admin/EditModeToggle';
 import AdminIndicator from './components/admin/AdminIndicator';
 
-function App() {
+const AppRoutes = () => {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+
   return (
-    <AuthProvider>
-      <EditModeProvider>
-        <SocketProvider>
-          <Router>
-            {/* Admin Edit Mode Toggle - Fixed position top right */}
-            <EditModeToggle />
-            
-            {/* Admin Indicator - Fixed position bottom right */}
-            <AdminIndicator />
-            
-            <div className="pt-[60px]">
-              <Routes>
+    <div className={isHomePage ? 'pt-0' : 'pt-[60px]'}>
+      <Routes>
             {/* Public Routes */}
             {/* public routes  */}
             <Route path="/" element={<Home />} />
@@ -584,10 +577,26 @@ function App() {
               } 
             />
 
-            </Routes>
-          </div>
-        </Router>
-      </SocketProvider>
+      </Routes>
+    </div>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <EditModeProvider>
+        <SocketProvider>
+          <Router>
+            {/* Admin Edit Mode Toggle - Fixed position top right */}
+            <EditModeToggle />
+            
+            {/* Admin Indicator - Fixed position bottom right */}
+            <AdminIndicator />
+            
+            <AppRoutes />
+          </Router>
+        </SocketProvider>
       </EditModeProvider>
     </AuthProvider>
   );

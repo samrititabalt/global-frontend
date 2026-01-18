@@ -72,7 +72,7 @@ const HeroVideoSection = () => {
   }, []);
 
   return (
-    <section className="relative w-full h-screen overflow-hidden" style={{ marginTop: '60px', paddingTop: 0 }}>
+    <section className="relative w-full h-screen overflow-hidden" style={{ marginTop: 0, paddingTop: 0 }}>
       {/* Fallback background image - ONLY shows if video doesn't exist or fails to load after verification */}
       {(!videoExists || !videoUrl) && !checkingVideo && (
         <div 
