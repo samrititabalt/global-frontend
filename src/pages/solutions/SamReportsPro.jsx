@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FileText, Building2, MapPin, TrendingUp, Sparkles, FileDown } from 'lucide-react';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
+import api from '../../utils/axios';
+import { useAuth } from '../../context/AuthContext';
 
 const INDUSTRIES = [
   'Aerospace & Defense', 'Agriculture', 'Alternative Energy', 'Apparel & Fashion',
@@ -36,10 +38,16 @@ const REGIONS = [
 ];
 
 const SamReportsPro = () => {
+  const { isAuthenticated } = useAuth();
   const [industry, setIndustry] = useState('');
   const [sector, setSector] = useState('');
   const [yearRange, setYearRange] = useState('2026 (Current)');
   const [industryReport, setIndustryReport] = useState(null);
+  const [industries, setIndustries] = useState(INDUSTRIES);
+  const [availableSectors, setAvailableSectors] = useState([]);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [isLoadingIndustry, setIsLoadingIndustry] = useState(false);
+  const [isDownloadingIndustry, setIsDownloadingIndustry] = useState(false);
 
   const [companyName, setCompanyName] = useState('');
   const [companyIndustry, setCompanyIndustry] = useState('');
@@ -47,59 +55,168 @@ const SamReportsPro = () => {
   const [companyRegion, setCompanyRegion] = useState('');
   const [suggestedCompanies, setSuggestedCompanies] = useState([]);
   const [companyProfile, setCompanyProfile] = useState(null);
+  const [isLoadingCompany, setIsLoadingCompany] = useState(false);
+  const [isDownloadingCompany, setIsDownloadingCompany] = useState(false);
 
   const sectors = useMemo(() => {
     if (!industry) return [];
+    if (availableSectors.length) return availableSectors;
     return SECTOR_MAP[industry] || ['Core Segment', 'Adjacent Segment', 'Emerging Segment', 'Services & Enablement'];
-  }, [industry]);
+  }, [industry, availableSectors]);
 
-  const handleGenerateIndustryReport = () => {
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setStatusMessage('Log in to generate Sam Reports.');
+      return;
+    }
+    api.get('/sam-reports/industries')
+      .then((response) => {
+        if (Array.isArray(response.data?.industries)) {
+          setIndustries(response.data.industries);
+        }
+      })
+      .catch(() => {
+        setIndustries(INDUSTRIES);
+      });
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !industry) {
+      setAvailableSectors([]);
+      return;
+    }
+    api.post('/sam-reports/sectors', { industry })
+      .then((response) => {
+        if (Array.isArray(response.data?.sectors)) {
+          setAvailableSectors(response.data.sectors);
+        } else {
+          setAvailableSectors([]);
+        }
+      })
+      .catch(() => {
+        setAvailableSectors([]);
+      });
+  }, [industry, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    const start = Date.now();
+    api.post('/sam-reports/analytics', { eventType: 'session_started' }).catch(() => {});
+    return () => {
+      const durationSeconds = Math.max(1, Math.floor((Date.now() - start) / 1000));
+      api.post('/sam-reports/analytics', {
+        eventType: 'session_ended',
+        metadata: { durationSeconds }
+      }).catch(() => {});
+    };
+  }, [isAuthenticated]);
+
+  const handleGenerateIndustryReport = async () => {
+    if (!isAuthenticated) {
+      setStatusMessage('Please log in to generate a report.');
+      return;
+    }
     if (!industry || !sector || !yearRange) return;
-    setIndustryReport({
-      overview: `${industry} is entering a consolidation cycle with scaled operators prioritising margin resilience.`,
-      sectorInsights: `${sector} activity is led by platform modernization and demand for efficiency gains.`,
-      keyTrends: [
-        'AI-driven cost optimisation',
-        'Shift to subscription-based models',
-        'Regional capacity rebalancing'
-      ],
-      marketDrivers: ['Digital adoption', 'Regulatory mandates', 'Supply chain redesign'],
-      challenges: ['Margin pressure', 'Talent scarcity', 'Fragmented regulation'],
-      opportunities: ['Adjacency expansion', 'Cross-border partnerships', 'Vertical integration'],
-      forecast: `2025-2030 outlook indicates steady growth with mid-single digit CAGR and selective breakout niches.`
-    });
+    setIsLoadingIndustry(true);
+    setStatusMessage('');
+    try {
+      const response = await api.post('/sam-reports/industry-report', {
+        industry,
+        sector,
+        yearRange
+      });
+      if (response.data?.report) {
+        setIndustryReport(response.data.report);
+      }
+    } catch (error) {
+      setStatusMessage(error.response?.data?.message || 'Unable to generate report.');
+    } finally {
+      setIsLoadingIndustry(false);
+    }
   };
 
-  const handleSuggestCompanies = () => {
+  const handleDownloadIndustryPdf = async () => {
+    if (!industryReport?._id) return;
+    setIsDownloadingIndustry(true);
+    setStatusMessage('');
+    try {
+      await api.post(`/sam-reports/report/${industryReport._id}/pdf`);
+      const download = await api.get(`/sam-reports/report/${industryReport._id}/download`);
+      if (download.data?.url) {
+        window.open(download.data.url, '_blank', 'noopener,noreferrer');
+      }
+    } catch (error) {
+      setStatusMessage(error.response?.data?.message || 'Unable to download PDF.');
+    } finally {
+      setIsDownloadingIndustry(false);
+    }
+  };
+
+  const handleSuggestCompanies = async () => {
+    if (!isAuthenticated) {
+      setStatusMessage('Please log in to view suggestions.');
+      return;
+    }
     if (!companyIndustry || !companySector || !companyRegion) return;
-    const base = companyIndustry.split(' ')[0] || 'Growth';
-    setSuggestedCompanies([
-      { name: `${base} Horizon Labs`, summary: 'AI-enabled market intelligence platform.', why: 'Transforms decision speed across sectors.' },
-      { name: `${base} Pulse Systems`, summary: 'Operational optimisation suite for enterprise teams.', why: 'Delivers measurable productivity gains.' },
-      { name: `${base} Vertex Analytics`, summary: 'Sector benchmarking and competitive monitoring.', why: 'Raises visibility into market shifts.' },
-      { name: `${base} Nova Markets`, summary: 'Next-gen distribution and demand sensing.', why: 'Improves revenue resilience.' },
-      { name: `${base} Catalyst Partners`, summary: 'Strategic transformation advisory network.', why: 'Enables rapid scale and adoption.' }
-    ]);
+    setStatusMessage('');
+    try {
+      const response = await api.post('/sam-reports/company-suggestions', {
+        industry: companyIndustry,
+        sector: companySector,
+        region: companyRegion
+      });
+      if (Array.isArray(response.data?.suggestions)) {
+        setSuggestedCompanies(response.data.suggestions);
+      }
+    } catch (error) {
+      setStatusMessage(error.response?.data?.message || 'Unable to load suggestions.');
+    }
   };
 
-  const handleGenerateCompanyProfile = () => {
-    const name = companyName || suggestedCompanies[0]?.name;
-    if (!name) return;
-    setCompanyProfile({
-      name,
-      overview: `${name} operates at the intersection of ${companyIndustry || industry || 'core'} and ${companySector || sector || 'adjacent'} markets.`,
-      model: 'Platform-led strategy combining proprietary data assets with subscription revenue.',
-      financials: 'Estimated ARR growth 18-24% with strong gross margin expansion.',
-      priorities: ['Scale enterprise adoption', 'Strengthen partner ecosystems', 'Invest in automation'],
-      positioning: 'Differentiated by speed-to-insight and vertically integrated workflows.',
-      swot: {
-        strengths: ['Data depth', 'Sticky enterprise contracts'],
-        weaknesses: ['High onboarding complexity'],
-        opportunities: ['International expansion', 'Verticalised bundles'],
-        threats: ['Well-capitalised incumbents', 'Regulatory shifts']
-      },
-      outlook: 'Well-positioned to capture consolidation benefits over the next 24 months.'
-    });
+  const handleGenerateCompanyProfile = async () => {
+    if (!isAuthenticated) {
+      setStatusMessage('Please log in to generate a company report.');
+      return;
+    }
+    const resolvedName = companyName || suggestedCompanies[0]?.name;
+    if (!resolvedName || !companyIndustry || !companySector || !companyRegion) {
+      setStatusMessage('Select industry, sector, region, and company name.');
+      return;
+    }
+    setIsLoadingCompany(true);
+    setStatusMessage('');
+    try {
+      const response = await api.post('/sam-reports/company-report', {
+        companyName: resolvedName,
+        industry: companyIndustry,
+        sector: companySector,
+        region: companyRegion
+      });
+      if (response.data?.report) {
+        setCompanyProfile(response.data.report);
+      }
+    } catch (error) {
+      setStatusMessage(error.response?.data?.message || 'Unable to generate company report.');
+    } finally {
+      setIsLoadingCompany(false);
+    }
+  };
+
+  const handleDownloadCompanyPdf = async () => {
+    if (!companyProfile?._id) return;
+    setIsDownloadingCompany(true);
+    setStatusMessage('');
+    try {
+      await api.post(`/sam-reports/report/${companyProfile._id}/pdf`);
+      const download = await api.get(`/sam-reports/report/${companyProfile._id}/download`);
+      if (download.data?.url) {
+        window.open(download.data.url, '_blank', 'noopener,noreferrer');
+      }
+    } catch (error) {
+      setStatusMessage(error.response?.data?.message || 'Unable to download PDF.');
+    } finally {
+      setIsDownloadingCompany(false);
+    }
   };
 
   return (
@@ -133,7 +250,7 @@ const SamReportsPro = () => {
                     className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2"
                   >
                     <option value="">Select industry</option>
-                    {INDUSTRIES.map(item => (
+                    {industries.map(item => (
                       <option key={item} value={item}>{item}</option>
                     ))}
                   </select>
@@ -170,9 +287,10 @@ const SamReportsPro = () => {
                 <button
                   type="button"
                   onClick={handleGenerateIndustryReport}
+                  disabled={isLoadingIndustry}
                   className="w-full rounded-lg bg-blue-600 px-4 py-3 text-white font-semibold hover:bg-blue-700 transition"
                 >
-                  Generate Report
+                  {isLoadingIndustry ? 'Generating...' : 'Generate Report'}
                 </button>
               </div>
 
@@ -183,20 +301,22 @@ const SamReportsPro = () => {
                     <p className="font-semibold text-gray-900">{industry} • {sector} • {yearRange}</p>
                   </div>
                   <div className="space-y-3 text-sm text-gray-700">
-                    <p><span className="font-semibold">Industry overview:</span> {industryReport.overview}</p>
-                    <p><span className="font-semibold">Sector insights:</span> {industryReport.sectorInsights}</p>
-                    <p><span className="font-semibold">Key trends:</span> {industryReport.keyTrends.join(', ')}</p>
-                    <p><span className="font-semibold">Market drivers:</span> {industryReport.marketDrivers.join(', ')}</p>
-                    <p><span className="font-semibold">Challenges:</span> {industryReport.challenges.join(', ')}</p>
-                    <p><span className="font-semibold">Opportunities:</span> {industryReport.opportunities.join(', ')}</p>
-                    <p><span className="font-semibold">Forecast commentary:</span> {industryReport.forecast}</p>
+                    <p><span className="font-semibold">Industry overview:</span> {industryReport.content?.overview}</p>
+                    <p><span className="font-semibold">Sector insights:</span> {industryReport.content?.sectorInsights}</p>
+                    <p><span className="font-semibold">Key trends:</span> {(industryReport.content?.keyTrends || []).join(', ')}</p>
+                    <p><span className="font-semibold">Market drivers:</span> {(industryReport.content?.marketDrivers || []).join(', ')}</p>
+                    <p><span className="font-semibold">Challenges:</span> {(industryReport.content?.challenges || []).join(', ')}</p>
+                    <p><span className="font-semibold">Opportunities:</span> {(industryReport.content?.opportunities || []).join(', ')}</p>
+                    <p><span className="font-semibold">Forecast commentary:</span> {industryReport.content?.forecastCommentary}</p>
                   </div>
                   <button
                     type="button"
+                    onClick={handleDownloadIndustryPdf}
+                    disabled={isDownloadingIndustry}
                     className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700"
                   >
                     <FileDown className="h-4 w-4" />
-                    Download Report as PDF
+                    {isDownloadingIndustry ? 'Preparing PDF...' : 'Download Report as PDF'}
                   </button>
                 </div>
               )}
@@ -231,7 +351,7 @@ const SamReportsPro = () => {
                       className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2"
                     >
                       <option value="">Select industry</option>
-                      {INDUSTRIES.map(item => (
+                      {industries.map(item => (
                         <option key={item} value={item}>{item}</option>
                       ))}
                     </select>
@@ -295,9 +415,10 @@ const SamReportsPro = () => {
                 <button
                   type="button"
                   onClick={handleGenerateCompanyProfile}
-                  className="w-full rounded-lg bg-blue-600 px-4 py-3 text-white font-semibold hover:bg-blue-700 transition"
+                  disabled={isLoadingCompany}
+                  className="w-full rounded-lg bg-blue-600 px-4 py-3 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-70"
                 >
-                  Generate Company Profile
+                  {isLoadingCompany ? 'Generating...' : 'Generate Company Profile'}
                 </button>
               </div>
 
@@ -305,29 +426,31 @@ const SamReportsPro = () => {
                 <div className="mt-6 space-y-3 text-sm text-gray-700">
                   <div className="rounded-lg border border-gray-200 p-4 bg-slate-50">
                     <p className="text-sm text-gray-500">Company summary</p>
-                    <p className="font-semibold text-gray-900">{companyProfile.name}</p>
-                    <p className="text-gray-700">{companyProfile.overview}</p>
+                    <p className="font-semibold text-gray-900">{companyProfile.companyName}</p>
+                    <p className="text-gray-700">{companyProfile.content?.overview}</p>
                   </div>
-                  <p><span className="font-semibold">Business model:</span> {companyProfile.model}</p>
-                  <p><span className="font-semibold">Key financial indicators:</span> {companyProfile.financials}</p>
-                  <p><span className="font-semibold">Strategic priorities:</span> {companyProfile.priorities.join(', ')}</p>
-                  <p><span className="font-semibold">Competitive positioning:</span> {companyProfile.positioning}</p>
+                  <p><span className="font-semibold">Business model:</span> {companyProfile.content?.businessModel}</p>
+                  <p><span className="font-semibold">Key financial indicators:</span> {companyProfile.content?.keyFinancialIndicators}</p>
+                  <p><span className="font-semibold">Strategic priorities:</span> {(companyProfile.content?.strategicPriorities || []).join(', ')}</p>
+                  <p><span className="font-semibold">Competitive positioning:</span> {companyProfile.content?.competitivePositioning}</p>
                   <div className="rounded-lg border border-gray-200 p-4">
                     <p className="font-semibold text-gray-900 mb-2">SWOT Analysis</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
-                      <div><span className="font-semibold">Strengths:</span> {companyProfile.swot.strengths.join(', ')}</div>
-                      <div><span className="font-semibold">Weaknesses:</span> {companyProfile.swot.weaknesses.join(', ')}</div>
-                      <div><span className="font-semibold">Opportunities:</span> {companyProfile.swot.opportunities.join(', ')}</div>
-                      <div><span className="font-semibold">Threats:</span> {companyProfile.swot.threats.join(', ')}</div>
+                      <div><span className="font-semibold">Strengths:</span> {(companyProfile.content?.swot?.strengths || []).join(', ')}</div>
+                      <div><span className="font-semibold">Weaknesses:</span> {(companyProfile.content?.swot?.weaknesses || []).join(', ')}</div>
+                      <div><span className="font-semibold">Opportunities:</span> {(companyProfile.content?.swot?.opportunities || []).join(', ')}</div>
+                      <div><span className="font-semibold">Threats:</span> {(companyProfile.content?.swot?.threats || []).join(', ')}</div>
                     </div>
                   </div>
-                  <p><span className="font-semibold">Future outlook:</span> {companyProfile.outlook}</p>
+                  <p><span className="font-semibold">Future outlook:</span> {companyProfile.content?.futureOutlook}</p>
                   <button
                     type="button"
+                    onClick={handleDownloadCompanyPdf}
+                    disabled={isDownloadingCompany}
                     className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700"
                   >
                     <FileDown className="h-4 w-4" />
-                    Download Report as PDF
+                    {isDownloadingCompany ? 'Preparing PDF...' : 'Download Report as PDF'}
                   </button>
                 </div>
               )}
@@ -352,6 +475,11 @@ const SamReportsPro = () => {
             </div>
           </div>
 
+          {statusMessage && (
+            <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-2 text-sm text-blue-700">
+              {statusMessage}
+            </div>
+          )}
           <div className="text-xs text-gray-500 flex items-center gap-2">
             <MapPin className="h-4 w-4" />
             Mock data only. Live report generation and export will be connected in the backend phase.
