@@ -570,7 +570,6 @@ const CustomerDashboard = () => {
           </div>
         </div>
       )}
-        </div>
       </div>
     </Layout>
   );
