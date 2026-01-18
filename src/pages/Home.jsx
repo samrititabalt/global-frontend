@@ -88,9 +88,8 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'transparent' }}>
+    <div className="min-h-screen home-page" style={{ background: 'transparent' }}>
       <Header />
-      <div className="fixed top-0 left-0 right-0 h-[60px] bg-transparent z-40 pointer-events-none"></div>
       
       {/* 
         ============================================

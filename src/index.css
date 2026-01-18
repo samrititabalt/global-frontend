@@ -50,6 +50,16 @@ body > #root > div > div > section[class*="h-screen"][class*="overflow-hidden"] 
   margin-top: 0 !important;
 }
 
+/* Home page should not inherit global header padding */
+.home-page {
+  padding-top: 0 !important;
+}
+
+.home-page > section:first-of-type {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
