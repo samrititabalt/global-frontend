@@ -222,10 +222,10 @@ const Footer = () => {
                 </button>
               </form>
             {isHomePage && (
-              <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <div className="mt-4 flex flex-row flex-nowrap items-center justify-center gap-2">
                 <Link
                   to="/agent/login"
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                  className="px-3 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 text-xs whitespace-nowrap"
                 >
                   <EditableContent
                     blockId="common-footer-agent-login"
@@ -238,7 +238,7 @@ const Footer = () => {
                 </Link>
                 <Link
                   to="/hiring-pro/employee-login"
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                  className="px-3 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 text-xs whitespace-nowrap"
                 >
                   <EditableContent
                     blockId="common-footer-employee-login"
@@ -251,7 +251,7 @@ const Footer = () => {
                 </Link>
                 <Link
                   to="/admin/login"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="px-3 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs whitespace-nowrap"
                 >
                   <EditableContent
                     blockId="common-footer-admin-login"
