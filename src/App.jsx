@@ -79,6 +79,8 @@ import MergeSpreadsheets from './pages/solutions/MergeSpreadsheets';
 import MergeSpreadsheetsPro from './pages/solutions/MergeSpreadsheetsPro';
 import Forecasts from './pages/solutions/Forecasts';
 import LinkedInHelper from './pages/solutions/LinkedInHelper';
+import SamReports from './pages/solutions/SamReports';
+import SamReportsPro from './pages/solutions/SamReportsPro';
 import ErrorBoundary from './components/ErrorBoundary';
 import RiskFraud from './pages/solutions/RiskFraud';
 import Hiring from './pages/solutions/Hiring';
@@ -168,6 +170,8 @@ function App() {
             <Route path="/solutions/risk-fraud" element={<RiskFraud />} />
             <Route path="/solutions/hiring" element={<Hiring />} />
             <Route path="/solutions/facebook-ads" element={<FacebookAdsQuickLaunch />} />
+            <Route path="/solutions/sam-reports" element={<SamReports />} />
+            <Route path="/solutions/sam-reports-pro" element={<SamReportsPro />} />
             <Route path="/resume-builder" element={<ResumeBuilder />} />
             <Route path="/solutions/linkedin-helper" element={<LinkedInHelper />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
