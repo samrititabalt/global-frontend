@@ -142,6 +142,13 @@ const HeroVideoSection = () => {
               className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-light leading-relaxed drop-shadow-lg"
             >
               {heroSubtitle}
+              <span className="inline-flex align-top ml-1">
+                <img
+                  src="/assets/Tabalt%20SamStudios.png"
+                  alt="Tabalt"
+                  className="h-4 w-4 object-contain opacity-80"
+                />
+              </span>
             </EditableContent>
           </motion.div>
         </motion.div>
