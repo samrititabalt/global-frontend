@@ -113,7 +113,11 @@ const Header = () => {
     <>
       {/* Regular Header - Always visible, compact size */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md backdrop-blur-md bg-white/95"
+        className={`fixed top-0 left-0 right-0 z-50 ${
+          isHomePage
+            ? 'bg-transparent shadow-none'
+            : 'bg-white shadow-md backdrop-blur-md bg-white/95'
+        }`}
       >
         <nav className="w-full px-4 sm:px-6 lg:px-8 py-2">
           <div className="flex items-center justify-between min-h-[60px]">
@@ -162,6 +166,7 @@ const Header = () => {
           </Link>
 
           {/* Desktop Navigation */}
+          {!isHomePage && (
           <div className="hidden md:flex items-center space-x-8">
             {/* Home - Moved to the left */}
             <Link
@@ -415,20 +420,57 @@ const Header = () => {
               </div>
             )}
           </div>
+          )}
+          {isHomePage && (
+            <div className="hidden md:flex items-center">
+              <Link
+                to="/customer/signup"
+                className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap"
+              >
+                <EditableContent
+                  blockId="common-nav-signup"
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                >
+                  {getCommon('common-nav-signup', 'Sign up')}
+                </EditableContent>
+              </Link>
+            </div>
+          )}
+          {isHomePage && (
+            <div className="flex md:hidden items-center">
+              <Link
+                to="/customer/signup"
+                className="bg-gray-900 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap text-sm"
+              >
+                <EditableContent
+                  blockId="common-nav-signup"
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                >
+                  {getCommon('common-nav-signup', 'Sign up')}
+                </EditableContent>
+              </Link>
+            </div>
+          )}
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle menu"
-            aria-expanded={isMobileMenuOpen}
-          >
-            {isMobileMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </button>
+          {!isHomePage && (
+            <button
+              className="md:hidden p-2 text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
+              aria-expanded={isMobileMenuOpen}
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
+          )}
         </div>
       </nav>
 

@@ -8,8 +8,11 @@ import LiveChatBot from '../components/public/LiveChatBot';
 import HeroVideoSection from '../components/public/HeroVideoSection';
 import EditableContent from '../components/admin/EditableContent';
 import { usePageContent, getBlockContent } from '../hooks/usePageContent';
+import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
+  const { user, isAuthenticated } = useAuth();
+  const isAdministrator = isAuthenticated && user?.role === 'admin';
   const { content: pageContent } = usePageContent();
   const getHome = (key, fallback) => getBlockContent(pageContent, key) || fallback;
   
@@ -69,8 +72,23 @@ const Home = () => {
     { number: '100+', label: 'Clients Served', numberKey: 'home-stat-4-number', labelKey: 'home-stat-4-label' },
   ];
 
+  const bottomNavLinks = [
+    { label: 'Home', to: '/' },
+    { label: 'About Us', to: '/about-us' },
+    { label: 'Ask Sam', to: '/ask-sam' },
+    { label: 'Case Studies', to: '/case-studies' },
+    { label: 'Contact Us', to: '/contact-us' },
+    { label: 'Customer Login', to: '/customer/login' },
+  ];
+  if (isAdministrator) {
+    bottomNavLinks.push(
+      { label: 'Industry', to: '/industry' },
+      { label: 'Services', to: '/services' },
+    );
+  }
+
   return (
-    <div className="min-h-screen" style={{ background: 'transparent', marginTop: '-60px' }}>
+    <div className="min-h-screen" style={{ background: 'transparent' }}>
       <Header />
       
       {/* 
@@ -83,7 +101,9 @@ const Home = () => {
         See: global-frontend/src/components/public/HeroVideoSection.jsx
         ============================================
       */}
-      <HeroVideoSection />
+      <div className="-mt-[60px]">
+        <HeroVideoSection />
+      </div>
       
       {/* Hero Section - Template background starts here after video */}
       <section className="relative min-h-screen flex items-center pt-20 pb-16 overflow-hidden bg-white bg-gradient-to-b from-gray-50 to-white">
@@ -337,6 +357,22 @@ const Home = () => {
               <ArrowRight className="ml-2 h-6 w-6" />
             </Link>
           </motion.div>
+        </div>
+      </section>
+
+      <section className="bg-white border-t border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-center gap-6 py-6 text-sm font-semibold text-gray-700">
+            {bottomNavLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="transition-colors hover:text-gray-900"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
