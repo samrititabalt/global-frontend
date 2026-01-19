@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { FiLogOut } from 'react-icons/fi';
 import Header from './public/Header';
 
-const Layout = ({ children, title, compact = false }) => {
+const Layout = ({ children, title, compact = false, showHeader = true, showNav = true }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [logoError, setLogoError] = useState(false);
@@ -38,9 +38,10 @@ const Layout = ({ children, title, compact = false }) => {
       </div>
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Public Header with Solutions tab - Always visible */}
-        <Header />
-        
+        {showHeader && <Header />}
+
         {/* Dashboard-specific navigation bar */}
+        {showNav && (
         <nav className="bg-white/80 border-b border-white/60 backdrop-blur-xl sticky top-20 z-40 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
@@ -91,7 +92,8 @@ const Layout = ({ children, title, compact = false }) => {
             </div>
           </div>
         </nav>
-        <main className={`flex-1 ${compact ? 'pt-6' : 'pt-24'}`}>
+        )}
+        <main className={`flex-1 ${compact ? 'pt-0' : 'pt-24'}`}>
           <div
             className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${
               title ? 'pt-10 pb-6' : compact ? 'py-4' : 'py-8'
