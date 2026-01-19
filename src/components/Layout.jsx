@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { FiLogOut } from 'react-icons/fi';
 import Header from './public/Header';
 
-const Layout = ({ children, title, compact = false, showHeader = true, showNav = true }) => {
+const Layout = ({ children, title, compact = false, showHeader = true, showNav = true, navPosition = 'top' }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [logoError, setLogoError] = useState(false);
@@ -41,7 +41,7 @@ const Layout = ({ children, title, compact = false, showHeader = true, showNav =
         {showHeader && <Header />}
 
         {/* Dashboard-specific navigation bar */}
-        {showNav && (
+        {showNav && navPosition === 'top' && (
         <nav className="bg-white/80 border-b border-white/60 backdrop-blur-xl sticky top-20 z-40 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
@@ -110,6 +110,58 @@ const Layout = ({ children, title, compact = false, showHeader = true, showNav =
             {children}
           </div>
         </main>
+        {showNav && navPosition === 'bottom' && (
+          <nav className="bg-white/80 border-t border-white/60 backdrop-blur-xl sticky bottom-0 z-40 shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between items-center h-16">
+                <div className="hidden md:flex items-center space-x-6">
+                  {role === 'customer' && (
+                    <Link
+                      to="/customer/plans"
+                      className="text-gray-700 hover:text-gray-900 font-medium transition-colors text-sm"
+                    >
+                      Plans
+                    </Link>
+                  )}
+                  <Link
+                    to={getDashboardPath()}
+                    className="text-gray-700 hover:text-gray-900 font-medium transition-colors text-sm"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    to={getProfilePath()}
+                    className="text-gray-700 hover:text-gray-900 font-medium transition-colors text-sm"
+                  >
+                    Profile
+                  </Link>
+                </div>
+                <div className="flex items-center space-x-4 ml-auto">
+                  <div className="hidden md:flex items-center space-x-3">
+                    <span className="text-gray-700 font-medium text-sm">{user?.name}</span>
+                    {role && (
+                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 uppercase tracking-wide">
+                        {role}
+                      </span>
+                    )}
+                    {role === 'customer' && (
+                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">
+                        {Number(minuteBalance).toLocaleString()} min left
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-gray-900 font-medium transition-colors rounded-full border border-transparent hover:border-gray-200 text-sm"
+                  >
+                    <FiLogOut className="h-5 w-5" />
+                    <span className="hidden sm:inline">Logout</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </nav>
+        )}
       </div>
     </div>
   );

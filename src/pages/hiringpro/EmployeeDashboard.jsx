@@ -352,7 +352,7 @@ const EmployeeDashboard = () => {
   const resolvedProfileImage = profileImagePreview || profile.profileImageUrl;
 
   return (
-    <Layout compact>
+    <Layout compact navPosition="bottom">
       <div className="bg-slate-50 min-h-screen !pt-0">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6 space-y-6">
           <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-xl p-8">
