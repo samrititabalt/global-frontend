@@ -23,7 +23,7 @@ const EmployeeDashboard = () => {
     highestQualification: '',
     previousEmployer: ''
   });
-  const [employeeInfo, setEmployeeInfo] = useState({ name: '', email: '' });
+  const [employeeInfo, setEmployeeInfo] = useState({ name: '', email: '', designation: '' });
   const [profileImagePreview, setProfileImagePreview] = useState('');
   const [profileImageUploading, setProfileImageUploading] = useState(false);
   const [offerLetterFile, setOfferLetterFile] = useState(null);
@@ -58,7 +58,11 @@ const EmployeeDashboard = () => {
         setDocuments(docRes.data.documents || []);
         setSalaryBreakdown(salaryRes.data.ctcBreakdown || '');
         if (profileRes.data.employee) {
-          setEmployeeInfo({ name: profileRes.data.employee.name || '', email: profileRes.data.employee.email || '' });
+          setEmployeeInfo({
+            name: profileRes.data.employee.name || '',
+            email: profileRes.data.employee.email || '',
+            designation: profileRes.data.employee.designation || ''
+          });
         }
         if (profileRes.data.profile) {
           setProfile(profileRes.data.profile);
@@ -284,7 +288,11 @@ const EmployeeDashboard = () => {
         setDocuments(docRes.data.documents || []);
         setSalaryBreakdown(salaryRes.data.ctcBreakdown || '');
         if (profileRes.data.employee) {
-          setEmployeeInfo({ name: profileRes.data.employee.name || '', email: profileRes.data.employee.email || '' });
+        setEmployeeInfo({
+          name: profileRes.data.employee.name || '',
+          email: profileRes.data.employee.email || '',
+          designation: profileRes.data.employee.designation || ''
+        });
         }
         if (profileRes.data.profile) {
           setProfile(profileRes.data.profile);
@@ -384,27 +392,87 @@ const EmployeeDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <input
-                    value={employeeInfo.name}
-                    disabled
-                    className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-600"
-                    placeholder="Name"
-                  />
-                  <input
-                    value={employeeInfo.email}
-                    disabled
-                    className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-600"
-                    placeholder="Email"
-                  />
-                  {['phone', 'emergencyContact', 'bloodGroup', 'currentAddress', 'highestQualification', 'previousEmployer'].map(field => (
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600">Name</label>
                     <input
-                      key={field}
-                      value={profile[field]}
-                      onChange={(e) => setProfile(prev => ({ ...prev, [field]: e.target.value }))}
-                      placeholder={field.replace(/([A-Z])/g, ' $1')}
-                      className="rounded-lg border border-gray-300 px-4 py-2"
+                      value={employeeInfo.name}
+                      disabled
+                      className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-600"
+                      placeholder="Name"
                     />
-                  ))}
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600">Designation</label>
+                    <input
+                      value={employeeInfo.designation}
+                      disabled
+                      className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-600"
+                      placeholder="Designation"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600">Email</label>
+                    <input
+                      value={employeeInfo.email}
+                      disabled
+                      className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-600"
+                      placeholder="Email"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600">Phone</label>
+                    <input
+                      value={profile.phone}
+                      onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="Phone"
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600">Emergency Contact</label>
+                    <input
+                      value={profile.emergencyContact}
+                      onChange={(e) => setProfile(prev => ({ ...prev, emergencyContact: e.target.value }))}
+                      placeholder="Emergency Contact"
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600">Blood Group</label>
+                    <input
+                      value={profile.bloodGroup}
+                      onChange={(e) => setProfile(prev => ({ ...prev, bloodGroup: e.target.value }))}
+                      placeholder="Blood Group"
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600">Current Address</label>
+                    <input
+                      value={profile.currentAddress}
+                      onChange={(e) => setProfile(prev => ({ ...prev, currentAddress: e.target.value }))}
+                      placeholder="Current Address"
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600">Qualification</label>
+                    <input
+                      value={profile.highestQualification}
+                      onChange={(e) => setProfile(prev => ({ ...prev, highestQualification: e.target.value }))}
+                      placeholder="Qualification"
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600">Previous Employer</label>
+                    <input
+                      value={profile.previousEmployer}
+                      onChange={(e) => setProfile(prev => ({ ...prev, previousEmployer: e.target.value }))}
+                      placeholder="Previous Employer"
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2"
+                    />
+                  </div>
                 </div>
                 <button
                   onClick={handleProfileSave}
