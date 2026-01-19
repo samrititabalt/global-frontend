@@ -57,6 +57,8 @@ const CompanyAdminDashboard = () => {
   const [documentLogoPreview, setDocumentLogoPreview] = useState('');
   const [signatureFile, setSignatureFile] = useState(null);
   const [signaturePreview, setSignaturePreview] = useState('');
+  const [ndaPages, setNdaPages] = useState([]);
+  const [activeNdaPage, setActiveNdaPage] = useState(0);
   const [error, setError] = useState('');
   const [offerActionError, setOfferActionError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -159,6 +161,9 @@ const CompanyAdminDashboard = () => {
       setOfferContent(response.data.content || '');
       setOfferWarnings(response.data.dummyFields || []);
       setOfferForm(prev => ({ ...prev, documentDate: response.data.date || prev.documentDate }));
+      if (offerForm.documentType === 'NDA') {
+        syncNdaPages(response.data.content || '');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to generate document');
     }
@@ -259,6 +264,31 @@ const CompanyAdminDashboard = () => {
       candidateName: selected.name || prev.candidateName,
       employeeCode: selected.employeeCode || ''
     }));
+  };
+
+  const isNdaDocument = offerForm.documentType === 'NDA';
+  const splitNdaPages = (content) => {
+    if (!content) return [];
+    const chunks = content.split(/=== Page \d+ ===/i).map((page) => page.trim()).filter(Boolean);
+    return chunks.length ? chunks : [content];
+  };
+
+  const syncNdaPages = (content) => {
+    const pages = splitNdaPages(content);
+    setNdaPages(pages);
+    setActiveNdaPage(0);
+  };
+
+  const updateNdaPage = (index, value) => {
+    setNdaPages(prev => {
+      const updated = [...prev];
+      updated[index] = value;
+      const withMarkers = updated
+        .map((pageContent, pageIndex) => `=== Page ${pageIndex + 1} ===\n${pageContent.trim()}`)
+        .join('\n\n');
+      setOfferContent(withMarkers);
+      return updated;
+    });
   };
 
   const handleEmployeeDetail = async (employeeId) => {
@@ -750,18 +780,69 @@ const CompanyAdminDashboard = () => {
           )}
           {offerContent && (
             <div className="space-y-3">
-              <textarea
-                value={offerContent}
-                onChange={(e) => setOfferContent(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2"
-                rows={10}
-              />
-              <button
-                onClick={handleSaveOffer}
-                className="rounded-lg bg-indigo-600 text-white px-4 py-2 font-semibold"
-              >
-                Save Document
-              </button>
+              {isNdaDocument ? (
+                <div className="rounded-lg border border-gray-200 p-4 space-y-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {ndaPages.map((_, index) => (
+                      <button
+                        key={`nda-page-${index}`}
+                        type="button"
+                        onClick={() => setActiveNdaPage(index)}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${activeNdaPage === index ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+                      >
+                        Page {index + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700">
+                          Page {activeNdaPage + 1} Preview
+                        </p>
+                        <p className="text-xs text-gray-500">Edit the content for this page below.</p>
+                      </div>
+                      {documentLogoPreview && activeNdaPage === 0 && (
+                        <img src={documentLogoPreview} alt="Logo preview" className="h-10 w-auto rounded-md border border-gray-200 bg-white p-1" />
+                      )}
+                    </div>
+                    <textarea
+                      value={ndaPages[activeNdaPage] || ''}
+                      onChange={(e) => updateNdaPage(activeNdaPage, e.target.value)}
+                      className="mt-3 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                      rows={12}
+                    />
+                    <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+                      {signaturePreview && <span>Signature preview attached</span>}
+                      {offerForm.documentDate && <span>Date: {offerForm.documentDate}</span>}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <textarea
+                  value={offerContent}
+                  onChange={(e) => setOfferContent(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2"
+                  rows={10}
+                />
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {isNdaDocument && (
+                  <button
+                    type="button"
+                    onClick={handleSaveOffer}
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700"
+                  >
+                    Save Draft
+                  </button>
+                )}
+                <button
+                  onClick={handleSaveOffer}
+                  className="rounded-lg bg-indigo-600 text-white px-4 py-2 font-semibold"
+                >
+                  Save Document
+                </button>
+              </div>
             </div>
           )}
         </div>
