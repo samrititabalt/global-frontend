@@ -352,26 +352,43 @@ const EmployeeDashboard = () => {
   const resolvedProfileImage = profileImagePreview || profile.profileImageUrl;
 
   return (
-    <Layout compact showHeader={false} showNav={false}>
+    <Layout compact>
       <div className="bg-slate-50 min-h-screen !pt-0">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6 space-y-6">
           <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-xl p-8">
             <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-indigo-50" />
             <div className="absolute -left-12 bottom-0 h-32 w-32 rounded-full bg-blue-50" />
             <div className="relative">
-              <div className="flex items-center gap-3 mb-3">
-                <LayoutDashboard className="h-8 w-8 text-indigo-600" />
-                <h1 className="text-3xl font-bold text-gray-900">Employee Dashboard</h1>
-              </div>
-              <p className="text-gray-600 max-w-2xl">
-                Access your personal profile, salary breakup, timesheets, and holiday requests in one secure place.
-                Keep your records updated and track approvals in real time.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-4">
-                <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3">
-                  <p className="text-xs text-indigo-600 font-semibold uppercase">Signed in as</p>
-                  <p className="text-sm font-semibold text-gray-900">{employeeInfo.name || 'Employee'}</p>
-                  <p className="text-xs text-gray-500">{employeeInfo.email}</p>
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <LayoutDashboard className="h-8 w-8 text-indigo-600" />
+                    <h1 className="text-3xl font-bold text-gray-900">Employee Dashboard</h1>
+                  </div>
+                  <p className="text-gray-600 max-w-2xl">
+                    Access your personal profile, salary breakup, timesheets, and holiday requests in one secure place.
+                    Keep your records updated and track approvals in real time.
+                  </p>
+                  <div className="mt-6 flex flex-wrap gap-4">
+                    <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3">
+                      <p className="text-xs text-indigo-600 font-semibold uppercase">Signed in as</p>
+                      <p className="text-sm font-semibold text-gray-900">{employeeInfo.name || 'Employee'}</p>
+                      <p className="text-xs text-gray-500">{employeeInfo.email}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                  <div className="h-12 w-12 rounded-full border border-gray-200 overflow-hidden bg-gray-100 flex items-center justify-center text-sm font-semibold text-gray-500">
+                    {resolvedProfileImage ? (
+                      <img src={resolvedProfileImage} alt={employeeInfo.name || 'Employee'} className="h-full w-full object-cover" />
+                    ) : (
+                      (employeeInfo.name || 'E').slice(0, 1)
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{employeeInfo.name || 'Employee'}</p>
+                    <p className="text-xs text-gray-500">Logged in as {employeeInfo.name || 'Employee'}</p>
+                  </div>
                 </div>
               </div>
             </div>
