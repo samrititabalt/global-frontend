@@ -29,6 +29,18 @@ const CompanyAdminDashboard = () => {
   const [salaryCurrency, setSalaryCurrency] = useState('USD');
   const [salaryGenerating, setSalaryGenerating] = useState(false);
   const [salarySaving, setSalarySaving] = useState(false);
+  const [expenseTemplate, setExpenseTemplate] = useState(null);
+  const [expenseTemplateSaving, setExpenseTemplateSaving] = useState(false);
+  const [expenseTemplateGenerating, setExpenseTemplateGenerating] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState(null);
+  const [expenseComment, setExpenseComment] = useState('');
+  const [expenseFilters, setExpenseFilters] = useState({
+    status: '',
+    employeeId: '',
+    expenseType: '',
+    from: '',
+    to: ''
+  });
   const [offerForm, setOfferForm] = useState({
     candidateName: '',
     roleTitle: '',
@@ -87,13 +99,14 @@ const CompanyAdminDashboard = () => {
   };
 
   const loadCompanyData = async (authToken) => {
-    const [profile, employeeRes, offerRes, timesheetRes, holidayRes, expenseRes] = await Promise.all([
+    const [profile, employeeRes, offerRes, timesheetRes, holidayRes, expenseRes, templateRes] = await Promise.all([
       api.get('/hiring-pro/company/profile', { headers: { Authorization: `Bearer ${authToken}` } }),
       api.get('/hiring-pro/company/employees', { headers: { Authorization: `Bearer ${authToken}` } }),
       api.get('/hiring-pro/company/offer-letters', { headers: { Authorization: `Bearer ${authToken}` } }),
       api.get('/hiring-pro/company/timesheets', { headers: { Authorization: `Bearer ${authToken}` } }),
       api.get('/hiring-pro/company/holidays', { headers: { Authorization: `Bearer ${authToken}` } }),
-      api.get('/hiring-pro/company/expenses', { headers: { Authorization: `Bearer ${authToken}` } })
+      api.get('/hiring-pro/company/expenses', { headers: { Authorization: `Bearer ${authToken}` } }),
+      api.get('/hiring-pro/company/expense-template', { headers: { Authorization: `Bearer ${authToken}` } })
     ]);
     setCompany(profile.data.company);
     setEmployees(employeeRes.data.employees || []);
@@ -101,6 +114,7 @@ const CompanyAdminDashboard = () => {
     setTimesheets(timesheetRes.data.timesheets || []);
     setHolidays(holidayRes.data.holidays || []);
     setExpenses(expenseRes.data.expenses || []);
+    setExpenseTemplate(templateRes.data.template || null);
   };
 
   const handleLogin = async (e) => {
@@ -347,9 +361,115 @@ const CompanyAdminDashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setExpenses(prev => prev.map(item => item._id === expenseId ? response.data.expense : item));
+      if (selectedExpense?._id === expenseId) {
+        setSelectedExpense(response.data.expense);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to update expense');
     }
+  };
+
+  const fetchExpenses = async (filters = expenseFilters) => {
+    try {
+      const response = await api.get('/hiring-pro/company/expenses', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: filters
+      });
+      setExpenses(response.data.expenses || []);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to load expenses');
+    }
+  };
+
+  const handleGenerateExpenseTemplate = async () => {
+    setExpenseTemplateGenerating(true);
+    setError('');
+    try {
+      const response = await api.post('/hiring-pro/company/expense-template/generate', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setExpenseTemplate(response.data.template);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to generate expense template');
+    } finally {
+      setExpenseTemplateGenerating(false);
+    }
+  };
+
+  const handleSaveExpenseTemplate = async () => {
+    if (!expenseTemplate) return;
+    setExpenseTemplateSaving(true);
+    setError('');
+    try {
+      const response = await api.put('/hiring-pro/company/expense-template', {
+        fields: expenseTemplate.fields || []
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      setExpenseTemplate(response.data.template);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to save expense template');
+    } finally {
+      setExpenseTemplateSaving(false);
+    }
+  };
+
+  const handleAddTemplateField = () => {
+    setExpenseTemplate((prev) => {
+      if (!prev) return prev;
+      const nextFields = [...(prev.fields || [])];
+      nextFields.push({
+        key: `custom_field_${nextFields.length + 1}`,
+        label: 'Custom Field',
+        required: false,
+        order: nextFields.length + 1
+      });
+      return { ...prev, fields: nextFields };
+    });
+  };
+
+  const handleRemoveTemplateField = (index) => {
+    setExpenseTemplate((prev) => {
+      if (!prev) return prev;
+      const nextFields = [...(prev.fields || [])];
+      const field = nextFields[index];
+      if (field?.required) return prev;
+      nextFields.splice(index, 1);
+      return { ...prev, fields: nextFields.map((item, idx) => ({ ...item, order: idx + 1 })) };
+    });
+  };
+
+  const handleMoveTemplateField = (from, to) => {
+    setExpenseTemplate((prev) => {
+      if (!prev) return prev;
+      const nextFields = [...(prev.fields || [])];
+      const [moved] = nextFields.splice(from, 1);
+      nextFields.splice(to, 0, moved);
+      return { ...prev, fields: nextFields.map((item, idx) => ({ ...item, order: idx + 1 })) };
+    });
+  };
+
+  const handleExpenseDownloadPdf = async (expenseId) => {
+    setError('');
+    try {
+      const response = await api.get(`/hiring-pro/company/expenses/${expenseId}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `expense-${expenseId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to download expense PDF');
+    }
+  };
+
+  const getExpenseValue = (expense, key) => {
+    const entry = expense?.values?.find((item) => item.key === key);
+    return entry?.value || '—';
   };
 
   useEffect(() => {
@@ -837,31 +957,275 @@ const CompanyAdminDashboard = () => {
       </div>
 
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Employee Expense Tracker</h3>
-        <div className="space-y-3">
-          {expenses.map(expense => (
-            <div key={expense._id} className="rounded-lg border border-gray-200 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <p className="font-semibold">{expense.employeeId?.name || 'Employee'}</p>
-                  <p className="text-sm text-gray-600">£{expense.amount} • {expense.description}</p>
-                </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900">Employee Expense Tracker</h3>
+            <p className="text-sm text-gray-500">Standard Expense Template (master format)</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleGenerateExpenseTemplate}
+              disabled={expenseTemplateGenerating}
+              className="rounded-md border border-indigo-200 px-3 py-1 text-sm font-semibold text-indigo-600 hover:border-indigo-300 disabled:opacity-60"
+            >
+              {expenseTemplateGenerating ? 'Generating...' : 'Generate Template'}
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveExpenseTemplate}
+              disabled={expenseTemplateSaving || !expenseTemplate}
+              className="rounded-md bg-indigo-600 px-3 py-1 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {expenseTemplateSaving ? 'Saving...' : 'Save Template'}
+            </button>
+            <button
+              type="button"
+              onClick={handleAddTemplateField}
+              disabled={!expenseTemplate}
+              className="rounded-md border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:border-gray-400 disabled:opacity-60"
+            >
+              Add Field
+            </button>
+          </div>
+        </div>
+        {expenseTemplate ? (
+          <div className="space-y-3">
+            {(expenseTemplate.fields || []).map((field, index) => (
+              <div key={`${field.key}-${index}`} className="grid grid-cols-1 md:grid-cols-6 gap-2 items-center">
+                <input
+                  value={field.label}
+                  onChange={(e) => {
+                    const updated = { ...expenseTemplate };
+                    updated.fields[index] = { ...field, label: e.target.value };
+                    setExpenseTemplate(updated);
+                  }}
+                  className="rounded-md border border-gray-300 px-2 py-1 text-sm md:col-span-2"
+                />
+                <input
+                  value={field.key}
+                  onChange={(e) => {
+                    const updated = { ...expenseTemplate };
+                    updated.fields[index] = { ...field, key: e.target.value };
+                    setExpenseTemplate(updated);
+                  }}
+                  className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+                />
                 <select
-                  defaultValue={expense.status}
-                  className="rounded border border-gray-300 px-2 py-1 text-sm"
-                  onChange={(e) => handleExpenseUpdate(expense._id, { status: e.target.value })}
+                  value={field.required ? 'required' : 'optional'}
+                  onChange={(e) => {
+                    const updated = { ...expenseTemplate };
+                    updated.fields[index] = { ...field, required: e.target.value === 'required' };
+                    setExpenseTemplate(updated);
+                  }}
+                  className="rounded-md border border-gray-300 px-2 py-1 text-sm"
                 >
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
+                  <option value="required">Required</option>
+                  <option value="optional">Optional</option>
                 </select>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleMoveTemplateField(index, Math.max(0, index - 1))}
+                    className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
+                  >
+                    Up
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMoveTemplateField(index, Math.min(expenseTemplate.fields.length - 1, index + 1))}
+                    className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
+                  >
+                    Down
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTemplateField(index)}
+                  className={`rounded-md border px-2 py-1 text-xs font-semibold ${field.required ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-red-200 text-red-600 hover:border-red-300'}`}
+                >
+                  Remove
+                </button>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-600">Generate a template to start.</p>
+        )}
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+        <h3 className="text-xl font-semibold text-gray-900 mb-4">Expense Dashboard</h3>
+        <div className="mb-4 grid grid-cols-1 md:grid-cols-5 gap-3 text-sm">
+          <select
+            value={expenseFilters.status}
+            onChange={(e) => setExpenseFilters(prev => ({ ...prev, status: e.target.value }))}
+            className="rounded-md border border-gray-300 px-3 py-2"
+          >
+            <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <select
+            value={expenseFilters.employeeId}
+            onChange={(e) => setExpenseFilters(prev => ({ ...prev, employeeId: e.target.value }))}
+            className="rounded-md border border-gray-300 px-3 py-2"
+          >
+            <option value="">All Employees</option>
+            {employees.map((employee) => (
+              <option key={employee._id} value={employee._id}>{employee.name}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            value={expenseFilters.expenseType}
+            onChange={(e) => setExpenseFilters(prev => ({ ...prev, expenseType: e.target.value }))}
+            placeholder="Expense type"
+            className="rounded-md border border-gray-300 px-3 py-2"
+          />
+          <input
+            type="date"
+            value={expenseFilters.from}
+            onChange={(e) => setExpenseFilters(prev => ({ ...prev, from: e.target.value }))}
+            className="rounded-md border border-gray-300 px-3 py-2"
+          />
+          <input
+            type="date"
+            value={expenseFilters.to}
+            onChange={(e) => setExpenseFilters(prev => ({ ...prev, to: e.target.value }))}
+            className="rounded-md border border-gray-300 px-3 py-2"
+          />
+        </div>
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => fetchExpenses(expenseFilters)}
+            className="rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white"
+          >
+            Apply Filters
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const resetFilters = { status: '', employeeId: '', expenseType: '', from: '', to: '' };
+              setExpenseFilters(resetFilters);
+              fetchExpenses(resetFilters);
+            }}
+            className="rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700"
+          >
+            Clear
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500 border-b">
+                <th className="py-2 pr-4">Employee</th>
+                <th className="py-2 pr-4">Expense Type</th>
+                <th className="py-2 pr-4">Amount</th>
+                <th className="py-2 pr-4">Invoice #</th>
+                <th className="py-2 pr-4">Bill #</th>
+                <th className="py-2 pr-4">Status</th>
+                <th className="py-2 pr-4">Submitted</th>
+                <th className="py-2 pr-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {expenses.map((expense) => (
+                <tr key={expense._id} className="border-b last:border-b-0">
+                  <td className="py-3 pr-4 font-semibold text-gray-900">{expense.employeeId?.name || 'Employee'}</td>
+                  <td className="py-3 pr-4">{expense.expenseType || getExpenseValue(expense, 'expense_type')}</td>
+                  <td className="py-3 pr-4">{expense.amount}</td>
+                  <td className="py-3 pr-4">{getExpenseValue(expense, 'invoice_number')}</td>
+                  <td className="py-3 pr-4">{getExpenseValue(expense, 'bill_number')}</td>
+                  <td className="py-3 pr-4 capitalize">{expense.status}</td>
+                  <td className="py-3 pr-4">{new Date(expense.createdAt).toLocaleDateString()}</td>
+                  <td className="py-3 pr-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedExpense(expense);
+                          setExpenseComment(expense.adminComment || '');
+                        }}
+                        className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
+                      >
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleExpenseUpdate(expense._id, { status: 'approved', adminComment: expense.adminComment })}
+                        className="rounded-md border border-emerald-200 px-2 py-1 text-xs font-semibold text-emerald-700 hover:border-emerald-300"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleExpenseUpdate(expense._id, { status: 'rejected', adminComment: expense.adminComment })}
+                        className="rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:border-red-300"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           {!expenses.length && (
-            <p className="text-sm text-gray-600">No expenses submitted yet.</p>
+            <p className="text-sm text-gray-600 mt-3">No expenses submitted yet.</p>
           )}
         </div>
+        {selectedExpense && (
+          <div className="mt-6 rounded-lg border border-gray-200 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="font-semibold text-gray-900">{selectedExpense.employeeId?.name || 'Employee'}</p>
+                <p className="text-xs text-gray-500">Expense Sheet Details</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedExpense(null)}
+                className="text-xs font-semibold text-gray-500 hover:text-gray-700"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-3 space-y-2 text-sm">
+              {(selectedExpense.values || []).map((entry, index) => (
+                <div key={`${entry.key}-${index}`} className="flex items-center justify-between gap-4">
+                  <span className="text-gray-500">{entry.label}</span>
+                  <span className="font-semibold text-gray-900">{entry.value}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <textarea
+                value={expenseComment}
+                onChange={(e) => setExpenseComment(e.target.value)}
+                placeholder="Add admin comments..."
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleExpenseUpdate(selectedExpense._id, { status: selectedExpense.status, adminComment: expenseComment })}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:border-gray-400"
+                >
+                  Save Comment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExpenseDownloadPdf(selectedExpense._id)}
+                  className="rounded-md border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-600 hover:border-indigo-300"
+                >
+                  Download PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">

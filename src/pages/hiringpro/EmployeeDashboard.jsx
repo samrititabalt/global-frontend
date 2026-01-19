@@ -16,6 +16,13 @@ const EmployeeDashboard = () => {
   const [salaryUpdatedAt, setSalaryUpdatedAt] = useState('');
   const [salaryUpdatedBy, setSalaryUpdatedBy] = useState('');
   const [legacySalaryBreakdown, setLegacySalaryBreakdown] = useState('');
+  const [expenseTemplate, setExpenseTemplate] = useState(null);
+  const [expenseDraftValues, setExpenseDraftValues] = useState([]);
+  const [expenseInvoice, setExpenseInvoice] = useState(null);
+  const [expenseUploading, setExpenseUploading] = useState(false);
+  const [expenseSubmitting, setExpenseSubmitting] = useState(false);
+  const [expenseSheets, setExpenseSheets] = useState([]);
+  const [selectedExpense, setSelectedExpense] = useState(null);
   const [profile, setProfile] = useState({
     profileImageUrl: '',
     profileImagePublicId: '',
@@ -47,13 +54,15 @@ const EmployeeDashboard = () => {
         localStorage.setItem('hiringProEmployeeToken', response.data.token);
         localStorage.removeItem('hiringProToken');
         setToken(response.data.token);
-        const [offers, timesheetRes, holidayRes, docRes, salaryRes, profileRes] = await Promise.all([
+        const [offers, timesheetRes, holidayRes, docRes, salaryRes, profileRes, expenseTemplateRes, expenseRes] = await Promise.all([
           api.get('/hiring-pro/employee/offer-letters', { headers: { Authorization: `Bearer ${response.data.token}` } }),
           api.get('/hiring-pro/employee/timesheets', { headers: { Authorization: `Bearer ${response.data.token}` } }),
           api.get('/hiring-pro/employee/holidays', { headers: { Authorization: `Bearer ${response.data.token}` } }),
           api.get('/hiring-pro/employee/documents', { headers: { Authorization: `Bearer ${response.data.token}` } }),
           api.get('/hiring-pro/employee/salary-breakdown', { headers: { Authorization: `Bearer ${response.data.token}` } }),
-          api.get('/hiring-pro/employee/profile', { headers: { Authorization: `Bearer ${response.data.token}` } })
+          api.get('/hiring-pro/employee/profile', { headers: { Authorization: `Bearer ${response.data.token}` } }),
+          api.get('/hiring-pro/employee/expense-template', { headers: { Authorization: `Bearer ${response.data.token}` } }),
+          api.get('/hiring-pro/employee/expenses', { headers: { Authorization: `Bearer ${response.data.token}` } })
         ]);
         setOfferLetters(offers.data.offerLetters || []);
         setTimesheets(timesheetRes.data.timesheets || []);
@@ -73,6 +82,8 @@ const EmployeeDashboard = () => {
         if (profileRes.data.profile) {
           setProfile(profileRes.data.profile);
         }
+        setExpenseTemplate(expenseTemplateRes.data.template || null);
+        setExpenseSheets(expenseRes.data.expenses || []);
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
@@ -275,18 +286,89 @@ const EmployeeDashboard = () => {
     }
   };
 
+  const handleExpenseExtract = async (file) => {
+    if (!file) return;
+    setError('');
+    setSuccess('');
+    setExpenseUploading(true);
+    try {
+      const payload = new FormData();
+      payload.append('invoice', file);
+      const response = await api.post('/hiring-pro/employee/expenses/extract', payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setExpenseTemplate(response.data.template || expenseTemplate);
+      setExpenseDraftValues(response.data.values || []);
+      setExpenseInvoice(response.data.invoice || null);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to extract expense data');
+    } finally {
+      setExpenseUploading(false);
+    }
+  };
+
+  const handleExpenseValueChange = (index, value) => {
+    setExpenseDraftValues(prev => prev.map((item, idx) => idx === index ? { ...item, value } : item));
+  };
+
+  const handleSubmitExpense = async () => {
+    if (!expenseDraftValues.length || !expenseInvoice) {
+      setError('Please upload an invoice and generate the expense sheet first.');
+      return;
+    }
+    setError('');
+    setSuccess('');
+    setExpenseSubmitting(true);
+    try {
+      const response = await api.post('/hiring-pro/employee/expenses', {
+        values: expenseDraftValues,
+        invoice: expenseInvoice
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      setExpenseSheets(prev => [response.data.expense, ...prev]);
+      setExpenseDraftValues([]);
+      setExpenseInvoice(null);
+      setSuccess('Expense submitted for approval.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to submit expense');
+    } finally {
+      setExpenseSubmitting(false);
+    }
+  };
+
+  const handleDownloadExpensePdf = async (expenseId) => {
+    setError('');
+    try {
+      const response = await api.get(`/hiring-pro/employee/expenses/${expenseId}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `expense-${expenseId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to download expense PDF');
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       if (!token) return;
       try {
         const headers = { Authorization: `Bearer ${token}` };
-        const [offers, timesheetRes, holidayRes, docRes, salaryRes, profileRes] = await Promise.all([
+        const [offers, timesheetRes, holidayRes, docRes, salaryRes, profileRes, expenseTemplateRes, expenseRes] = await Promise.all([
           api.get('/hiring-pro/employee/offer-letters', { headers }),
           api.get('/hiring-pro/employee/timesheets', { headers }),
           api.get('/hiring-pro/employee/holidays', { headers }),
           api.get('/hiring-pro/employee/documents', { headers }),
           api.get('/hiring-pro/employee/salary-breakdown', { headers }),
-          api.get('/hiring-pro/employee/profile', { headers })
+          api.get('/hiring-pro/employee/profile', { headers }),
+          api.get('/hiring-pro/employee/expense-template', { headers }),
+          api.get('/hiring-pro/employee/expenses', { headers })
         ]);
         setOfferLetters(offers.data.offerLetters || []);
         setTimesheets(timesheetRes.data.timesheets || []);
@@ -306,6 +388,8 @@ const EmployeeDashboard = () => {
         if (profileRes.data.profile) {
           setProfile(profileRes.data.profile);
         }
+        setExpenseTemplate(expenseTemplateRes.data.template || null);
+        setExpenseSheets(expenseRes.data.expenses || []);
       } catch (err) {
         setError(err.response?.data?.message || 'Unable to load employee data');
         if (err.response?.status === 401 || err.response?.status === 403) {
@@ -726,6 +810,115 @@ const EmployeeDashboard = () => {
                 </div>
               ))}
             </div>
+          </section>
+
+          <section className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <ClipboardList className="h-6 w-6 text-indigo-600" />
+              <h2 className="text-2xl font-semibold text-gray-900">Expense Builder</h2>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Upload an invoice to generate your expense sheet. You can edit values but not the template fields.
+            </p>
+            <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={(e) => handleExpenseExtract(e.target.files?.[0])}
+                className="rounded-lg border border-gray-300 px-4 py-2"
+              />
+              {expenseInvoice?.fileName && (
+                <span className="text-xs text-gray-500">{expenseInvoice.fileName}</span>
+              )}
+            </div>
+            {expenseUploading && (
+              <p className="text-sm text-gray-500">Extracting invoice details...</p>
+            )}
+            {expenseDraftValues.length > 0 && (
+              <div className="space-y-3">
+                {expenseDraftValues.map((field, index) => (
+                  <div key={`${field.key}-${index}`} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
+                    <p className="text-sm font-semibold text-gray-700">{field.label}</p>
+                    <input
+                      value={field.value}
+                      onChange={(e) => handleExpenseValueChange(index, e.target.value)}
+                      className="md:col-span-2 rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                    />
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={handleSubmitExpense}
+                  disabled={expenseSubmitting}
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold ${expenseSubmitting ? 'bg-gray-300 text-gray-600' : 'bg-indigo-600 text-white'}`}
+                >
+                  {expenseSubmitting ? 'Submitting...' : 'Send to Admin for Approval'}
+                </button>
+              </div>
+            )}
+          </section>
+
+          <section className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <FileText className="h-6 w-6 text-indigo-600" />
+              <h2 className="text-2xl font-semibold text-gray-900">My Expense Sheet</h2>
+            </div>
+            <div className="space-y-3">
+              {expenseSheets.map((sheet) => (
+                <div key={sheet._id} className="rounded-lg border border-gray-200 p-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      {sheet.expenseType || sheet.values?.find((item) => item.key === 'expense_type')?.value || 'Expense'}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {new Date(sheet.createdAt).toLocaleDateString()} • {sheet.status}
+                    </p>
+                    <p className="text-xs text-gray-500">Amount: {sheet.amount}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedExpense(sheet)}
+                      className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
+                    >
+                      View Sheet
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadExpensePdf(sheet._id)}
+                      className="rounded-md border border-indigo-200 px-3 py-1 text-xs font-semibold text-indigo-600 hover:border-indigo-300"
+                    >
+                      Download PDF
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {!expenseSheets.length && (
+                <p className="text-sm text-gray-600">No expense sheets submitted yet.</p>
+              )}
+            </div>
+            {selectedExpense && (
+              <div className="mt-4 rounded-lg border border-gray-200 p-4">
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold text-gray-900">Expense Sheet Details</p>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedExpense(null)}
+                    className="text-xs font-semibold text-gray-500 hover:text-gray-700"
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="mt-3 space-y-2 text-sm">
+                  {(selectedExpense.values || []).map((entry, index) => (
+                    <div key={`${entry.key}-${index}`} className="flex items-center justify-between gap-4">
+                      <span className="text-gray-500">{entry.label}</span>
+                      <span className="font-semibold text-gray-900">{entry.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
 
           <section className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
