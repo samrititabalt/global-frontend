@@ -15,6 +15,16 @@ const CompanyAdminDashboard = () => {
   const [holidays, setHolidays] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [employeeDetail, setEmployeeDetail] = useState(null);
+  const [employeeEdit, setEmployeeEdit] = useState({ name: '', email: '', designation: '' });
+  const [profileEdit, setProfileEdit] = useState({
+    phone: '',
+    emergencyContact: '',
+    bloodGroup: '',
+    currentAddress: '',
+    highestQualification: '',
+    previousEmployer: ''
+  });
+  const [savingEmployeeDetail, setSavingEmployeeDetail] = useState(false);
   const [offerForm, setOfferForm] = useState({
     candidateName: '',
     roleTitle: '',
@@ -196,8 +206,43 @@ const CompanyAdminDashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setEmployeeDetail(response.data);
+      setEmployeeEdit({
+        name: response.data.employee?.name || '',
+        email: response.data.employee?.email || '',
+        designation: response.data.employee?.designation || ''
+      });
+      setProfileEdit({
+        phone: response.data.profile?.phone || '',
+        emergencyContact: response.data.profile?.emergencyContact || '',
+        bloodGroup: response.data.profile?.bloodGroup || '',
+        currentAddress: response.data.profile?.currentAddress || '',
+        highestQualification: response.data.profile?.highestQualification || '',
+        previousEmployer: response.data.profile?.previousEmployer || ''
+      });
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to load employee profile');
+    }
+  };
+
+  const handleSaveEmployeeDetail = async () => {
+    if (!employeeDetail?.employee?._id) return;
+    setError('');
+    setSavingEmployeeDetail(true);
+    try {
+      const response = await api.put(`/hiring-pro/company/employees/${employeeDetail.employee._id}/profile`, {
+        employee: employeeEdit,
+        profile: profileEdit
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      setEmployeeDetail(response.data);
+      setEmployees(prev => prev.map(emp => (
+        emp._id === response.data.employee._id
+          ? { ...emp, name: response.data.employee.name, email: response.data.employee.email }
+          : emp
+      )));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to update employee details');
+    } finally {
+      setSavingEmployeeDetail(false);
     }
   };
 
@@ -405,15 +450,96 @@ const CompanyAdminDashboard = () => {
           </div>
           {employeeDetail && (
             <div className="mt-6 border-t border-gray-200 pt-4">
-              <h4 className="font-semibold text-gray-900">{employeeDetail.employee.name}</h4>
-              <p className="text-sm text-gray-600">{employeeDetail.employee.email}</p>
-              <p className="text-sm text-gray-600">Designation: {employeeDetail.employee.designation || '—'}</p>
-              <p className="text-sm text-gray-600">Phone: {employeeDetail.profile?.phone || '—'}</p>
-              <p className="text-sm text-gray-600">Emergency Contact: {employeeDetail.profile?.emergencyContact || '—'}</p>
-              <p className="text-sm text-gray-600">Blood Group: {employeeDetail.profile?.bloodGroup || '—'}</p>
-              <p className="text-sm text-gray-600">Current Address: {employeeDetail.profile?.currentAddress || '—'}</p>
-              <p className="text-sm text-gray-600">Qualification: {employeeDetail.profile?.highestQualification || '—'}</p>
-              <p className="text-sm text-gray-600">Previous Employer: {employeeDetail.profile?.previousEmployer || '—'}</p>
+              <h4 className="font-semibold text-gray-900 mb-3">Edit employee details</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600">Name</label>
+                  <input
+                    value={employeeEdit.name}
+                    onChange={(e) => setEmployeeEdit(prev => ({ ...prev, name: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600">Email</label>
+                  <input
+                    value={employeeEdit.email}
+                    onChange={(e) => setEmployeeEdit(prev => ({ ...prev, email: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600">Designation</label>
+                  <input
+                    value={employeeEdit.designation}
+                    onChange={(e) => setEmployeeEdit(prev => ({ ...prev, designation: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600">Phone</label>
+                  <input
+                    value={profileEdit.phone}
+                    onChange={(e) => setProfileEdit(prev => ({ ...prev, phone: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600">Emergency Contact</label>
+                  <input
+                    value={profileEdit.emergencyContact}
+                    onChange={(e) => setProfileEdit(prev => ({ ...prev, emergencyContact: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600">Blood Group</label>
+                  <input
+                    value={profileEdit.bloodGroup}
+                    onChange={(e) => setProfileEdit(prev => ({ ...prev, bloodGroup: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600">Current Address</label>
+                  <input
+                    value={profileEdit.currentAddress}
+                    onChange={(e) => setProfileEdit(prev => ({ ...prev, currentAddress: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600">Qualification</label>
+                  <input
+                    value={profileEdit.highestQualification}
+                    onChange={(e) => setProfileEdit(prev => ({ ...prev, highestQualification: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600">Previous Employer</label>
+                  <input
+                    value={profileEdit.previousEmployer}
+                    onChange={(e) => setProfileEdit(prev => ({ ...prev, previousEmployer: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  onClick={handleSaveEmployeeDetail}
+                  disabled={savingEmployeeDetail}
+                  className="rounded-lg bg-indigo-600 text-white px-4 py-2 text-sm font-semibold disabled:opacity-60"
+                >
+                  {savingEmployeeDetail ? 'Saving...' : 'Save Details'}
+                </button>
+                <button
+                  onClick={() => handleEmployeeDetail(employeeDetail.employee._id)}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400"
+                >
+                  Reset
+                </button>
+              </div>
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div className="rounded-lg border border-gray-200 p-3">
                   <p className="font-semibold text-gray-900 mb-2">Offer Letters</p>
