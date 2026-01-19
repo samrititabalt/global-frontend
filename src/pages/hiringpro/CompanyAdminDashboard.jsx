@@ -467,6 +467,31 @@ const CompanyAdminDashboard = () => {
     }
   };
 
+  const handleViewInvoiceFile = (invoiceUrl) => {
+    if (!invoiceUrl) {
+      setError('Invoice file not available.');
+      return;
+    }
+    window.open(invoiceUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleDeleteExpense = async (expenseId) => {
+    const confirmDelete = window.confirm('This will permanently delete the expense and the invoice file.');
+    if (!confirmDelete) return;
+    setError('');
+    try {
+      await api.delete(`/hiring-pro/company/expenses/${expenseId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setExpenses(prev => prev.filter(item => item._id !== expenseId));
+      if (selectedExpense?._id === expenseId) {
+        setSelectedExpense(null);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to delete expense');
+    }
+  };
+
   const getExpenseValue = (expense, key) => {
     const entry = expense?.values?.find((item) => item.key === key);
     return entry?.value || '—';
@@ -1155,6 +1180,13 @@ const CompanyAdminDashboard = () => {
                       </button>
                       <button
                         type="button"
+                        onClick={() => handleViewInvoiceFile(expense.invoiceUrl)}
+                        className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
+                      >
+                        View Invoice File
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleExpenseUpdate(expense._id, { status: 'approved', adminComment: expense.adminComment })}
                         className="rounded-md border border-emerald-200 px-2 py-1 text-xs font-semibold text-emerald-700 hover:border-emerald-300"
                       >
@@ -1166,6 +1198,13 @@ const CompanyAdminDashboard = () => {
                         className="rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:border-red-300"
                       >
                         Reject
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteExpense(expense._id)}
+                        className="rounded-md border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-500 hover:border-gray-300"
+                      >
+                        Delete
                       </button>
                     </div>
                   </td>
@@ -1221,6 +1260,20 @@ const CompanyAdminDashboard = () => {
                   className="rounded-md border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-600 hover:border-indigo-300"
                 >
                   Download PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleViewInvoiceFile(selectedExpense.invoiceUrl)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:border-gray-400"
+                >
+                  View Invoice File
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteExpense(selectedExpense._id)}
+                  className="rounded-md border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-500 hover:border-gray-300"
+                >
+                  Delete
                 </button>
               </div>
             </div>

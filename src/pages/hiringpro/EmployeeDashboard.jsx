@@ -355,6 +355,31 @@ const EmployeeDashboard = () => {
     }
   };
 
+  const handleViewInvoiceFile = (invoiceUrl) => {
+    if (!invoiceUrl) {
+      setError('Invoice file not available.');
+      return;
+    }
+    window.open(invoiceUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleDeleteExpense = async (expenseId) => {
+    setError('');
+    const confirmDelete = window.confirm('Delete this expense sheet?');
+    if (!confirmDelete) return;
+    try {
+      await api.delete(`/hiring-pro/employee/expenses/${expenseId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setExpenseSheets(prev => prev.filter(item => item._id !== expenseId));
+      if (selectedExpense?._id === expenseId) {
+        setSelectedExpense(null);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to delete expense');
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       if (!token) return;
@@ -885,10 +910,24 @@ const EmployeeDashboard = () => {
                     </button>
                     <button
                       type="button"
+                      onClick={() => handleViewInvoiceFile(sheet.invoiceUrl)}
+                      className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
+                    >
+                      View Invoice File
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleDownloadExpensePdf(sheet._id)}
                       className="rounded-md border border-indigo-200 px-3 py-1 text-xs font-semibold text-indigo-600 hover:border-indigo-300"
                     >
                       Download PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteExpense(sheet._id)}
+                      className="rounded-md border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-500 hover:border-gray-300"
+                    >
+                      Delete
                     </button>
                   </div>
                 </div>
