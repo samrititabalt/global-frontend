@@ -12,7 +12,10 @@ const EmployeeDashboard = () => {
   const [timesheets, setTimesheets] = useState([]);
   const [holidays, setHolidays] = useState([]);
   const [documents, setDocuments] = useState([]);
-  const [salaryBreakdown, setSalaryBreakdown] = useState('');
+  const [salaryBreakdown, setSalaryBreakdown] = useState(null);
+  const [salaryUpdatedAt, setSalaryUpdatedAt] = useState('');
+  const [salaryUpdatedBy, setSalaryUpdatedBy] = useState('');
+  const [legacySalaryBreakdown, setLegacySalaryBreakdown] = useState('');
   const [profile, setProfile] = useState({
     profileImageUrl: '',
     profileImagePublicId: '',
@@ -56,7 +59,10 @@ const EmployeeDashboard = () => {
         setTimesheets(timesheetRes.data.timesheets || []);
         setHolidays(holidayRes.data.holidays || []);
         setDocuments(docRes.data.documents || []);
-        setSalaryBreakdown(salaryRes.data.ctcBreakdown || '');
+        setSalaryBreakdown(salaryRes.data.salaryBreakup || null);
+        setSalaryUpdatedAt(salaryRes.data.salaryUpdatedAt || '');
+        setSalaryUpdatedBy(salaryRes.data.salaryUpdatedBy?.name || '');
+        setLegacySalaryBreakdown(salaryRes.data.ctcBreakdown || '');
         if (profileRes.data.employee) {
           setEmployeeInfo({
             name: profileRes.data.employee.name || '',
@@ -286,7 +292,10 @@ const EmployeeDashboard = () => {
         setTimesheets(timesheetRes.data.timesheets || []);
         setHolidays(holidayRes.data.holidays || []);
         setDocuments(docRes.data.documents || []);
-        setSalaryBreakdown(salaryRes.data.ctcBreakdown || '');
+        setSalaryBreakdown(salaryRes.data.salaryBreakup || null);
+        setSalaryUpdatedAt(salaryRes.data.salaryUpdatedAt || '');
+        setSalaryUpdatedBy(salaryRes.data.salaryUpdatedBy?.name || '');
+        setLegacySalaryBreakdown(salaryRes.data.ctcBreakdown || '');
         if (profileRes.data.employee) {
         setEmployeeInfo({
           name: profileRes.data.employee.name || '',
@@ -533,7 +542,48 @@ const EmployeeDashboard = () => {
               <Wallet className="h-6 w-6 text-indigo-600" />
               <h2 className="text-2xl font-semibold text-gray-900">Salary Breakup</h2>
             </div>
-            <p className="text-sm text-gray-600 whitespace-pre-wrap">{salaryBreakdown || 'No salary breakup available yet.'}</p>
+            <p className="text-sm text-gray-500 mb-4">This salary breakup is managed by your administrator.</p>
+            {salaryBreakdown?.components?.length ? (
+              <div className="space-y-3">
+                {salaryBreakdown.components.map((component, index) => (
+                  <div key={`${component.key}-${index}`} className="rounded-lg border border-gray-200 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-semibold text-gray-900">{component.label}</p>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {salaryBreakdown.currency} {Number(component.amount || 0).toLocaleString()}
+                      </p>
+                    </div>
+                    {component.description && (
+                      <p className="text-xs text-gray-500 mt-1">{component.description}</p>
+                    )}
+                  </div>
+                ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="rounded-lg border border-gray-200 p-3">
+                    <p className="text-xs text-gray-500">Total CTC</p>
+                    <p className="font-semibold text-gray-900">
+                      {salaryBreakdown.currency} {Number(salaryBreakdown.totalCtc || 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 p-3">
+                    <p className="text-xs text-gray-500">Net Pay</p>
+                    <p className="font-semibold text-gray-900">
+                      {salaryBreakdown.currency} {Number(salaryBreakdown.netPay || 0).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                {salaryUpdatedAt && (
+                  <p className="text-xs text-gray-500">
+                    Last updated by admin{salaryUpdatedBy ? ` (${salaryUpdatedBy})` : ''} on{' '}
+                    {new Date(salaryUpdatedAt).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            ) : legacySalaryBreakdown ? (
+              <p className="text-sm text-gray-600 whitespace-pre-wrap">{legacySalaryBreakdown}</p>
+            ) : (
+              <p className="text-sm text-gray-600">No salary breakup available yet.</p>
+            )}
           </section>
 
           <section className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">

@@ -25,6 +25,10 @@ const CompanyAdminDashboard = () => {
     previousEmployer: ''
   });
   const [savingEmployeeDetail, setSavingEmployeeDetail] = useState(false);
+  const [salaryBreakup, setSalaryBreakup] = useState(null);
+  const [salaryCurrency, setSalaryCurrency] = useState('USD');
+  const [salaryGenerating, setSalaryGenerating] = useState(false);
+  const [salarySaving, setSalarySaving] = useState(false);
   const [offerForm, setOfferForm] = useState({
     candidateName: '',
     roleTitle: '',
@@ -219,8 +223,77 @@ const CompanyAdminDashboard = () => {
         highestQualification: response.data.profile?.highestQualification || '',
         previousEmployer: response.data.profile?.previousEmployer || ''
       });
+      if (response.data.profile?.salaryBreakup?.components?.length) {
+        setSalaryBreakup(response.data.profile.salaryBreakup);
+        setSalaryCurrency(response.data.profile.salaryBreakup.currency || 'USD');
+      } else {
+        setSalaryBreakup(null);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to load employee profile');
+    }
+  };
+
+  const normalizeSalaryBreakup = (payload) => {
+    if (!payload) return null;
+    const components = Array.isArray(payload.components) ? payload.components : [];
+    const sanitized = components.map((item) => ({
+      key: item.key || '',
+      label: item.label || '',
+      amount: Number(item.amount) || 0,
+      description: item.description || '',
+      category: item.category === 'deduction' ? 'deduction' : 'earning'
+    }));
+    const totalCtc = sanitized
+      .filter((item) => item.category === 'earning')
+      .reduce((sum, item) => sum + item.amount, 0);
+    const totalDeductions = sanitized
+      .filter((item) => item.category === 'deduction')
+      .reduce((sum, item) => sum + item.amount, 0);
+    return {
+      currency: payload.currency || salaryCurrency || 'USD',
+      components: sanitized,
+      totalCtc,
+      netPay: totalCtc - totalDeductions
+    };
+  };
+
+  const handleGenerateSalaryBreakup = async () => {
+    if (!employeeDetail?.employee?._id) return;
+    setSalaryGenerating(true);
+    setError('');
+    try {
+      const response = await api.post(
+        `/hiring-pro/company/employees/${employeeDetail.employee._id}/salary-breakup/generate`,
+        { currency: salaryCurrency },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const normalized = normalizeSalaryBreakup(response.data.salaryBreakup);
+      setSalaryBreakup(normalized);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to generate salary breakup');
+    } finally {
+      setSalaryGenerating(false);
+    }
+  };
+
+  const handleSaveSalaryBreakup = async () => {
+    if (!employeeDetail?.employee?._id || !salaryBreakup) return;
+    setSalarySaving(true);
+    setError('');
+    try {
+      const normalized = normalizeSalaryBreakup(salaryBreakup);
+      const response = await api.put(
+        `/hiring-pro/company/employees/${employeeDetail.employee._id}/salary-breakup`,
+        { salaryBreakup: normalized },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setEmployeeDetail(response.data);
+      setSalaryBreakup(response.data.profile?.salaryBreakup || normalized);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to save salary breakup');
+    } finally {
+      setSalarySaving(false);
     }
   };
 
@@ -539,6 +612,110 @@ const CompanyAdminDashboard = () => {
                 >
                   Reset
                 </button>
+              </div>
+              <div className="mt-6 rounded-lg border border-gray-200 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-gray-900">Salary Breakup</p>
+                    <p className="text-xs text-gray-500">Generate, edit, and push the salary breakup to the employee.</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      value={salaryCurrency}
+                      onChange={(e) => setSalaryCurrency(e.target.value)}
+                      className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+                    >
+                      <option value="USD">USD</option>
+                      <option value="GBP">GBP</option>
+                      <option value="INR">INR</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={handleGenerateSalaryBreakup}
+                      disabled={salaryGenerating}
+                      className="rounded-md border border-indigo-200 px-3 py-1 text-sm font-semibold text-indigo-600 hover:border-indigo-300 disabled:opacity-60"
+                    >
+                      {salaryGenerating ? 'Generating...' : 'Generate Template'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveSalaryBreakup}
+                      disabled={!salaryBreakup || salarySaving}
+                      className="rounded-md bg-indigo-600 px-3 py-1 text-sm font-semibold text-white disabled:opacity-60"
+                    >
+                      {salarySaving ? 'Saving...' : 'Save & Push'}
+                    </button>
+                  </div>
+                </div>
+                {salaryBreakup ? (
+                  <div className="mt-4 space-y-3">
+                    {salaryBreakup.components.map((component, index) => (
+                      <div key={`${component.key}-${index}`} className="grid grid-cols-1 md:grid-cols-5 gap-2 items-center">
+                        <input
+                          value={component.label}
+                          onChange={(e) => {
+                            const updated = { ...salaryBreakup };
+                            updated.components[index] = { ...component, label: e.target.value };
+                            setSalaryBreakup(normalizeSalaryBreakup(updated));
+                          }}
+                          className="rounded-md border border-gray-300 px-2 py-1 text-sm md:col-span-2"
+                        />
+                        <input
+                          type="number"
+                          value={component.amount}
+                          onChange={(e) => {
+                            const updated = { ...salaryBreakup };
+                            updated.components[index] = { ...component, amount: Number(e.target.value) };
+                            setSalaryBreakup(normalizeSalaryBreakup(updated));
+                          }}
+                          className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+                        />
+                        <select
+                          value={component.category}
+                          onChange={(e) => {
+                            const updated = { ...salaryBreakup };
+                            updated.components[index] = { ...component, category: e.target.value };
+                            setSalaryBreakup(normalizeSalaryBreakup(updated));
+                          }}
+                          className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+                        >
+                          <option value="earning">Earning</option>
+                          <option value="deduction">Deduction</option>
+                        </select>
+                        <input
+                          value={component.description}
+                          onChange={(e) => {
+                            const updated = { ...salaryBreakup };
+                            updated.components[index] = { ...component, description: e.target.value };
+                            setSalaryBreakup(normalizeSalaryBreakup(updated));
+                          }}
+                          className="rounded-md border border-gray-300 px-2 py-1 text-sm md:col-span-2"
+                        />
+                      </div>
+                    ))}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="rounded-md border border-gray-200 px-3 py-2">
+                        <p className="text-xs text-gray-500">Total CTC</p>
+                        <p className="font-semibold text-gray-900">
+                          {salaryBreakup.currency} {salaryBreakup.totalCtc.toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="rounded-md border border-gray-200 px-3 py-2">
+                        <p className="text-xs text-gray-500">Net Pay</p>
+                        <p className="font-semibold text-gray-900">
+                          {salaryBreakup.currency} {salaryBreakup.netPay.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    {employeeDetail.profile?.salaryUpdatedAt && (
+                      <p className="text-xs text-gray-500">
+                        Last updated by admin on {new Date(employeeDetail.profile.salaryUpdatedAt).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm text-gray-500">Generate a salary template to begin.</p>
+                )}
               </div>
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div className="rounded-lg border border-gray-200 p-3">
