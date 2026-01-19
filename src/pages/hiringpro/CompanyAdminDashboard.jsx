@@ -44,13 +44,19 @@ const CompanyAdminDashboard = () => {
   const fixedExpenseKeys = ['particulars', 'invoice_number', 'name', 'expense_type', 'amount', 'date', 'remarks'];
   const [offerForm, setOfferForm] = useState({
     candidateName: '',
-    roleTitle: '',
-    startDate: '',
-    salaryPackage: '',
-    ctcBreakdown: '',
-    notes: ''
+    title: '',
+    employeeId: '',
+    employeeCode: '',
+    documentType: 'Offer Letter',
+    customDocumentType: '',
+    documentDate: ''
   });
   const [offerContent, setOfferContent] = useState('');
+  const [offerWarnings, setOfferWarnings] = useState([]);
+  const [documentLogoFile, setDocumentLogoFile] = useState(null);
+  const [documentLogoPreview, setDocumentLogoPreview] = useState('');
+  const [signatureFile, setSignatureFile] = useState(null);
+  const [signaturePreview, setSignaturePreview] = useState('');
   const [error, setError] = useState('');
   const [offerActionError, setOfferActionError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -140,25 +146,47 @@ const CompanyAdminDashboard = () => {
   const handleGenerateOffer = async () => {
     setError('');
     try {
-      const response = await api.post('/hiring-pro/company/offer-letter/generate', offerForm, {
+      const response = await api.post('/hiring-pro/company/offer-letter/generate', {
+        candidateName: offerForm.candidateName,
+        title: offerForm.title,
+        employeeId: offerForm.employeeId,
+        employeeCode: offerForm.employeeCode,
+        documentType: offerForm.documentType,
+        customDocumentType: offerForm.customDocumentType
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setOfferContent(response.data.content || '');
+      setOfferWarnings(response.data.dummyFields || []);
+      setOfferForm(prev => ({ ...prev, documentDate: response.data.date || prev.documentDate }));
     } catch (err) {
-      setError(err.response?.data?.message || 'Unable to generate offer letter');
+      setError(err.response?.data?.message || 'Unable to generate document');
     }
   };
 
   const handleSaveOffer = async () => {
     setError('');
     try {
-      const response = await api.post('/hiring-pro/company/offer-letter', {
-        ...offerForm,
-        content: offerContent
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      const payload = new FormData();
+      payload.append('candidateName', offerForm.candidateName);
+      payload.append('title', offerForm.title);
+      payload.append('employeeId', offerForm.employeeId || '');
+      payload.append('employeeCode', offerForm.employeeCode || '');
+      payload.append('documentType', offerForm.documentType);
+      payload.append('customDocumentType', offerForm.customDocumentType || '');
+      payload.append('documentDate', offerForm.documentDate || '');
+      payload.append('content', offerContent);
+      if (documentLogoFile) payload.append('documentLogo', documentLogoFile);
+      if (signatureFile) payload.append('signature', signatureFile);
+
+      const response = await api.post('/hiring-pro/company/offer-letter', payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setOfferLetters(prev => [response.data.offerLetter, ...prev]);
+      setOfferContent('');
+      setOfferWarnings([]);
     } catch (err) {
-      setError(err.response?.data?.message || 'Unable to save offer letter');
+      setError(err.response?.data?.message || 'Unable to save document');
     }
   };
 
@@ -209,7 +237,7 @@ const CompanyAdminDashboard = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `offer-letter-${(candidateName || 'document').replace(/\s+/g, '-')}.pdf`;
+      link.download = `document-${(candidateName || 'document').replace(/\s+/g, '-')}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -217,6 +245,20 @@ const CompanyAdminDashboard = () => {
     } catch (err) {
       setOfferActionError(err.response?.data?.message || 'Unable to download offer letter');
     }
+  };
+
+  const handleEmployeeSelect = (employeeId) => {
+    const selected = employees.find(emp => emp._id === employeeId);
+    if (!selected) {
+      setOfferForm(prev => ({ ...prev, employeeId: '', employeeCode: '' }));
+      return;
+    }
+    setOfferForm(prev => ({
+      ...prev,
+      employeeId: selected._id,
+      candidateName: selected.name || prev.candidateName,
+      employeeCode: selected.employeeCode || ''
+    }));
   };
 
   const handleEmployeeDetail = async (employeeId) => {
@@ -598,39 +640,114 @@ const CompanyAdminDashboard = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 space-y-4">
-          <h3 className="text-xl font-semibold text-gray-900">Offer Letter Generator</h3>
+          <h3 className="text-xl font-semibold text-gray-900">
+            Documents Generator (Offer Letter, Employment Contract, NDA, Vendor Contract, and Others)
+          </h3>
           {error && <div className="text-sm text-red-600">{error}</div>}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {['candidateName', 'roleTitle', 'startDate', 'salaryPackage'].map(field => (
+            <input
+              value={offerForm.candidateName}
+              onChange={(e) => setOfferForm(prev => ({ ...prev, candidateName: e.target.value }))}
+              className="rounded-lg border border-gray-300 px-4 py-2"
+              placeholder="Candidate Name"
+            />
+            <input
+              value={offerForm.title}
+              onChange={(e) => setOfferForm(prev => ({ ...prev, title: e.target.value }))}
+              className="rounded-lg border border-gray-300 px-4 py-2"
+              placeholder="Title"
+            />
+            <select
+              value={offerForm.employeeId}
+              onChange={(e) => handleEmployeeSelect(e.target.value)}
+              className="rounded-lg border border-gray-300 px-4 py-2"
+            >
+              <option value="">Select employee (optional)</option>
+              {employees.map(employee => (
+                <option key={employee._id} value={employee._id}>
+                  {employee.name} {employee.employeeCode ? `(${employee.employeeCode})` : ''}
+                </option>
+              ))}
+            </select>
+            <input
+              value={offerForm.employeeCode}
+              onChange={(e) => setOfferForm(prev => ({ ...prev, employeeCode: e.target.value }))}
+              className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-600"
+              placeholder="Employee ID (auto-generated)"
+              disabled
+            />
+            <select
+              value={offerForm.documentType}
+              onChange={(e) => setOfferForm(prev => ({ ...prev, documentType: e.target.value }))}
+              className="rounded-lg border border-gray-300 px-4 py-2"
+            >
+              <option value="Offer Letter">Offer Letter</option>
+              <option value="Employment Contract">Employment Contract</option>
+              <option value="NDA">NDA</option>
+              <option value="Vendor Contract">Vendor Contract</option>
+              <option value="Visa Letter">Visa Letter</option>
+              <option value="Others">Others</option>
+            </select>
+            {offerForm.documentType === 'Others' && (
               <input
-                key={field}
-                value={offerForm[field]}
-                onChange={(e) => setOfferForm(prev => ({ ...prev, [field]: e.target.value }))}
+                value={offerForm.customDocumentType}
+                onChange={(e) => setOfferForm(prev => ({ ...prev, customDocumentType: e.target.value }))}
                 className="rounded-lg border border-gray-300 px-4 py-2"
-                placeholder={field.replace(/([A-Z])/g, ' $1')}
+                placeholder="Custom document type"
               />
-            ))}
+            )}
+            <input
+              value={offerForm.documentDate}
+              className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-600"
+              placeholder="Document Date (auto)"
+              disabled
+            />
           </div>
-          <textarea
-            value={offerForm.ctcBreakdown}
-            onChange={(e) => setOfferForm(prev => ({ ...prev, ctcBreakdown: e.target.value }))}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2"
-            rows={3}
-            placeholder="CTC breakdown"
-          />
-          <textarea
-            value={offerForm.notes}
-            onChange={(e) => setOfferForm(prev => ({ ...prev, notes: e.target.value }))}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2"
-            rows={2}
-            placeholder="Additional notes"
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-lg border border-gray-200 p-4">
+              <p className="text-sm font-semibold text-gray-700 mb-2">Upload Company Logo</p>
+              {documentLogoPreview && (
+                <img src={documentLogoPreview} alt="Document logo preview" className="h-16 w-auto mb-2 rounded-md border border-gray-200" />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setDocumentLogoFile(file);
+                  setDocumentLogoPreview(file ? URL.createObjectURL(file) : '');
+                }}
+                className="rounded-lg border border-gray-300 px-4 py-2 w-full"
+              />
+            </div>
+            <div className="rounded-lg border border-gray-200 p-4">
+              <p className="text-sm font-semibold text-gray-700 mb-2">Upload Signature</p>
+              {signaturePreview && (
+                <img src={signaturePreview} alt="Signature preview" className="h-16 w-auto mb-2 rounded-md border border-gray-200" />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setSignatureFile(file);
+                  setSignaturePreview(file ? URL.createObjectURL(file) : '');
+                }}
+                className="rounded-lg border border-gray-300 px-4 py-2 w-full"
+              />
+            </div>
+          </div>
           <button
             onClick={handleGenerateOffer}
             className="rounded-lg bg-gray-900 text-white px-4 py-2 font-semibold"
           >
-            Generate Offer Letter
+            Generate Document
           </button>
+          {offerWarnings.length > 0 && (
+            <div className="text-xs text-amber-600">
+              Dummy data was used for: {offerWarnings.join(', ')}
+            </div>
+          )}
           {offerContent && (
             <div className="space-y-3">
               <textarea
@@ -643,7 +760,7 @@ const CompanyAdminDashboard = () => {
                 onClick={handleSaveOffer}
                 className="rounded-lg bg-indigo-600 text-white px-4 py-2 font-semibold"
               >
-                Save Offer Letter
+                Save Document
               </button>
             </div>
           )}
@@ -865,10 +982,12 @@ const CompanyAdminDashboard = () => {
               </div>
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div className="rounded-lg border border-gray-200 p-3">
-                  <p className="font-semibold text-gray-900 mb-2">Offer Letters</p>
+                  <p className="font-semibold text-gray-900 mb-2">Documents</p>
                   {employeeDetail.offerLetters?.length ? employeeDetail.offerLetters.map(letter => (
-                    <p key={letter._id} className="text-gray-600">{letter.roleTitle} • {letter.startDate}</p>
-                  )) : <p className="text-gray-500">No offer letters</p>}
+                    <p key={letter._id} className="text-gray-600">
+                      {(letter.customDocumentType || letter.documentType || 'Document')} • {letter.candidateName}
+                    </p>
+                  )) : <p className="text-gray-500">No documents</p>}
                 </div>
                 <div className="rounded-lg border border-gray-200 p-3">
                   <p className="font-semibold text-gray-900 mb-2">Documents</p>
@@ -1284,7 +1403,7 @@ const CompanyAdminDashboard = () => {
       </div>
 
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Offer Letters</h3>
+        <h3 className="text-xl font-semibold text-gray-900 mb-4">Documents</h3>
         {offerActionError && <div className="mb-3 text-sm text-red-600">{offerActionError}</div>}
         <div className="space-y-3">
           {offerLetters.map(letter => (
@@ -1297,12 +1416,14 @@ const CompanyAdminDashboard = () => {
                       onClick={() => handleViewOffer(letter._id)}
                       className="font-semibold text-indigo-600 hover:text-indigo-700"
                     >
-                      {letter.candidateName} — {letter.roleTitle}
+                      {letter.candidateName} — {(letter.customDocumentType || letter.documentType || 'Document')}
                     </button>
                   ) : (
-                    <p className="font-semibold">{letter.candidateName} — {letter.roleTitle}</p>
+                    <p className="font-semibold">{letter.candidateName} — {(letter.customDocumentType || letter.documentType || 'Document')}</p>
                   )}
-                  <p className="text-sm text-gray-600">Start Date: {letter.startDate}</p>
+                  {letter.documentDate && (
+                    <p className="text-sm text-gray-600">Date: {letter.documentDate}</p>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {letter.fileUrl ? (

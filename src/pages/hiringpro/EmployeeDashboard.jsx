@@ -23,6 +23,8 @@ const EmployeeDashboard = () => {
   const [expenseSubmitting, setExpenseSubmitting] = useState(false);
   const [expenseSheets, setExpenseSheets] = useState([]);
   const [selectedExpense, setSelectedExpense] = useState(null);
+  const [employeeSignatureFiles, setEmployeeSignatureFiles] = useState({});
+  const [employeeSignatureUploading, setEmployeeSignatureUploading] = useState({});
   const [profile, setProfile] = useState({
     profileImageUrl: '',
     profileImagePublicId: '',
@@ -250,13 +252,44 @@ const EmployeeDashboard = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `offer-letter-${(candidateName || 'document').replace(/\s+/g, '-')}.pdf`;
+      link.download = `document-${(candidateName || 'document').replace(/\s+/g, '-')}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
       setTimeout(() => window.URL.revokeObjectURL(url), 1000);
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to download offer letter');
+    }
+  };
+
+  const handleSignatureFileChange = (offerId, file) => {
+    setEmployeeSignatureFiles(prev => ({ ...prev, [offerId]: file }));
+  };
+
+  const handleUploadEmployeeSignature = async (offerId) => {
+    const file = employeeSignatureFiles[offerId];
+    if (!file) {
+      setError('Please choose a signature image first.');
+      return;
+    }
+    setError('');
+    setEmployeeSignatureUploading(prev => ({ ...prev, [offerId]: true }));
+    try {
+      const payload = new FormData();
+      payload.append('signature', file);
+      const response = await api.post(`/hiring-pro/employee/offer-letters/${offerId}/sign`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOfferLetters(prev => prev.map(letter => letter._id === offerId ? response.data.offerLetter : letter));
+      setEmployeeSignatureFiles(prev => {
+        const updated = { ...prev };
+        delete updated[offerId];
+        return updated;
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to upload signature');
+    } finally {
+      setEmployeeSignatureUploading(prev => ({ ...prev, [offerId]: false }));
     }
   };
 
@@ -984,17 +1017,19 @@ const EmployeeDashboard = () => {
           <section className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
             <div className="flex items-center gap-3 mb-4">
               <FileText className="h-6 w-6 text-indigo-600" />
-              <h2 className="text-2xl font-semibold text-gray-900">Offer Letters</h2>
+              <h2 className="text-2xl font-semibold text-gray-900">Documents</h2>
             </div>
             <div className="space-y-3">
               {offerLetters.length === 0 && (
-                <p className="text-sm text-gray-600">No offer letters available yet.</p>
+                <p className="text-sm text-gray-600">No documents available yet.</p>
               )}
               {offerLetters.map(letter => (
                 <div key={letter._id} className="rounded-lg border border-gray-200 p-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold">{letter.candidateName} — {letter.roleTitle}</p>
-                    <p className="text-sm text-gray-600">Start Date: {letter.startDate}</p>
+                    <p className="font-semibold">{letter.candidateName} — {(letter.customDocumentType || letter.documentType || 'Document')}</p>
+                    {letter.documentDate && (
+                      <p className="text-sm text-gray-600">Date: {letter.documentDate}</p>
+                    )}
                     <p className="text-sm text-gray-600">Status: {letter.status}</p>
                   </div>
                   {letter.fileUrl && (
@@ -1006,8 +1041,34 @@ const EmployeeDashboard = () => {
                       >
                         Download
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => handleViewOfferLetter(letter._id)}
+                        className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-gray-400"
+                      >
+                        View
+                      </button>
                     </div>
                   )}
+                  <div className="w-full flex flex-col md:flex-row md:items-center gap-2 mt-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleSignatureFileChange(letter._id, e.target.files?.[0] || null)}
+                      className="rounded-lg border border-gray-300 px-3 py-1 text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleUploadEmployeeSignature(letter._id)}
+                      disabled={employeeSignatureUploading[letter._id]}
+                      className={`rounded-md px-3 py-1 text-xs font-semibold ${employeeSignatureUploading[letter._id] ? 'bg-gray-300 text-gray-600' : 'bg-indigo-600 text-white'}`}
+                    >
+                      {employeeSignatureUploading[letter._id] ? 'Uploading...' : 'Add Signature'}
+                    </button>
+                    {letter.employeeSignatureUrl && (
+                      <span className="text-xs text-green-600">Signed by you</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
