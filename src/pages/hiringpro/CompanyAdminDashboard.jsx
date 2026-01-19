@@ -41,6 +41,7 @@ const CompanyAdminDashboard = () => {
     from: '',
     to: ''
   });
+  const fixedExpenseKeys = ['particulars', 'invoice_number', 'name', 'expense_type', 'amount', 'date', 'remarks'];
   const [offerForm, setOfferForm] = useState({
     candidateName: '',
     roleTitle: '',
@@ -431,7 +432,7 @@ const CompanyAdminDashboard = () => {
       if (!prev) return prev;
       const nextFields = [...(prev.fields || [])];
       const field = nextFields[index];
-      if (field?.required) return prev;
+      if (field?.required || fixedExpenseKeys.includes(field?.key)) return prev;
       nextFields.splice(index, 1);
       return { ...prev, fields: nextFields.map((item, idx) => ({ ...item, order: idx + 1 })) };
     });
@@ -1034,7 +1035,8 @@ const CompanyAdminDashboard = () => {
                     updated.fields[index] = { ...field, key: e.target.value };
                     setExpenseTemplate(updated);
                   }}
-                  className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+                  disabled={fixedExpenseKeys.includes(field.key)}
+                  className={`rounded-md border px-2 py-1 text-sm ${fixedExpenseKeys.includes(field.key) ? 'border-gray-200 bg-gray-50 text-gray-400' : 'border-gray-300'}`}
                 />
                 <select
                   value={field.required ? 'required' : 'optional'}
@@ -1067,7 +1069,7 @@ const CompanyAdminDashboard = () => {
                 <button
                   type="button"
                   onClick={() => handleRemoveTemplateField(index)}
-                  className={`rounded-md border px-2 py-1 text-xs font-semibold ${field.required ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-red-200 text-red-600 hover:border-red-300'}`}
+                  className={`rounded-md border px-2 py-1 text-xs font-semibold ${fixedExpenseKeys.includes(field.key) ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-red-200 text-red-600 hover:border-red-300'}`}
                 >
                   Remove
                 </button>
@@ -1150,7 +1152,7 @@ const CompanyAdminDashboard = () => {
                 <th className="py-2 pr-4">Expense Type</th>
                 <th className="py-2 pr-4">Amount</th>
                 <th className="py-2 pr-4">Invoice #</th>
-                <th className="py-2 pr-4">Bill #</th>
+                <th className="py-2 pr-4">Date</th>
                 <th className="py-2 pr-4">Status</th>
                 <th className="py-2 pr-4">Submitted</th>
                 <th className="py-2 pr-4">Actions</th>
@@ -1163,7 +1165,7 @@ const CompanyAdminDashboard = () => {
                   <td className="py-3 pr-4">{expense.expenseType || getExpenseValue(expense, 'expense_type')}</td>
                   <td className="py-3 pr-4">{expense.amount}</td>
                   <td className="py-3 pr-4">{getExpenseValue(expense, 'invoice_number')}</td>
-                  <td className="py-3 pr-4">{getExpenseValue(expense, 'bill_number')}</td>
+                  <td className="py-3 pr-4">{getExpenseValue(expense, 'date')}</td>
                   <td className="py-3 pr-4 capitalize">{expense.status}</td>
                   <td className="py-3 pr-4">{new Date(expense.createdAt).toLocaleDateString()}</td>
                   <td className="py-3 pr-4">

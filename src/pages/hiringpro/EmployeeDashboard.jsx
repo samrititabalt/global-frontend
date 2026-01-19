@@ -864,11 +864,32 @@ const EmployeeDashboard = () => {
                 {expenseDraftValues.map((field, index) => (
                   <div key={`${field.key}-${index}`} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
                     <p className="text-sm font-semibold text-gray-700">{field.label}</p>
-                    <input
-                      value={field.value}
-                      onChange={(e) => handleExpenseValueChange(index, e.target.value)}
-                      className="md:col-span-2 rounded-lg border border-gray-300 px-4 py-2 text-sm"
-                    />
+                    {field.key === 'expense_type' ? (
+                      <select
+                        value={field.value && field.value !== 'Data Missing' ? field.value : 'Others'}
+                        onChange={(e) => handleExpenseValueChange(index, e.target.value)}
+                        className="md:col-span-2 rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                      >
+                        <option value="Travel">Travel</option>
+                        <option value="Food & Drinks">Food & Drinks</option>
+                        <option value="Internet/Phone">Internet/Phone</option>
+                        <option value="Visa">Visa</option>
+                        <option value="Others">Others</option>
+                      </select>
+                    ) : field.key === 'date' ? (
+                      <input
+                        type="date"
+                        value={field.value && field.value !== 'Data Missing' ? field.value : ''}
+                        onChange={(e) => handleExpenseValueChange(index, e.target.value || 'Data Missing')}
+                        className="md:col-span-2 rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                      />
+                    ) : (
+                      <input
+                        value={field.value}
+                        onChange={(e) => handleExpenseValueChange(index, e.target.value)}
+                        className="md:col-span-2 rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                      />
+                    )}
                   </div>
                 ))}
                 <button
