@@ -352,9 +352,9 @@ const EmployeeDashboard = () => {
   const resolvedProfileImage = profileImagePreview || profile.profileImageUrl;
 
   return (
-    <Layout>
+    <Layout compact>
       <div className="bg-slate-50 min-h-screen">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
           <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-xl p-8">
             <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-indigo-50" />
             <div className="absolute -left-12 bottom-0 h-32 w-32 rounded-full bg-blue-50" />

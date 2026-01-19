@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { FiLogOut } from 'react-icons/fi';
 import Header from './public/Header';
 
-const Layout = ({ children, title }) => {
+const Layout = ({ children, title, compact = false }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [logoError, setLogoError] = useState(false);
@@ -91,8 +91,12 @@ const Layout = ({ children, title }) => {
             </div>
           </div>
         </nav>
-        <main className="flex-1 pt-24">
-          <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${title ? 'pt-10 pb-6' : 'py-8'}`}>
+        <main className={`flex-1 ${compact ? 'pt-6' : 'pt-24'}`}>
+          <div
+            className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${
+              title ? 'pt-10 pb-6' : compact ? 'py-4' : 'py-8'
+            }`}
+          >
             {title && (
               <div className="pb-6">
                 <p className="text-sm uppercase tracking-[0.3em] text-blue-600 font-semibold">
