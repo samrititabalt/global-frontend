@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import { Globe2, Mail, Send } from 'lucide-react';
 
 const ContactUs = () => {
   const [formData, setFormData] = useState({
@@ -40,49 +40,13 @@ const ContactUs = () => {
     {
       icon: Mail,
       title: 'Email',
-      content: 'info@tabalt.co.uk',
-      link: 'mailto:info@tabalt.co.uk',
-    },
-    {
-      icon: Phone,
-      title: 'Phone',
-      content: '+44 7448614160',
-      link: 'tel:+447448614160',
-    },
-    {
-      icon: MapPin,
-      title: 'Office',
-      content: '3 Herron Court, Bromley, London, United Kingdom',
-      link: '#',
+      content: 'info@samstudios.uk',
+      link: 'mailto:info@samstudios.uk',
     },
   ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-        {contactInfo.map((info, index) => {
-          const Icon = info.icon;
-          return (
-            <motion.a
-              key={index}
-              href={info.link}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              whileHover={{ y: -8, transition: { duration: 0.3 } }}
-              className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 text-center"
-            >
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Icon className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">{info.title}</h3>
-              <p className="text-gray-600">{info.content}</p>
-            </motion.a>
-          );
-        })}
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Contact Form */}
         <motion.div
@@ -90,7 +54,7 @@ const ContactUs = () => {
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100"
+          className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100"
         >
           <h3 className="text-2xl font-bold text-gray-900 mb-6">Send us a Message</h3>
           {submitted ? (
@@ -148,21 +112,6 @@ const ContactUs = () => {
               </div>
 
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="+44 7448614160"
-                />
-              </div>
-
-              <div>
                 <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
                   Message *
                 </label>
@@ -189,7 +138,7 @@ const ContactUs = () => {
           )}
         </motion.div>
 
-        {/* Additional Info */}
+        {/* Contact Info */}
         <motion.div
           initial={{ opacity: 0, x: 30 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -197,46 +146,41 @@ const ContactUs = () => {
           transition={{ duration: 0.6 }}
           className="space-y-8"
         >
-          <div className="bg-gradient-to-br from-blue-50 to-gray-50 rounded-2xl p-8">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">Why Contact Us?</h3>
-            <ul className="space-y-3 text-gray-700">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-3 mt-1">✓</span>
-                <span>Get a free consultation on your business needs</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-3 mt-1">✓</span>
-                <span>Learn about our customized solutions</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-3 mt-1">✓</span>
-                <span>Discuss pricing and implementation timelines</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-3 mt-1">✓</span>
-                <span>Schedule a demo of our services</span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">Business Hours</h3>
-            <div className="space-y-2 text-gray-700">
-              <div className="flex justify-between">
-                <span className="font-semibold">Monday - Friday</span>
-                <span>9:00 AM - 6:00 PM EST</span>
+          <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center">
+                <Mail className="w-6 h-6 text-indigo-600" />
               </div>
-              <div className="flex justify-between">
-                <span className="font-semibold">Saturday</span>
-                <span>10:00 AM - 4:00 PM EST</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-semibold">Sunday</span>
-                <span>Closed</span>
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Email us</p>
+                <a href="mailto:info@samstudios.uk" className="text-lg font-semibold text-gray-900">
+                  info@samstudios.uk
+                </a>
               </div>
             </div>
+            <p className="text-sm text-gray-600">
+              Share your goals and timelines. Our team will respond with a tailored plan.
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-br from-indigo-50 to-slate-50 rounded-3xl p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <Globe2 className="h-6 w-6 text-indigo-600" />
+              <h3 className="text-xl font-semibold text-gray-900">Regional focus</h3>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {['APAC', 'Europe', 'Americas'].map((region) => (
+                <button
+                  key={region}
+                  type="button"
+                  className="px-5 py-2 rounded-full border border-indigo-200 text-indigo-700 bg-white font-semibold text-sm shadow-sm hover:bg-indigo-50 transition"
+                >
+                  {region}
+                </button>
+              ))}
+            </div>
             <p className="mt-4 text-sm text-gray-600">
-              For urgent matters, please call our 24/7 support line.
+              These buttons are for visual guidance only and do not change the form selection.
             </p>
           </div>
         </motion.div>

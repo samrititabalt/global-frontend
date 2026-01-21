@@ -12,8 +12,6 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
   const [isMobileServicesOpen, setIsMobileServicesOpen] = useState(false);
-  const [isSolutionsDropdownOpen, setIsSolutionsDropdownOpen] = useState(false);
-  const [isMobileSolutionsOpen, setIsMobileSolutionsOpen] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const [employeeAccess, setEmployeeAccess] = useState(false);
   const [chatbotRole, setChatbotRole] = useState(null);
@@ -42,15 +40,7 @@ const Header = () => {
         .toUpperCase()
     : '';
   const dropdownRef = useRef(null);
-  const solutionsDropdownRef = useRef(null);
   
-  // Check if user can access Sam Studios solutions
-  // Check if user can access Sam Studios solutions
-  const isAdminOrCustomer = isAuthenticated && (
-    user?.role === 'admin' ||
-    user?.role === 'customer' ||
-    user?.role === 'agent'
-  );
 
   const services = [
     { name: 'UK Accounting, Taxation & Reporting', path: '/services/uk-accounting-taxation-reporting', key: 'common-services-uk-accounting' },
@@ -61,22 +51,6 @@ const Header = () => {
     { name: 'Equity Research & Management', path: '/services/equity-research-management', key: 'common-services-equity-research' },
     { name: 'Industry Reports', path: '/services/industry-reports', key: 'common-services-industry-reports' },
     { name: 'Software & Tech Support', path: '/services/software-tech-support', key: 'common-services-software-tech' },
-  ];
-
-  const solutions = [
-    { name: 'Ask Sam', path: '/ask-sam', key: 'common-solutions-ask-sam' },
-    { name: 'Expense Monitor', path: '/solutions/expense-monitor', key: 'common-solutions-expense-monitor' },
-    { name: "Sam's Smart Reports", path: '/solutions/sams-smart-reports', key: 'common-solutions-smart-reports' },
-    { name: 'Sam Reports', path: '/solutions/sam-reports', key: 'common-solutions-sam-reports' },
-    { name: 'Merge Spreadsheets', path: '/solutions/merge-spreadsheets', key: 'common-solutions-merge-spreadsheets' },
-    { name: 'Forecasts', path: '/solutions/forecasts', key: 'common-solutions-forecasts' },
-    { name: 'Risk & Fraud', path: '/solutions/risk-fraud', key: 'common-solutions-risk-fraud' },
-    { name: 'Hiring', path: '/solutions/hiring', key: 'common-solutions-hiring' },
-    { name: 'Run Facebook Ads', path: '/solutions/facebook-ads', key: 'common-solutions-facebook-ads', isFacebook: true },
-    { name: 'Resume Builder', path: '/resume-builder', key: 'common-solutions-resume-builder' },
-    { name: 'LinkedIn Helper', path: '/solutions/linkedin-helper', key: 'common-solutions-linkedin-helper' },
-    { name: 'Industry Solutions', path: '/solutions/industry-solutions', key: 'common-solutions-industry' },
-    { name: 'Document Converter & PDF Editor', path: '/solutions/document-converter', key: 'common-solutions-document-converter' },
   ];
 
   // Check if we're on the home page
@@ -110,19 +84,16 @@ const Header = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsServicesDropdownOpen(false);
       }
-      if (solutionsDropdownRef.current && !solutionsDropdownRef.current.contains(event.target)) {
-        setIsSolutionsDropdownOpen(false);
-      }
     };
 
-    if (isServicesDropdownOpen || isSolutionsDropdownOpen) {
+    if (isServicesDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isServicesDropdownOpen, isSolutionsDropdownOpen]);
+  }, [isServicesDropdownOpen]);
 
   const navLinks = [
     { name: 'About Us', path: '/about-us', key: 'common-nav-about' },
@@ -296,104 +267,23 @@ const Header = () => {
               </div>
             )}
 
-            {/* Solutions Dropdown - Renamed to "Sam Studios" - Only visible to Admin and Customer */}
-            {isAdminOrCustomer && (
-            <div className="relative" ref={solutionsDropdownRef}>
-              <button
-                onClick={() => setIsSolutionsDropdownOpen(!isSolutionsDropdownOpen)}
-                className={`flex items-center gap-1 text-sm font-medium transition-colors ${
-                  solutions.some(s => isActive(s.path))
-                    ? 'text-blue-600'
-                    : 'text-gray-700 hover:text-gray-900'
-                }`}
+            <Link
+              to="/solutions/hiring"
+              className={`text-sm font-semibold transition-colors ${
+                isActive('/solutions/hiring')
+                  ? 'text-blue-600'
+                  : 'text-gray-700 hover:text-gray-900'
+              }`}
+            >
+              <EditableContent
+                blockId="common-nav-wfh-hrm"
+                blockType="text"
+                tag="span"
+                page="common"
               >
-                <EditableContent
-                  blockId="common-nav-sam-studios"
-                  blockType="text"
-                  tag="span"
-                  page="common"
-                >
-                  {getCommon('common-nav-sam-studios', 'Sam Studios')}
-                </EditableContent>
-                <ChevronDown 
-                  className={`h-4 w-4 transition-transform duration-200 ${
-                    isSolutionsDropdownOpen ? 'rotate-180' : ''
-                  }`} 
-                />
-              </button>
-              
-              <AnimatePresence>
-                {isSolutionsDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
-                  >
-                    {solutions.map((solution) => {
-                      const isFacebook = solution.isFacebook;
-                      const linkPath =
-                        isFacebook && !isAuthenticated
-                          ? '/customer/login?redirect=/solutions/facebook-ads'
-                          : solution.path;
-                      const label =
-                        isFacebook && !isAuthenticated
-                          ? getCommon('common-solutions-facebook-cta', 'Get Started')
-                          : getCommon(solution.key, solution.name);
-
-                      return (
-                        <Link
-                          key={solution.path}
-                          to={linkPath}
-                          className={`block px-4 py-2.5 text-sm transition-colors ${
-                            isActive(solution.path)
-                              ? 'text-blue-600 bg-blue-50'
-                              : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-                          }`}
-                          onClick={() => setIsSolutionsDropdownOpen(false)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <EditableContent
-                              blockId={isFacebook && !isAuthenticated ? 'common-solutions-facebook-cta' : solution.key}
-                              blockType="text"
-                              tag="span"
-                              page="common"
-                            >
-                              {label}
-                            </EditableContent>
-                            {isFacebook && (
-                              <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                                <EditableContent
-                                  blockId="common-solutions-facebook-new"
-                                  blockType="text"
-                                  tag="span"
-                                  page="common"
-                                >
-                                  {getCommon('common-solutions-facebook-new', 'New')}
-                                </EditableContent>
-                              </span>
-                            )}
-                          </div>
-                          {isFacebook && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              <EditableContent
-                                blockId="common-solutions-facebook-note"
-                                blockType="text"
-                                tag="span"
-                                page="common"
-                              >
-                                {getCommon('common-solutions-facebook-note', 'Facebook Ads Quick Launch')}
-                              </EditableContent>
-                            </p>
-                          )}
-                        </Link>
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            )}
+                {getCommon('common-nav-wfh-hrm', 'WFH-HRM')}
+              </EditableContent>
+            </Link>
             {/* Buttons - Always visible */}
             {isCustomer || isAgent ? (
               <div className="flex items-center gap-3">
@@ -631,109 +521,24 @@ const Header = () => {
                 </div>
               )}
 
-              {/* Mobile Solutions Dropdown - Renamed to "Sam Studios" - Only visible to Admin and Customer */}
-              {isAdminOrCustomer && (
-              <div>
-                <button
-                  onClick={() => setIsMobileSolutionsOpen(!isMobileSolutionsOpen)}
-                  className={`flex items-center justify-between w-full text-base font-medium py-2 ${
-                    solutions.some(s => isActive(s.path))
-                      ? 'text-blue-600'
-                      : 'text-gray-700 hover:text-gray-900'
-                  }`}
+              <Link
+                to="/solutions/hiring"
+                className={`block text-base font-semibold py-2 ${
+                  isActive('/solutions/hiring')
+                    ? 'text-blue-600'
+                    : 'text-gray-700 hover:text-gray-900'
+                }`}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <EditableContent
+                  blockId="common-nav-wfh-hrm"
+                  blockType="text"
+                  tag="span"
+                  page="common"
                 >
-                  <EditableContent
-                    blockId="common-nav-sam-studios"
-                    blockType="text"
-                    tag="span"
-                    page="common"
-                  >
-                    {getCommon('common-nav-sam-studios', 'Sam Studios')}
-                  </EditableContent>
-                  <ChevronDown 
-                    className={`h-5 w-5 transition-transform duration-200 ${
-                      isMobileSolutionsOpen ? 'rotate-180' : ''
-                    }`} 
-                  />
-                </button>
-                
-                <AnimatePresence>
-                  {isMobileSolutionsOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="pl-4 pt-2 space-y-2">
-                        {solutions.map((solution) => {
-                          const isFacebook = solution.isFacebook;
-                          const linkPath =
-                            isFacebook && !isAuthenticated
-                              ? '/customer/login?redirect=/solutions/facebook-ads'
-                              : solution.path;
-                          const label =
-                            isFacebook && !isAuthenticated
-                              ? getCommon('common-solutions-facebook-cta', 'Get Started')
-                              : getCommon(solution.key, solution.name);
-
-                          return (
-                            <Link
-                              key={solution.path}
-                              to={linkPath}
-                              className={`block text-sm py-2 ${
-                                isActive(solution.path)
-                                  ? 'text-blue-600'
-                                  : 'text-gray-600 hover:text-gray-900'
-                              }`}
-                              onClick={() => {
-                                setIsMobileMenuOpen(false);
-                                setIsMobileSolutionsOpen(false);
-                              }}
-                            >
-                              <div className="flex items-center justify-between">
-                                <EditableContent
-                                  blockId={isFacebook && !isAuthenticated ? 'common-solutions-facebook-cta' : solution.key}
-                                  blockType="text"
-                                  tag="span"
-                                  page="common"
-                                >
-                                  {label}
-                                </EditableContent>
-                                {isFacebook && (
-                                  <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                                    <EditableContent
-                                      blockId="common-solutions-facebook-new"
-                                      blockType="text"
-                                      tag="span"
-                                      page="common"
-                                    >
-                                      {getCommon('common-solutions-facebook-new', 'New')}
-                                    </EditableContent>
-                                  </span>
-                                )}
-                              </div>
-                              {isFacebook && (
-                                <p className="text-xs text-gray-500">
-                                  <EditableContent
-                                    blockId="common-solutions-facebook-note"
-                                    blockType="text"
-                                    tag="span"
-                                    page="common"
-                                  >
-                                    {getCommon('common-solutions-facebook-note', 'Facebook Ads Quick Launch')}
-                                  </EditableContent>
-                                </p>
-                              )}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-              )}
+                  {getCommon('common-nav-wfh-hrm', 'WFH-HRM')}
+                </EditableContent>
+              </Link>
 
               <Link
                 to="/"

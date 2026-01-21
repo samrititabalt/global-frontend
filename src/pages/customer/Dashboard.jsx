@@ -77,6 +77,7 @@ const CustomerDashboard = () => {
     .filter((entry) => entry.enabled)
     .map((entry) => samStudiosServices.find((service) => service.key === entry.key))
     .filter(Boolean);
+  const visibleServices = services.filter((service) => service.name?.toLowerCase().includes('ask sam'));
 
   // Icon mapping for services
   const getServiceIcon = (serviceName) => {
@@ -260,14 +261,6 @@ const CustomerDashboard = () => {
               >
                 Request a service
               </button>
-              {hiringCompany && (
-                <Link
-                  to="/customer/hiring-platform"
-                  className="px-6 py-3 rounded-full bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition"
-                >
-                  Hiring Platform
-                </Link>
-              )}
               <Link
                 to="/customer/plans"
                 className="px-6 py-3 rounded-full border border-white/40 text-white font-semibold hover:bg-white/10 transition"
@@ -280,7 +273,7 @@ const CustomerDashboard = () => {
             <p className="text-sm font-semibold text-gray-500 uppercase tracking-[0.3em]">Quick stats</p>
             <div className="mt-6 space-y-4">
               <div>
-                <p className="text-3xl font-bold text-gray-900">{services.length}</p>
+                <p className="text-3xl font-bold text-gray-900">{visibleServices.length}</p>
                 <p className="text-sm text-gray-500">Services available</p>
               </div>
               <div>
@@ -310,7 +303,7 @@ const CustomerDashboard = () => {
               {!selectedService ? (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    {services.map((service, index) => {
+                    {visibleServices.map((service, index) => {
                       const colorScheme = getServiceColor(index);
                       const IconComponent = getServiceIcon(service.name);
                       return (
@@ -435,24 +428,6 @@ const CustomerDashboard = () => {
                 ))
               )}
             </div>
-          </div>
-          <div className="bg-white/90 rounded-3xl shadow-xl border border-white/60 p-6 backdrop-blur">
-            <p className="text-[11px] uppercase tracking-[0.25em] text-gray-500 font-semibold">Sam Studios</p>
-            <ul className="mt-4 space-y-2 text-sm text-gray-700">
-              {samStudiosServices.map((service) => {
-                const route = samStudiosRoutes[service.key] || '#';
-                return (
-                  <li key={service.key}>
-                    <Link
-                      to={route}
-                      className="hover:text-gray-900 transition-colors"
-                    >
-                      {service.label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
           </div>
         </div>
       </div>

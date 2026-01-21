@@ -75,7 +75,7 @@ const Home = () => {
   const bottomNavLinks = [
     { label: 'Home', to: '/' },
     { label: 'About Us', to: '/about-us' },
-    { label: 'Ask Sam', to: '/ask-sam' },
+    { label: 'WFH-HRM', to: '/solutions/hiring' },
     { label: 'Case Studies', to: '/case-studies' },
     { label: 'Contact Us', to: '/contact-us' },
     { label: 'Customer Login', to: '/customer/login' },
