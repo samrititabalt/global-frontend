@@ -189,6 +189,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithAccessCode = async (authData) => {
+    if (!authData?.token || !authData?.user) {
+      return { success: false, message: 'Invalid login response' };
+    }
+    localStorage.setItem('token', authData.token);
+    if (authData.user.email && authData.user.email.toLowerCase() === 'spbajaj25@gmail.com') {
+      localStorage.setItem('user', JSON.stringify(authData.user));
+    }
+    setToken(authData.token);
+    setUser(authData.user);
+    return { success: true, user: authData.user };
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user'); // Clear stored user on logout
@@ -201,6 +214,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
+    loginWithAccessCode,
     logout,
     refreshUser,
     autoLoginOwnerAsCustomer,

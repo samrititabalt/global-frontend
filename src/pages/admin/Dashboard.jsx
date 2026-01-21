@@ -10,6 +10,7 @@ import CRMAgents from '../../components/admin/CRMAgents';
 import AgentManagement from '../../components/admin/AgentManagement';
 import ResumeBuilderUsage from '../../components/admin/ResumeBuilderUsage';
 import SamStudiosAccessCRM from '../../components/admin/SamStudiosAccessCRM';
+import UserAccessCodes from '../../components/admin/UserAccessCodes';
 
 const AdminDashboard = () => {
   const [dashboard, setDashboard] = useState(null);
@@ -727,6 +728,8 @@ const AdminDashboard = () => {
             </p>
           </div>
         </div>
+
+        <UserAccessCodes />
 
         <div className="bg-white/90 rounded-3xl shadow-xl border border-white/60 p-6 backdrop-blur">
           <h2 className="text-xl font-bold mb-4">Recent Transactions</h2>

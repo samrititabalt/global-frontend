@@ -15,6 +15,8 @@ const Header = () => {
   const [isSolutionsDropdownOpen, setIsSolutionsDropdownOpen] = useState(false);
   const [isMobileSolutionsOpen, setIsMobileSolutionsOpen] = useState(false);
   const [logoError, setLogoError] = useState(false);
+  const [employeeAccess, setEmployeeAccess] = useState(false);
+  const [chatbotRole, setChatbotRole] = useState(null);
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   const { content: commonContent } = usePageContent('common');
@@ -23,6 +25,14 @@ const Header = () => {
   const isCustomer = isAuthenticated && user?.role === 'customer';
   const isAgent = isAuthenticated && user?.role === 'agent';
   const isAdministrator = isAuthenticated && user?.role === 'admin';
+  const hasEmployeeDashboard = chatbotRole === 'employee' || employeeAccess;
+  const dashboardLink = hasEmployeeDashboard
+    ? '/hiring-pro/employee'
+    : isAgent
+      ? '/agent/dashboard'
+      : isCustomer
+        ? '/customer/dashboard'
+        : null;
   const agentInitials = isAgent
     ? (user?.name || user?.email || 'A')
         .split(' ')
@@ -76,6 +86,22 @@ const Header = () => {
   useEffect(() => {
     setShowNavigation(true);
     setIsScrolled(true);
+  }, []);
+
+  useEffect(() => {
+    const syncEmployeeAccess = () => {
+      const token = localStorage.getItem('hiringProEmployeeToken');
+      const role = localStorage.getItem('chatbotAccessRole');
+      setEmployeeAccess(!!token);
+      setChatbotRole(token ? role : null);
+    };
+    syncEmployeeAccess();
+    window.addEventListener('accessCodeLogin', syncEmployeeAccess);
+    window.addEventListener('storage', syncEmployeeAccess);
+    return () => {
+      window.removeEventListener('accessCodeLogin', syncEmployeeAccess);
+      window.removeEventListener('storage', syncEmployeeAccess);
+    };
   }, []);
 
   // Close dropdown when clicking outside
@@ -424,36 +450,68 @@ const Header = () => {
           )}
           {isHomePage && (
             <div className="hidden md:flex items-center pointer-events-auto">
-              <Link
-                to="/customer/signup"
-                className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap"
-              >
-                <EditableContent
-                  blockId="common-nav-signup"
-                  blockType="text"
-                  tag="span"
-                  page="common"
+              {dashboardLink ? (
+                <Link
+                  to={dashboardLink}
+                  className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap"
                 >
-                  {getCommon('common-nav-signup', 'Sign up')}
-                </EditableContent>
-              </Link>
+                  <EditableContent
+                    blockId="common-nav-dashboard"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-nav-dashboard', 'Dashboard')}
+                  </EditableContent>
+                </Link>
+              ) : (
+                <Link
+                  to="/customer/signup"
+                  className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap"
+                >
+                  <EditableContent
+                    blockId="common-nav-signup"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-nav-signup', 'Sign up')}
+                  </EditableContent>
+                </Link>
+              )}
             </div>
           )}
           {isHomePage && (
             <div className="flex md:hidden items-center pointer-events-auto">
-              <Link
-                to="/customer/signup"
-                className="bg-gray-900 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap text-sm"
-              >
-                <EditableContent
-                  blockId="common-nav-signup"
-                  blockType="text"
-                  tag="span"
-                  page="common"
+              {dashboardLink ? (
+                <Link
+                  to={dashboardLink}
+                  className="bg-gray-900 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap text-sm"
                 >
-                  {getCommon('common-nav-signup', 'Sign up')}
-                </EditableContent>
-              </Link>
+                  <EditableContent
+                    blockId="common-nav-dashboard"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-nav-dashboard', 'Dashboard')}
+                  </EditableContent>
+                </Link>
+              ) : (
+                <Link
+                  to="/customer/signup"
+                  className="bg-gray-900 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap text-sm"
+                >
+                  <EditableContent
+                    blockId="common-nav-signup"
+                    blockType="text"
+                    tag="span"
+                    page="common"
+                  >
+                    {getCommon('common-nav-signup', 'Sign up')}
+                  </EditableContent>
+                </Link>
+              )}
             </div>
           )}
 

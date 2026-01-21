@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Minimize2 } from 'lucide-react';
 import api from '../../utils/axios';
+import { useAuth } from '../../context/AuthContext';
 
 const LiveChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,6 +22,7 @@ const LiveChatBot = () => {
   const [userName, setUserName] = useState('');
   const [userCompany, setUserCompany] = useState('');
   const [consentGiven, setConsentGiven] = useState(false);
+  const { loginWithAccessCode, logout } = useAuth();
   const messagesEndRef = useRef(null);
   const chatHistoryRef = useRef([]);
 
@@ -78,6 +80,43 @@ const LiveChatBot = () => {
     // Must have at least 10 digits (for UK numbers) or 11+ with country code
     const digits = cleanPhone.replace(/\D/g, '');
     return digits.length >= 10 && digits.length <= 15;
+  };
+
+  const isAccessCodeInput = (text) => /^\d{5}$/.test(text.trim());
+
+  const handleAccessCodeLogin = async (code) => {
+    try {
+      const response = await api.post('/chatbot/access-code-login', { accessCode: code });
+      if (response.data?.success) {
+        if (response.data.tokenType === 'core') {
+          localStorage.removeItem('hiringProEmployeeToken');
+          localStorage.removeItem('chatbotAccessRole');
+          localStorage.removeItem('chatbotAccessDashboard');
+          await loginWithAccessCode({ token: response.data.token, user: response.data.user });
+        } else if (response.data.tokenType === 'hiring') {
+          logout();
+          localStorage.setItem('hiringProEmployeeToken', response.data.token);
+          localStorage.setItem('chatbotAccessRole', 'employee');
+          localStorage.setItem('chatbotAccessDashboard', response.data.dashboardPath || '/hiring-pro/employee');
+        }
+        window.dispatchEvent(new Event('accessCodeLogin'));
+        setOnboardingComplete(true);
+        const successMessage = {
+          id: Date.now() + 1,
+          text: "You're now logged in. Your dashboard is available at the top right.",
+          sender: 'bot',
+          timestamp: new Date()
+        };
+        setMessages((prev) => [...prev, successMessage]);
+        return { success: true };
+      }
+      return { success: false, message: response.data?.message || 'Login failed' };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Access code not found. Please try again or contact support.'
+      };
+    }
   };
 
   // Extract name from text
@@ -191,6 +230,21 @@ const LiveChatBot = () => {
     const messageText = inputMessage.trim();
     setInputMessage('');
     setIsTyping(true);
+
+    if (isAccessCodeInput(messageText)) {
+      const result = await handleAccessCodeLogin(messageText);
+      if (!result.success) {
+        const errorMessage = {
+          id: Date.now() + 1,
+          text: result.message,
+          sender: 'bot',
+          timestamp: new Date()
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      }
+      setIsTyping(false);
+      return;
+    }
 
     // If onboarding is not complete, extract email and phone
     if (!onboardingComplete) {
