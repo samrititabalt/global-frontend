@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import EditableContent from '../admin/EditableContent';
 import { usePageContent, getBlockContent } from '../../hooks/usePageContent';
@@ -10,8 +10,6 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showNavigation, setShowNavigation] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
-  const [isMobileServicesOpen, setIsMobileServicesOpen] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const [employeeAccess, setEmployeeAccess] = useState(false);
   const [chatbotRole, setChatbotRole] = useState(null);
@@ -22,7 +20,6 @@ const Header = () => {
   // Check if user is a customer/agent
   const isCustomer = isAuthenticated && user?.role === 'customer';
   const isAgent = isAuthenticated && user?.role === 'agent';
-  const isAdministrator = isAuthenticated && user?.role === 'admin';
   const hasEmployeeDashboard = chatbotRole === 'employee' || employeeAccess;
   const dashboardLink = hasEmployeeDashboard
     ? '/hiring-pro/employee'
@@ -39,20 +36,6 @@ const Header = () => {
         .slice(0, 2)
         .toUpperCase()
     : '';
-  const dropdownRef = useRef(null);
-  
-
-  const services = [
-    { name: 'UK Accounting, Taxation & Reporting', path: '/services/uk-accounting-taxation-reporting', key: 'common-services-uk-accounting' },
-    { name: 'ESG', path: '/services/esg', key: 'common-services-esg' },
-    { name: 'Market Research', path: '/services/market-research', key: 'common-services-market-research' },
-    { name: 'Contact Centre Support', path: '/services/contact-centre-support', key: 'common-services-contact-centre' },
-    { name: 'Recruitment & Staffing', path: '/services/recruitment-staffing', key: 'common-services-recruitment' },
-    { name: 'Equity Research & Management', path: '/services/equity-research-management', key: 'common-services-equity-research' },
-    { name: 'Industry Reports', path: '/services/industry-reports', key: 'common-services-industry-reports' },
-    { name: 'Software & Tech Support', path: '/services/software-tech-support', key: 'common-services-software-tech' },
-  ];
-
   // Check if we're on the home page
   const isHomePage = location.pathname === '/';
 
@@ -81,28 +64,25 @@ const Header = () => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsServicesDropdownOpen(false);
+      if (!event.target.closest('nav')) {
+        setIsMobileMenuOpen(false);
       }
     };
 
-    if (isServicesDropdownOpen) {
+    if (isMobileMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isServicesDropdownOpen]);
+  }, [isMobileMenuOpen]);
 
   const navLinks = [
     { name: 'About Us', path: '/about-us', key: 'common-nav-about' },
     { name: 'Case Studies', path: '/case-studies', key: 'common-nav-case-studies' },
     { name: 'Contact Us', path: '/contact-us', key: 'common-nav-contact' },
   ];
-  if (isAdministrator) {
-    navLinks.splice(1, 0, { name: 'Industry', path: '/industry', key: 'common-nav-industry' });
-  }
 
   const isActive = (path) => location.pathname === path;
 
@@ -206,67 +186,6 @@ const Header = () => {
               </Link>
             ))}
             
-            {/* Services Dropdown */}
-            {isAdministrator && (
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setIsServicesDropdownOpen(!isServicesDropdownOpen)}
-                  className={`flex items-center gap-1 text-sm font-medium transition-colors ${
-                    services.some(s => isActive(s.path))
-                      ? 'text-blue-600'
-                      : 'text-gray-700 hover:text-gray-900'
-                  }`}
-                >
-                  <EditableContent
-                    blockId="common-nav-services"
-                    blockType="text"
-                    tag="span"
-                    page="common"
-                  >
-                    {getCommon('common-nav-services', 'Services')}
-                  </EditableContent>
-                  <ChevronDown 
-                    className={`h-4 w-4 transition-transform duration-200 ${
-                      isServicesDropdownOpen ? 'rotate-180' : ''
-                    }`} 
-                  />
-                </button>
-                
-                <AnimatePresence>
-                  {isServicesDropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute top-full left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
-                    >
-                      {services.map((service) => (
-                        <Link
-                          key={service.path}
-                          to={service.path}
-                          className={`block px-4 py-2.5 text-sm transition-colors ${
-                            isActive(service.path)
-                              ? 'text-blue-600 bg-blue-50'
-                              : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-                          }`}
-                          onClick={() => setIsServicesDropdownOpen(false)}
-                        >
-                          <EditableContent
-                            blockId={service.key}
-                            blockType="text"
-                            tag="span"
-                            page="common"
-                          >
-                            {getCommon(service.key, service.name)}
-                          </EditableContent>
-                        </Link>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-
             <Link
               to="/solutions/hiring"
               className={`text-sm font-semibold transition-colors ${
@@ -454,73 +373,6 @@ const Header = () => {
                   </EditableContent>
                 </Link>
               ))}
-              
-              {/* Mobile Services Dropdown */}
-              {isAdministrator && (
-                <div>
-                  <button
-                    onClick={() => setIsMobileServicesOpen(!isMobileServicesOpen)}
-                    className={`flex items-center justify-between w-full text-base font-medium py-2 ${
-                      services.some(s => isActive(s.path))
-                        ? 'text-blue-600'
-                        : 'text-gray-700 hover:text-gray-900'
-                    }`}
-                  >
-                    <EditableContent
-                      blockId="common-nav-services"
-                      blockType="text"
-                      tag="span"
-                      page="common"
-                    >
-                      {getCommon('common-nav-services', 'Services')}
-                    </EditableContent>
-                    <ChevronDown 
-                      className={`h-5 w-5 transition-transform duration-200 ${
-                        isMobileServicesOpen ? 'rotate-180' : ''
-                      }`} 
-                    />
-                  </button>
-                  
-                  <AnimatePresence>
-                    {isMobileServicesOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="pl-4 pt-2 space-y-2">
-                          {services.map((service) => (
-                            <Link
-                              key={service.path}
-                              to={service.path}
-                              className={`block text-sm py-2 ${
-                                isActive(service.path)
-                                  ? 'text-blue-600'
-                                  : 'text-gray-600 hover:text-gray-900'
-                              }`}
-                              onClick={() => {
-                                setIsMobileMenuOpen(false);
-                                setIsMobileServicesOpen(false);
-                              }}
-                            >
-                              <EditableContent
-                                blockId={service.key}
-                                blockType="text"
-                                tag="span"
-                                page="common"
-                              >
-                                {getCommon(service.key, service.name)}
-                              </EditableContent>
-                            </Link>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
-
               <Link
                 to="/solutions/hiring"
                 className={`block text-base font-semibold py-2 ${

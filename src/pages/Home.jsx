@@ -8,11 +8,8 @@ import LiveChatBot from '../components/public/LiveChatBot';
 import HeroVideoSection from '../components/public/HeroVideoSection';
 import EditableContent from '../components/admin/EditableContent';
 import { usePageContent, getBlockContent } from '../hooks/usePageContent';
-import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
-  const { user, isAuthenticated } = useAuth();
-  const isAdministrator = isAuthenticated && user?.role === 'admin';
   const { content: pageContent } = usePageContent();
   const getHome = (key, fallback) => getBlockContent(pageContent, key) || fallback;
   
@@ -75,17 +72,12 @@ const Home = () => {
   const bottomNavLinks = [
     { label: 'Home', to: '/' },
     { label: 'About Us', to: '/about-us' },
+    { label: 'Ask Sam', to: '/ask-sam' },
     { label: 'WFH-HRM', to: '/solutions/hiring' },
     { label: 'Case Studies', to: '/case-studies' },
     { label: 'Contact Us', to: '/contact-us' },
     { label: 'Customer Login', to: '/customer/login' },
   ];
-  if (isAdministrator) {
-    bottomNavLinks.push(
-      { label: 'Industry', to: '/industry' },
-      { label: 'Services', to: '/services' },
-    );
-  }
 
   return (
     <div className="min-h-screen home-page" style={{ background: 'transparent' }}>
