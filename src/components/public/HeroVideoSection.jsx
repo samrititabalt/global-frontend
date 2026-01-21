@@ -22,7 +22,7 @@ const HeroVideoSection = () => {
   
   // Get editable content for hero text
   const heroTitle = getBlockContent(pageContent, 'hero-title') || 'Building Tomorrow of UK Small Businesses';
-  const heroSubtitle = getBlockContent(pageContent, 'hero-subtitle') || 'Sam Studios is the automation unit of Tabalt Ltd.';
+  const heroSubtitle = getBlockContent(pageContent, 'hero-subtitle') || 'Build for Startups and Small Businesses';
 
   useEffect(() => {
     // Check if video exists via public API endpoint
