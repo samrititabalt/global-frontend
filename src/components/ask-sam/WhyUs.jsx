@@ -18,26 +18,26 @@ const WhyUs = () => {
   const differentiators = [
     {
       icon: Users,
-      title: 'Dedicated Teams, Not Just Agents',
-      description: 'Every engagement includes a complete operations organization with trainers, QA analysts, and managers—not just individual agents.',
+      title: 'Close Hard-to-Fill Roles',
+      description: 'WFH-HRM workflow design plus Ask Sam recruiters deliver shortlists fast for tech, non-tech, and specialist roles.',
       color: 'bg-blue-100 text-blue-600',
     },
     {
       icon: Shield,
-      title: 'Brand Protection Guaranteed',
-      description: 'We train our teams to represent your brand authentically, maintaining your voice and values in every customer interaction.',
+      title: 'Niche Talent Sourcing',
+      description: 'Access a global talent pool and pre-vetted HR, recruitment, and operational professionals across industries.',
       color: 'bg-green-100 text-green-600',
     },
     {
       icon: Zap,
-      title: 'Rapid Deployment',
-      description: 'Launch new teams in weeks, not months. Our proven onboarding process gets you operational faster than building in-house.',
+      title: 'Staff Augmentation Pods',
+      description: 'Onshore and offshore staffing options with dedicated or shared teams for immediate scale and reliable coverage.',
       color: 'bg-purple-100 text-purple-600',
     },
     {
       icon: Award,
-      title: 'Proven Track Record',
-      description: 'Trusted by 100+ fast-growing companies. We\'ve helped businesses achieve 80% ROI increases and 50% cost savings.',
+      title: 'HR Advisory & Documentation',
+      description: 'Policies, contracts, onboarding, and compliance support aligned to 12 HR service categories and 110 subservices.',
       color: 'bg-orange-100 text-orange-600',
     },
   ];
@@ -45,74 +45,74 @@ const WhyUs = () => {
   const benefits = [
     {
       icon: TrendingUp,
-      title: 'Scale Without Limits',
-      description: 'Grow your operations as fast as your business demands, without the overhead of hiring and training.',
+      title: 'Reduce Hiring Time',
+      description: 'Move from requisition to shortlist in days, not weeks, with coordinated sourcing and screening.',
     },
     {
       icon: BarChart3,
-      title: 'Data-Driven Insights',
-      description: 'Real-time analytics and reporting help you make informed decisions and optimize performance.',
+      title: 'Lower HR Costs',
+      description: 'Cut hiring costs by 40 to 70 percent while keeping quality and compliance high.',
     },
     {
       icon: Clock,
-      title: '24/7 Global Coverage',
-      description: 'Round-the-clock support across multiple time zones ensures you never miss a customer interaction.',
+      title: 'Access Global Talent',
+      description: 'Source onshore or offshore talent across UK, Europe, US, India, APAC, and LATAM.',
     },
     {
       icon: Heart,
-      title: 'People-First Culture',
-      description: 'We invest heavily in our team\'s growth and wellbeing, resulting in better service and lower turnover.',
+      title: 'Scale Teams Quickly',
+      description: 'Support SMEs, startups, and global teams with flexible staffing and HR expertise.',
     },
   ];
 
   const stats = [
-    { number: '80%', label: 'Average ROI Increase', description: 'Our clients see significant returns on their investment' },
-    { number: '50%', label: 'Cost Savings', description: 'Compared to building in-house teams' },
-    { number: '100+', label: 'Companies Trust Us', description: 'From startups to enterprises' },
-    { number: '2200+', label: 'Team Members', description: 'Dedicated professionals across the globe' },
+    { number: '40-70%', label: 'Hiring Cost Reduction', description: 'Lower total hiring spend with shared talent pods' },
+    { number: '12', label: 'HR Service Categories', description: 'End-to-end HR coverage inside WFH-HRM' },
+    { number: '110', label: 'HR Subservices', description: 'From onboarding to compliance and retention' },
+    { number: '10 days', label: 'Average Shortlist Time', description: 'Role intake to qualified candidates' },
   ];
 
   const process = [
     {
       step: '01',
-      title: 'Discovery & Planning',
-      description: 'We understand your business, goals, and requirements to design the perfect solution.',
+      title: 'Submit HR Requirements',
+      description: 'Share your role, team plan, or HR request directly in WFH-HRM.',
     },
     {
       step: '02',
-      title: 'Team Assembly',
-      description: 'We handpick and train a dedicated team tailored to your brand and industry needs.',
+      title: 'Ask Sam Analyzes Needs',
+      description: 'We define the success profile, scope, and ideal sourcing strategy.',
     },
     {
       step: '03',
-      title: 'Rapid Launch',
-      description: 'Get operational in weeks with our streamlined onboarding and integration process.',
+      title: 'Talent Sourcing Begins',
+      description: 'WFH-HRM and Ask Sam source onshore or offshore talent and screen candidates.',
     },
     {
       step: '04',
-      title: 'Continuous Optimization',
-      description: 'Ongoing monitoring, feedback, and improvement to ensure peak performance.',
+      title: 'Interviews to Finalists',
+      description: 'We coordinate interviews, calibrate feedback, and deliver final candidates fast.',
     },
   ];
 
   const testimonials = [
     {
-      quote: 'Ask Sam transformed our customer service operations. We scaled from 5 to 50 agents in 3 months without compromising quality.',
-      author: 'Sarah Chen',
-      role: 'VP of Operations',
-      company: 'TechFlow Solutions',
+      quote: 'Onshore resources across the UK, Europe, and US for roles that require local context and time zone coverage.',
+      author: 'Onshore Resources',
+      role: 'UK, Europe, US',
+      company: 'Dedicated or shared teams',
     },
     {
-      quote: 'The dedicated team model is a game-changer. We have a complete operations organization, not just agents.',
-      author: 'Michael Rodriguez',
-      role: 'CEO',
-      company: 'RetailMax',
+      quote: 'Offshore delivery across India, APAC, and LATAM for 24/7 capacity and significant cost efficiencies.',
+      author: 'Offshore Resources',
+      role: 'India, APAC, LATAM',
+      company: 'Scalable hiring pods',
     },
     {
-      quote: 'Best decision we made. 50% cost savings and our customers love the service quality.',
-      author: 'Emily Johnson',
-      role: 'Founder',
-      company: 'FinanceHub',
+      quote: 'Flexible staffing across HR, recruitment, admin, finance, and operations with up to 70 percent savings.',
+      author: 'Staff Augmentation',
+      role: 'Dedicated or shared',
+      company: '40-70% lower costs',
     },
   ];
 
@@ -150,11 +150,10 @@ const WhyUs = () => {
           className="text-center mb-12"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            What Makes Us <span className="text-blue-600">Different</span>
+            What <span className="text-blue-600">Ask Sam</span> Does
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            We don't just provide agents—we deliver complete operations organizations 
-            designed to scale with your business.
+            Strategic HR and hiring support that turns requirements into qualified candidates and compliant HR workflows.
           </p>
         </motion.div>
 
@@ -192,10 +191,10 @@ const WhyUs = () => {
           className="text-center mb-12"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Why Companies Choose <span className="text-blue-600">Ask Sam</span>
+            Why Companies Use <span className="text-blue-600">Ask Sam</span>
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Discover the advantages that set us apart and drive exceptional results for our clients.
+            Benefit-driven hiring outcomes powered by WFH-HRM and a global talent network.
           </p>
         </motion.div>
 
@@ -232,10 +231,10 @@ const WhyUs = () => {
           className="text-center mb-12"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            How It <span className="text-blue-600">Works</span>
+            How <span className="text-blue-600">Ask Sam</span> Works
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            A simple, streamlined process to get you operational fast.
+            A clear, fast hiring and HR workflow that brings you qualified candidates quickly.
           </p>
         </motion.div>
 
@@ -274,10 +273,10 @@ const WhyUs = () => {
           className="text-center mb-12"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Trusted by <span className="text-blue-400">Industry Leaders</span>
+            Staff <span className="text-blue-400">Augmentation Options</span>
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            See what our clients say about working with Ask Sam.
+            Flexible onshore and offshore delivery models built for cost, speed, and quality.
           </p>
         </motion.div>
 
@@ -317,11 +316,10 @@ const WhyUs = () => {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Ready to Scale Your Business?
+            Ready to Build Your HR Advantage?
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join 100+ companies that trust Ask Sam to deliver exceptional results. 
-            Let's discuss how we can help transform your operations.
+            Partner with Ask Sam for hiring velocity, compliant HR support, and access to WFH-HRM's 12 service categories and 110 subservices.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

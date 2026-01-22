@@ -7,68 +7,68 @@ const Services = () => {
   const services = [
     {
       icon: Headphones,
-      title: 'Customer Service',
-      description: '24/7 customer support across multiple channels including phone, email, chat, and social media. Our trained agents deliver exceptional service that represents your brand.',
+      title: 'Hard-to-Fill Role Closure',
+      description: 'Targeted hiring support to fill critical roles faster with high-quality shortlists and aligned hiring plans.',
       features: [
-        'Multi-channel support',
-        '24/7 availability',
-        'Brand voice training',
-        'Quality assurance',
+        'Tech, non-tech, and specialist roles',
+        'Role intake and success profiles',
+        'Shortlist delivery in days',
+        'Offer negotiation support',
       ],
     },
     {
       icon: Shield,
-      title: 'Trust & Safety',
-      description: 'Protect your platform and users with comprehensive trust and safety services. Our team handles content moderation, fraud detection, and compliance monitoring.',
+      title: 'Niche Talent Sourcing',
+      description: 'Global reach with pre-vetted recruiters and operators to find scarce or specialized talent.',
       features: [
-        'Content moderation',
-        'Fraud detection',
-        'Compliance monitoring',
-        'Risk assessment',
+        'Industry-specific pipelines',
+        'Pre-vetted talent networks',
+        'Onshore and offshore options',
+        'Diversity and quality screening',
       ],
     },
     {
       icon: BarChart3,
-      title: 'Back Office Support',
-      description: 'Streamline your operations with our comprehensive back office support services. From data entry to financial processing, we handle it all.',
+      title: 'Staff Augmentation',
+      description: 'Flexible staffing models for fast scale with dedicated or shared resources across regions.',
       features: [
-        'Data processing',
-        'Financial operations',
-        'Document management',
-        'Administrative tasks',
+        'UK, Europe, US onshore teams',
+        'India, APAC, LATAM offshore teams',
+        'Dedicated or shared pods',
+        '40 to 70 percent cost savings',
       ],
     },
     {
       icon: Users,
-      title: 'Dedicated Teams',
-      description: 'Get a complete operations organization dedicated to your business. Every team includes trainers, QA analysts, and managers.',
+      title: 'Recruitment Automation & Screening',
+      description: 'WFH-HRM automation plus Ask Sam agents keep your pipeline moving with speed and accuracy.',
       features: [
-        'Complete team structure',
-        'Scalable operations',
-        'Dedicated resources',
-        'Custom training',
+        'ATS-ready candidate screening',
+        'Structured interview coordination',
+        'Assessment and scorecards',
+        'Weekly hiring reporting',
       ],
     },
     {
       icon: FileText,
-      title: 'Quality Assurance',
-      description: 'Ensure consistent quality across all customer interactions with our comprehensive QA programs. We monitor, measure, and improve performance continuously.',
+      title: 'HR Advisory & Documentation',
+      description: 'Compliant HR documentation and advisory support that scales with your growth.',
       features: [
-        'Performance monitoring',
-        'Quality metrics',
-        'Continuous improvement',
-        'Detailed reporting',
+        'Policies and handbooks',
+        'Contracts and offer letters',
+        'Onboarding and exit support',
+        'Compliance-ready workflows',
       ],
     },
     {
       icon: Settings,
-      title: 'Tech Support',
-      description: 'Provide technical assistance to your customers with our skilled tech support teams. From troubleshooting to product guidance, we cover it all.',
+      title: 'WFH-HRM Integration',
+      description: 'Ask Sam connects to WFH-HRM for end-to-end HR coverage and measurable outcomes.',
       features: [
-        'Technical troubleshooting',
-        'Product support',
-        'Issue resolution',
-        'Knowledge base management',
+        '12 HR service categories',
+        '110 HR subservices',
+        'Unified HR analytics',
+        'Global hiring governance',
       ],
     },
   ];
@@ -114,9 +114,9 @@ const Services = () => {
         transition={{ duration: 0.6 }}
         className="mt-20 bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-12 text-center text-white"
       >
-        <h3 className="text-3xl font-bold mb-4">Ready to Get Started?</h3>
+        <h3 className="text-3xl font-bold mb-4">Ready to Hire Faster?</h3>
         <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-          Let's discuss how our services can help transform your business operations.
+          Tell us your hiring goals and we will map the right Ask Sam support and WFH-HRM services.
         </p>
         <Link
           to="/contact-us"

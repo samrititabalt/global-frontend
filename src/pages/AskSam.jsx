@@ -207,13 +207,13 @@ const AskSam = () => {
                 <span className="text-blue-600">Ask Sam</span>
               </h1>
               <p className="text-lg text-gray-500 mb-4 font-medium">
-                Delegate task. Save time
+                WFH-HRM + Hiring + Staff Augmentation
               </p>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto md:mx-0 mb-4">
-                Everyone deserves a helping hand—at work or at home.
+                Your real-time HR assistant and hiring co-pilot for fast, compliant growth.
               </p>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto md:mx-0">
-                Ask Sam is a first-of-its-kind personal assistant service offering flexible, hourly support for every task and every individual. From business to personal to-dos, we step in exactly when you need us.
+                Ask Sam connects WFH-HRM with expert recruiters and talent partners to close hard-to-fill roles, scale teams quickly, and reduce hiring costs by 40 to 70 percent. From sourcing niche talent to coordinating interviews and HR documentation, we deliver the HR support you need across 12 service categories and 110 subservices.
               </p>
             </div>
           </motion.div>
