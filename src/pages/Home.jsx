@@ -79,6 +79,10 @@ const Home = () => {
     { label: 'Customer Login', to: '/customer/login' },
   ];
 
+  const handleBottomNavClick = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  };
+
   return (
     <div className="min-h-screen home-page" style={{ background: 'transparent' }}>
       <Header />
@@ -357,6 +361,7 @@ const Home = () => {
               <Link
                 key={link.to}
                 to={link.to}
+                onClick={handleBottomNavClick}
                 className="transition-colors hover:text-gray-900"
               >
                 {link.label}
