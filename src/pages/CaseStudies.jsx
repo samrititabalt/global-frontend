@@ -24,10 +24,10 @@ const CaseStudies = () => {
             className="text-center"
           >
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
-              Success <span className="text-blue-600">Stories</span>
+              Real Impact with <span className="text-blue-600">WFH-HRM</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Discover how we've helped businesses achieve remarkable results through our professional services.
+              Explore how our HR platform and Ask Sam helped companies scale, hire, and stay compliant.
             </p>
           </motion.div>
         </div>
