@@ -11,6 +11,7 @@ import AgentManagement from '../../components/admin/AgentManagement';
 import ResumeBuilderUsage from '../../components/admin/ResumeBuilderUsage';
 import SamStudiosAccessCRM from '../../components/admin/SamStudiosAccessCRM';
 import UserAccessCodes from '../../components/admin/UserAccessCodes';
+import hrServices from '../../data/hrServices';
 
 const AdminDashboard = () => {
   const [dashboard, setDashboard] = useState(null);
@@ -348,21 +349,16 @@ const AdminDashboard = () => {
               <thead className="bg-gray-50 sticky top-0">
                 <tr>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Sub-Services</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {detailData.map((service) => (
-                  <tr key={service._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedStat(null); navigate('/admin/services'); }}>
+                {hrServices.map((service) => (
+                  <tr key={service.name} className="hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedStat(null); navigate('/admin/services'); }}>
                     <td className="px-4 py-2 text-sm text-gray-900">{service.name}</td>
-                    <td className="px-4 py-2 text-sm text-gray-500">{service.description || '-'}</td>
-                    <td className="px-4 py-2">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        service.isActive !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {service.isActive !== false ? 'Active' : 'Inactive'}
-                      </span>
+                    <td className="px-4 py-2 text-sm text-gray-500">
+                      {service.subServices.length} sub-service
+                      {service.subServices.length > 1 ? 's' : ''}
                     </td>
                   </tr>
                 ))}
