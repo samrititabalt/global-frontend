@@ -18,7 +18,8 @@ const HeroVideoSection = () => {
   const [videoUrl, setVideoUrl] = useState(null);
   const [videoExists, setVideoExists] = useState(false);
   const [checkingVideo, setCheckingVideo] = useState(true);
-  const { content: pageContent } = usePageContent();
+  const [cacheBuster] = useState(() => Date.now());
+  const { content: pageContent } = usePageContent(null, { cacheBuster: true });
   
   // Get editable content for hero text
   const heroTitle = getBlockContent(pageContent, 'hero-title') || 'Building Tomorrow of UK Small Businesses';
@@ -29,7 +30,12 @@ const HeroVideoSection = () => {
     const checkVideoExists = async () => {
       try {
         setCheckingVideo(true);
-        const response = await fetch(`${API_CONFIG.API_URL}/public/homepage-video`);
+        const response = await fetch(`${API_CONFIG.API_URL}/public/homepage-video?v=${cacheBuster}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        });
         const data = await response.json();
         
         console.log('[HeroVideoSection] API response:', data);
@@ -40,6 +46,7 @@ const HeroVideoSection = () => {
         if (data.success && data.exists && videoSource) {
           setVideoExists(true);
           // If it's a relative path, construct full URL
+          const appendCacheBuster = (url) => `${url}${url.includes('?') ? '&' : '?'}v=${cacheBuster}`;
           if (videoSource.startsWith('/')) {
             const apiUrl = API_CONFIG.API_URL;
             let baseUrl = '';
@@ -48,10 +55,10 @@ const HeroVideoSection = () => {
             } else {
               baseUrl = apiUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
             }
-            setVideoUrl(`${baseUrl}${videoSource}`);
+            setVideoUrl(appendCacheBuster(`${baseUrl}${videoSource}`));
           } else {
             // Cloudinary URL or full URL
-            setVideoUrl(videoSource);
+            setVideoUrl(appendCacheBuster(videoSource));
           }
           console.log('[HeroVideoSection] Video URL set:', videoSource);
         } else {
@@ -92,7 +99,8 @@ const HeroVideoSection = () => {
           muted
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
+          poster="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop"
           style={{ objectFit: 'cover' }}
           onError={(e) => {
             // If video fails to load, hide it and show fallback

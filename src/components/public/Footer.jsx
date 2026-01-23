@@ -7,7 +7,7 @@ const Footer = () => {
   const [logoError, setLogoError] = useState(false);
   const location = useLocation();
   const isHomePage = location.pathname === '/';
-  const { content: commonContent } = usePageContent('common');
+  const { content: commonContent } = usePageContent('common', { cacheBuster: isHomePage });
   const getCommon = (key, fallback) => getBlockContent(commonContent, key) || fallback;
   const services = [
     'Trust & Safety',

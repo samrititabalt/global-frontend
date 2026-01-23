@@ -10,7 +10,7 @@ import EditableContent from '../components/admin/EditableContent';
 import { usePageContent, getBlockContent } from '../hooks/usePageContent';
 
 const Home = () => {
-  const { content: pageContent } = usePageContent();
+  const { content: pageContent } = usePageContent(null, { cacheBuster: true });
   const getHome = (key, fallback) => getBlockContent(pageContent, key) || fallback;
   
   // Get editable content for hero section

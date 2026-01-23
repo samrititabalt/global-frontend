@@ -15,7 +15,7 @@ const Header = () => {
   const [chatbotRole, setChatbotRole] = useState(null);
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
-  const { content: commonContent } = usePageContent('common');
+  const { content: commonContent } = usePageContent('common', { cacheBuster: isHomePage });
   const getCommon = (key, fallback) => getBlockContent(commonContent, key) || fallback;
   // Check if user is a customer/agent
   const isCustomer = isAuthenticated && user?.role === 'customer';

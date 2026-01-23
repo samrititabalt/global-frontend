@@ -6,11 +6,12 @@ import api from '../utils/axios';
  * Custom hook to fetch and manage page content
  * @returns {object} { content, loading, error, refresh }
  */
-export const usePageContent = (pageOverride = null) => {
+export const usePageContent = (pageOverride = null, options = {}) => {
   const location = useLocation();
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { cacheBuster = false } = options;
 
   const fetchContent = async () => {
     try {
@@ -18,7 +19,16 @@ export const usePageContent = (pageOverride = null) => {
       setError(null);
       
       const pagePath = pageOverride || (location.pathname === '/' ? 'home' : location.pathname.replace(/^\//, '').replace(/\//g, '-'));
-      const response = await api.get(`/text-content/page/${pagePath}`);
+      const cacheParam = cacheBuster ? `?v=${Date.now()}` : '';
+      const response = await api.get(`/text-content/page/${pagePath}${cacheParam}`, {
+        headers: cacheBuster
+          ? {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              Pragma: 'no-cache',
+              Expires: '0',
+            }
+          : undefined,
+      });
 
       if (response.data.success) {
         setContent(response.data.content || []);
@@ -47,7 +57,7 @@ export const usePageContent = (pageOverride = null) => {
     return () => {
       window.removeEventListener('contentUpdated', handleContentUpdate);
     };
-  }, [location.pathname, pageOverride]);
+  }, [location.pathname, pageOverride, cacheBuster]);
 
   return { content, loading, error, refresh: fetchContent };
 };
