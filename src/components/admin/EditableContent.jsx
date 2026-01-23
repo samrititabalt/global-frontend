@@ -28,7 +28,7 @@ const EditableContent = ({
   tag = 'span',
   enableFormatting = false,
   allowBullets = false,
-  fontSizeOptions = ['xs', 'sm', 'base', 'lg', 'xl', '2xl'],
+  fontSizeOptions = ['xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', '8xl', '9xl', '10xl'],
   defaultFontSize = 'base',
   metadata = {},
   ...props 
@@ -49,7 +49,7 @@ const EditableContent = ({
     if (!enableFormatting || typeof rawText !== 'string') {
       return { text: rawText || '', size: defaultFontSize };
     }
-    const match = rawText.match(/^\[size=(xs|sm|base|lg|xl|2xl)\]\s*/i);
+    const match = rawText.match(/^\[size=(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|10xl)\]\s*/i);
     if (match) {
       return {
         text: rawText.replace(match[0], ''),
@@ -147,6 +147,14 @@ const EditableContent = ({
       lg: '1.125rem',
       xl: '1.25rem',
       '2xl': '1.5rem',
+      '3xl': '1.875rem',
+      '4xl': '2.25rem',
+      '5xl': '3rem',
+      '6xl': '3.75rem',
+      '7xl': '4.5rem',
+      '8xl': '6rem',
+      '9xl': '8rem',
+      '10xl': '10rem',
     };
     const formattedClassName = allowBullets
       ? `${className} whitespace-pre-line`
