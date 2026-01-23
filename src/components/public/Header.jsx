@@ -15,6 +15,8 @@ const Header = () => {
   const [chatbotRole, setChatbotRole] = useState(null);
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
+  // Check if we're on the home page
+  const isHomePage = location.pathname === '/';
   const { content: commonContent } = usePageContent('common', { cacheBuster: isHomePage });
   const getCommon = (key, fallback) => getBlockContent(commonContent, key) || fallback;
   // Check if user is a customer/agent
@@ -36,9 +38,6 @@ const Header = () => {
         .slice(0, 2)
         .toUpperCase()
     : '';
-  // Check if we're on the home page
-  const isHomePage = location.pathname === '/';
-
   // Always show navigation and header - no scroll-based hiding
   useEffect(() => {
     setShowNavigation(true);
