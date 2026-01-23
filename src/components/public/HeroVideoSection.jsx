@@ -24,6 +24,13 @@ const HeroVideoSection = () => {
   // Get editable content for hero text
   const heroTitle = getBlockContent(pageContent, 'hero-title') || 'Building Tomorrow of UK Small Businesses';
   const heroSubtitle = getBlockContent(pageContent, 'hero-subtitle') || 'Software + AI + real HR agents, built for startups & small businesses.';
+  const heroSubtitleLines = String(heroSubtitle)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const heroSubtitleText = heroSubtitleLines.length > 1
+    ? heroSubtitleLines.map((line) => `• ${line}`).join('\n')
+    : heroSubtitle;
 
   useEffect(() => {
     // Check if video exists via public API endpoint
@@ -147,9 +154,9 @@ const HeroVideoSection = () => {
               blockId="hero-subtitle"
               blockType="paragraph"
               tag="p"
-              className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-light leading-relaxed drop-shadow-lg"
+              className="text-sm sm:text-base md:text-lg lg:text-xl text-white font-light leading-relaxed drop-shadow-lg whitespace-pre-line"
             >
-              {heroSubtitle}
+              {heroSubtitleText}
               <span className="inline-flex align-top ml-1">
                 <img
                   src="/assets/Tabalt%20SamStudios.png"
