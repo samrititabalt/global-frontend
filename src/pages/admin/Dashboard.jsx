@@ -27,6 +27,14 @@ const AdminDashboard = () => {
   const videoInputRef = useRef(null);
   const navigate = useNavigate();
   const [crmTab, setCrmTab] = useState('leads');
+  const [openSections, setOpenSections] = useState({
+    userAccessCodes: false,
+    recentTransactions: false,
+    crmModule: false,
+    samStudiosAccess: false,
+    customServiceRequests: false,
+    resumeBuilderUsage: false,
+  });
 
   useEffect(() => {
     loadDashboard();
@@ -246,6 +254,43 @@ const AdminDashboard = () => {
       transactions: 'All Transactions'
     };
     return titles[statType] || statType;
+  };
+
+  const toggleSection = (sectionKey) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey],
+    }));
+  };
+
+  const CollapsibleSection = ({ sectionKey, title, children }) => {
+    const isOpen = openSections[sectionKey];
+    return (
+      <div className="bg-white/90 rounded-3xl shadow-xl border border-white/60 backdrop-blur">
+        <button
+          type="button"
+          onClick={() => toggleSection(sectionKey)}
+          className="w-full flex items-center justify-between px-6 py-4 text-left"
+          aria-expanded={isOpen}
+          aria-controls={`${sectionKey}-content`}
+        >
+          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+          <span className="text-2xl font-semibold text-gray-500">
+            {isOpen ? '−' : '+'}
+          </span>
+        </button>
+        <div
+          id={`${sectionKey}-content`}
+          className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out ${
+            isOpen ? 'max-h-[4000px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="px-6 pb-6">
+            {children}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const copyShareableLink = () => {
@@ -489,8 +534,8 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <Layout title="Admin Dashboard">
-      <div className="space-y-10">
+    <Layout title="Admin Dashboard" compact>
+      <div className="space-y-8">
         <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-blue-900 text-white rounded-3xl p-8 shadow-2xl flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-blue-200 font-semibold">Control Center</p>
@@ -725,10 +770,17 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <UserAccessCodes />
+        <CollapsibleSection
+          sectionKey="userAccessCodes"
+          title="User Access Codes (5-Digit Login IDs)"
+        >
+          <UserAccessCodes />
+        </CollapsibleSection>
 
-        <div className="bg-white/90 rounded-3xl shadow-xl border border-white/60 p-6 backdrop-blur">
-          <h2 className="text-xl font-bold mb-4">Recent Transactions</h2>
+        <CollapsibleSection
+          sectionKey="recentTransactions"
+          title="Recent Transactions"
+        >
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50/70">
@@ -765,7 +817,7 @@ const AdminDashboard = () => {
               </tbody>
             </table>
           </div>
-        </div>
+        </CollapsibleSection>
 
         {/* Detail Modal */}
         {selectedStat && (
@@ -790,73 +842,90 @@ const AdminDashboard = () => {
         )}
 
         {/* CRM Module */}
-        <div className="space-y-6">
-          <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 text-white rounded-3xl p-8 shadow-2xl">
-            <h2 className="text-3xl font-bold mb-2">CRM & Agent Management</h2>
-            <p className="text-blue-200">Manage leads, customers, agents, and agent schedules</p>
-          </div>
-
-          {/* CRM Tabs */}
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6">
-            <div className="flex gap-2 mb-6 border-b border-gray-200">
-              <button
-                onClick={() => setCrmTab('leads')}
-                className={`px-4 py-2 font-medium transition ${
-                  crmTab === 'leads'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Leads
-              </button>
-              <button
-                onClick={() => setCrmTab('customers')}
-                className={`px-4 py-2 font-medium transition ${
-                  crmTab === 'customers'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Customers
-              </button>
-              <button
-                onClick={() => setCrmTab('agents')}
-                className={`px-4 py-2 font-medium transition ${
-                  crmTab === 'agents'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Agents
-              </button>
-              <button
-                onClick={() => setCrmTab('management')}
-                className={`px-4 py-2 font-medium transition ${
-                  crmTab === 'management'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Agent Management
-              </button>
+        <CollapsibleSection
+          sectionKey="crmModule"
+          title="CRM & Agent Management"
+        >
+          <div className="space-y-6">
+            <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 text-white rounded-3xl p-8 shadow-2xl">
+              <h2 className="text-3xl font-bold mb-2">CRM & Agent Management</h2>
+              <p className="text-blue-200">Manage leads, customers, agents, and agent schedules</p>
             </div>
 
-            {/* Tab Content */}
-            {crmTab === 'leads' && <CRMLeads />}
-            {crmTab === 'customers' && <CRMCustomers />}
-            {crmTab === 'agents' && <CRMAgents />}
-            {crmTab === 'management' && <AgentManagement />}
+            {/* CRM Tabs */}
+            <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6">
+              <div className="flex gap-2 mb-6 border-b border-gray-200">
+                <button
+                  onClick={() => setCrmTab('leads')}
+                  className={`px-4 py-2 font-medium transition ${
+                    crmTab === 'leads'
+                      ? 'text-blue-600 border-b-2 border-blue-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Leads
+                </button>
+                <button
+                  onClick={() => setCrmTab('customers')}
+                  className={`px-4 py-2 font-medium transition ${
+                    crmTab === 'customers'
+                      ? 'text-blue-600 border-b-2 border-blue-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Customers
+                </button>
+                <button
+                  onClick={() => setCrmTab('agents')}
+                  className={`px-4 py-2 font-medium transition ${
+                    crmTab === 'agents'
+                      ? 'text-blue-600 border-b-2 border-blue-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Agents
+                </button>
+                <button
+                  onClick={() => setCrmTab('management')}
+                  className={`px-4 py-2 font-medium transition ${
+                    crmTab === 'management'
+                      ? 'text-blue-600 border-b-2 border-blue-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Agent Management
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              {crmTab === 'leads' && <CRMLeads />}
+              {crmTab === 'customers' && <CRMCustomers />}
+              {crmTab === 'agents' && <CRMAgents />}
+              {crmTab === 'management' && <AgentManagement />}
+            </div>
           </div>
-        </div>
+        </CollapsibleSection>
 
-        {/* Sam Studios Access CRM */}
-        <SamStudiosAccessCRM />
+        <CollapsibleSection
+          sectionKey="samStudiosAccess"
+          title="Sam Studios Access CRM"
+        >
+          <SamStudiosAccessCRM />
+        </CollapsibleSection>
 
-        {/* Custom Service Requests */}
-        <CustomServiceRequests />
+        <CollapsibleSection
+          sectionKey="customServiceRequests"
+          title="Custom Service Requests"
+        >
+          <CustomServiceRequests />
+        </CollapsibleSection>
 
-        {/* Resume Builder Usage */}
-        <ResumeBuilderUsage />
+        <CollapsibleSection
+          sectionKey="resumeBuilderUsage"
+          title="Resume Builder Usage"
+        >
+          <ResumeBuilderUsage />
+        </CollapsibleSection>
       </div>
     </Layout>
   );
