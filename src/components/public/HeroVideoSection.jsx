@@ -142,6 +142,8 @@ const HeroVideoSection = () => {
             blockType="heading"
             tag="h1"
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium text-white mb-6 leading-tight tracking-tight drop-shadow-lg"
+            enableFormatting
+            allowBullets
           >
             {heroTitle}
           </EditableContent>
@@ -155,6 +157,8 @@ const HeroVideoSection = () => {
               blockType="paragraph"
               tag="p"
               className="text-sm sm:text-base md:text-lg lg:text-xl text-white font-light leading-relaxed drop-shadow-lg whitespace-pre-line"
+              enableFormatting
+              allowBullets
             >
               {heroSubtitleText}
               <span className="inline-flex align-top ml-1">

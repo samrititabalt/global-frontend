@@ -83,6 +83,16 @@ const Home = () => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   };
 
+  const formatBullets = (text) => {
+    if (!text) return text;
+    const normalized = String(text).replace(/\r/g, '').trim();
+    if (!normalized) return normalized;
+    if (normalized.includes('•')) return normalized;
+    const parts = normalized.split(/\s*-\s*/).map((item) => item.trim()).filter(Boolean);
+    if (parts.length <= 1) return normalized;
+    return parts.map((item) => `• ${item}`).join('\n');
+  };
+
   return (
     <div className="min-h-screen home-page" style={{ background: 'transparent' }}>
       <Header />
@@ -124,6 +134,8 @@ const Home = () => {
                   blockType="heading"
                   tag="h1"
                   className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight tracking-tight"
+                  enableFormatting
+                  allowBullets
                 >
                   {getBlockContent(pageContent, 'home-main-heading') || 'Premier Outsourcing.\nScale without losing\nyour brand\'s voice.'}
                 </EditableContent>
@@ -138,9 +150,11 @@ const Home = () => {
                   blockId="home-main-description"
                   blockType="paragraph"
                   tag="p"
-                  className="text-xl text-gray-600 mb-8 max-w-2xl leading-relaxed"
+                  className="text-sm sm:text-base md:text-lg text-gray-600 mb-8 max-w-2xl leading-relaxed whitespace-pre-line"
+                  enableFormatting
+                  allowBullets
                 >
-                  {getBlockContent(pageContent, 'home-main-description') || 'Premium outsourcing services that help UK businesses & individuals scale without losing their identity.'}
+                  {formatBullets(getBlockContent(pageContent, 'home-main-description') || 'Premium outsourcing services that help UK businesses & individuals scale without losing their identity.')}
                 </EditableContent>
               </motion.div>
 
@@ -158,6 +172,8 @@ const Home = () => {
                     blockId="home-hero-learn-more"
                     blockType="text"
                     tag="span"
+                    enableFormatting
+                    allowBullets
                   >
                     {getHome('home-hero-learn-more', 'Learn More')}
                   </EditableContent>
@@ -171,6 +187,8 @@ const Home = () => {
                     blockId="home-hero-get-started"
                     blockType="text"
                     tag="span"
+                    enableFormatting
+                    allowBullets
                   >
                     {getHome('home-hero-get-started', 'Get Started')}
                   </EditableContent>
@@ -218,6 +236,8 @@ const Home = () => {
                     blockId={stat.numberKey}
                     blockType="text"
                     tag="span"
+                    enableFormatting
+                    allowBullets
                   >
                     {getHome(stat.numberKey, stat.number)}
                   </EditableContent>
@@ -227,6 +247,8 @@ const Home = () => {
                     blockId={stat.labelKey}
                     blockType="text"
                     tag="span"
+                    enableFormatting
+                    allowBullets
                   >
                     {getHome(stat.labelKey, stat.label)}
                   </EditableContent>
@@ -246,6 +268,8 @@ const Home = () => {
               blockType="heading"
               tag="h2"
               className="text-4xl md:text-5xl font-bold text-gray-900 mb-4"
+              enableFormatting
+              allowBullets
             >
               {getBlockContent(pageContent, 'home-features-heading') || 'Why Choose Us'}
             </EditableContent>
@@ -254,6 +278,8 @@ const Home = () => {
               blockType="paragraph"
               tag="p"
               className="text-xl text-gray-600 max-w-3xl mx-auto"
+              enableFormatting
+              allowBullets
             >
               {getBlockContent(pageContent, 'home-features-description') || 'The secret to our success is our people. Our dedicated team of professionals is at the heart of everything we do.'}
             </EditableContent>
@@ -280,6 +306,8 @@ const Home = () => {
                     blockType="heading"
                     tag="h3"
                     className="text-xl font-bold text-gray-900 mb-4"
+                    enableFormatting
+                    allowBullets
                   >
                     {getHome(feature.titleKey, feature.title)}
                   </EditableContent>
@@ -288,6 +316,8 @@ const Home = () => {
                     blockType="paragraph"
                     tag="p"
                     className="text-gray-600 leading-relaxed"
+                    enableFormatting
+                    allowBullets
                   >
                     {getHome(feature.descriptionKey, feature.description)}
                   </EditableContent>
@@ -318,6 +348,8 @@ const Home = () => {
               blockType="heading"
               tag="h2"
               className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight"
+              enableFormatting
+              allowBullets
             >
               {getHome('home-cta-title', 'Ready to scale your business?')}
             </EditableContent>
@@ -326,6 +358,8 @@ const Home = () => {
               blockType="paragraph"
               tag="p"
               className="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed max-w-3xl mx-auto"
+              enableFormatting
+              allowBullets
             >
               {getHome('home-cta-description', 'Choose an automation solution that boosts your efficiency, fuels company growth with top-notch performance, and scales your business with high conversion rates. All at lower costs.')}
             </EditableContent>
@@ -334,6 +368,8 @@ const Home = () => {
               blockType="paragraph"
               tag="p"
               className="text-lg text-gray-400 mb-10"
+              enableFormatting
+              allowBullets
             >
               {getHome('home-cta-note', 'Quality results at a better value — 80% ROI increase and save 50% compared to in-house teams.')}
             </EditableContent>
@@ -345,6 +381,8 @@ const Home = () => {
                 blockId="home-cta-button"
                 blockType="text"
                 tag="span"
+                enableFormatting
+                allowBullets
               >
                 {getHome('home-cta-button', "Let's Talk!")}
               </EditableContent>

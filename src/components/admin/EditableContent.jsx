@@ -26,6 +26,10 @@ const EditableContent = ({
   children, 
   className = '', 
   tag = 'span',
+  enableFormatting = false,
+  allowBullets = false,
+  fontSizeOptions = ['xs', 'sm', 'base', 'lg', 'xl', '2xl'],
+  defaultFontSize = 'base',
   metadata = {},
   ...props 
 }) => {
@@ -34,15 +38,32 @@ const EditableContent = ({
   const location = useLocation();
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(children || '');
+  const [fontSize, setFontSize] = useState(defaultFontSize);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const textareaRef = useRef(null);
   const isAdmin = isAuthenticated && user?.role === 'admin';
 
   // Update content when children prop changes
+  const parseSizeMarker = (rawText) => {
+    if (!enableFormatting || typeof rawText !== 'string') {
+      return { text: rawText || '', size: defaultFontSize };
+    }
+    const match = rawText.match(/^\[size=(xs|sm|base|lg|xl|2xl)\]\s*/i);
+    if (match) {
+      return {
+        text: rawText.replace(match[0], ''),
+        size: match[1].toLowerCase(),
+      };
+    }
+    return { text: rawText || '', size: defaultFontSize };
+  };
+
   useEffect(() => {
-    setContent(children || '');
-  }, [children]);
+    const { text, size } = parseSizeMarker(children || '');
+    setContent(text);
+    setFontSize(size);
+  }, [children, enableFormatting, defaultFontSize]);
 
   // Focus textarea when editing starts
   useEffect(() => {
@@ -82,11 +103,15 @@ const EditableContent = ({
       // Get current page path
       const pagePath = page || (location.pathname === '/' ? 'home' : location.pathname.replace(/^\//, '').replace(/\//g, '-'));
 
+      const resolvedTextValue = enableFormatting
+        ? `[size=${fontSize}] ${content.trim()}`
+        : content.trim();
+
       const response = await api.put('/text-content', {
         contentKey: resolvedContentKey,
         page: pagePath,
         section: section || metadata.section || '',
-        textValue: content.trim(),
+        textValue: resolvedTextValue,
         blockType,
         metadata: {
           ...metadata,
@@ -115,12 +140,41 @@ const EditableContent = ({
   // Don't show edit controls for non-admin users or when not in edit mode
   if (!isAdmin || !isEditMode) {
     const Tag = tag;
-    return <Tag className={className} {...props}>{content}</Tag>;
+    const fontSizeMap = {
+      xs: '0.75rem',
+      sm: '0.875rem',
+      base: '1rem',
+      lg: '1.125rem',
+      xl: '1.25rem',
+      '2xl': '1.5rem',
+    };
+    const formattedClassName = allowBullets
+      ? `${className} whitespace-pre-line`
+      : className;
+    const formattedStyle = enableFormatting
+      ? { ...(props.style || {}), fontSize: fontSizeMap[fontSize] || fontSizeMap.base }
+      : props.style;
+    return (
+      <Tag className={formattedClassName} {...props} style={formattedStyle}>
+        {content}
+      </Tag>
+    );
   }
 
   const Tag = tag;
 
   if (isEditing) {
+    const applyBullets = () => {
+      const lines = String(content)
+        .split(/\r?\n/)
+        .map((line) => line.replace(/^[-•]\s*/, '').trim())
+        .filter(Boolean);
+      if (!lines.length) {
+        return;
+      }
+      setContent(lines.map((line) => `• ${line}`).join('\n'));
+    };
+
     return (
       <div className={`editable-content-wrapper ${className}`} style={{ position: 'relative' }}>
         <Tag className={className} {...props} style={{ display: 'none' }}>
@@ -135,6 +189,33 @@ const EditableContent = ({
           padding: '8px',
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
         }}>
+          {enableFormatting && (
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <label className="text-xs font-semibold text-gray-600">
+                Font size:
+                <select
+                  value={fontSize}
+                  onChange={(e) => setFontSize(e.target.value)}
+                  className="ml-2 text-xs border border-gray-300 rounded px-2 py-1"
+                >
+                  {fontSizeOptions.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {allowBullets && (
+                <button
+                  type="button"
+                  onClick={applyBullets}
+                  className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Add bullets
+                </button>
+              )}
+            </div>
+          )}
           <textarea
             ref={textareaRef}
             value={content}
