@@ -152,23 +152,25 @@ const HeroVideoSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <EditableContent
-              blockId="hero-subtitle"
-              blockType="paragraph"
-              tag="p"
-              className="text-sm sm:text-base md:text-lg lg:text-xl text-white font-light leading-relaxed drop-shadow-lg whitespace-pre-line"
-              enableFormatting
-              allowBullets
-            >
-              {heroSubtitleText}
-              <span className="inline-flex align-top ml-1">
+            <div className="inline-flex items-start justify-center gap-1 text-center">
+              <EditableContent
+                blockId="hero-subtitle"
+                blockType="paragraph"
+                tag="p"
+                className="text-sm sm:text-base md:text-lg lg:text-xl text-white font-light leading-relaxed drop-shadow-lg whitespace-pre-line text-center"
+                enableFormatting
+                allowBullets
+              >
+                {heroSubtitleText}
+              </EditableContent>
+              <span className="inline-flex align-top mt-1">
                 <img
                   src="/assets/Tabalt%20SamStudios.png"
                   alt="Tabalt"
                   className="h-4 w-4 object-contain opacity-80"
                 />
               </span>
-            </EditableContent>
+            </div>
           </motion.div>
         </motion.div>
       </div>
