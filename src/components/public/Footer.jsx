@@ -9,6 +9,7 @@ const Footer = () => {
   const isHomePage = location.pathname === '/';
   const { content: commonContent } = usePageContent('common', { cacheBuster: isHomePage });
   const getCommon = (key, fallback) => getBlockContent(commonContent, key) || fallback;
+  const enableHomeFormatting = isHomePage;
   const services = [
     'Trust & Safety',
   ];
@@ -33,6 +34,8 @@ const Footer = () => {
               tag="span"
               page="common"
               className="text-xs text-gray-400 font-medium mb-4 block"
+              enableFormatting={enableHomeFormatting}
+              allowBullets={enableHomeFormatting}
             >
               {getCommon('common-footer-kicker', 'UK Outsourcing Partners')}
             </EditableContent>
@@ -42,6 +45,8 @@ const Footer = () => {
               tag="p"
               page="common"
               className="text-gray-400 mb-6"
+              enableFormatting={enableHomeFormatting}
+              allowBullets={enableHomeFormatting}
             >
               {getCommon('common-footer-description', 'Premium outsourcing services that help businesses scale without losing their identity.')}
             </EditableContent>
@@ -71,6 +76,8 @@ const Footer = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-footer-service-primary', service)}
                   </EditableContent>
@@ -92,6 +99,8 @@ const Footer = () => {
                       tag="span"
                       page="common"
                       className="text-2xl font-bold text-white block"
+                      enableFormatting={enableHomeFormatting}
+                      allowBullets={enableHomeFormatting}
                     >
                       {getCommon('common-footer-logo-text', 'Tabalt')}
                     </EditableContent>
@@ -108,6 +117,8 @@ const Footer = () => {
                         blockType="text"
                         tag="span"
                         page="common"
+                        enableFormatting={enableHomeFormatting}
+                        allowBullets={enableHomeFormatting}
                       >
                         {getCommon('common-footer-agent-login', 'Agent Login')}
                       </EditableContent>
@@ -121,6 +132,8 @@ const Footer = () => {
                         blockType="text"
                         tag="span"
                         page="common"
+                        enableFormatting={enableHomeFormatting}
+                        allowBullets={enableHomeFormatting}
                       >
                         {getCommon('common-footer-employee-login', 'Employee Login')}
                       </EditableContent>
@@ -134,6 +147,8 @@ const Footer = () => {
                         blockType="text"
                         tag="span"
                         page="common"
+                        enableFormatting={enableHomeFormatting}
+                        allowBullets={enableHomeFormatting}
                       >
                         {getCommon('common-footer-admin-login', 'Admin Login')}
                       </EditableContent>
@@ -151,6 +166,8 @@ const Footer = () => {
               tag="h3"
               page="common"
               className="text-white font-semibold mb-4"
+              enableFormatting={enableHomeFormatting}
+              allowBullets={enableHomeFormatting}
             >
               {getCommon('common-footer-contact-title', 'Contact Us')}
             </EditableContent>
@@ -162,6 +179,8 @@ const Footer = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-footer-email', 'info@tabalt.co.uk')}
                   </EditableContent>
@@ -174,6 +193,8 @@ const Footer = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-footer-phone', '+44 7448614160')}
                   </EditableContent>
@@ -186,6 +207,8 @@ const Footer = () => {
                   tag="span"
                   page="common"
                   className="whitespace-pre-line"
+                  enableFormatting={enableHomeFormatting}
+                  allowBullets={enableHomeFormatting}
                 >
                   {getCommon('common-footer-address', '3 Herron Court, Bromley,\nLondon, United Kingdom')}
                 </EditableContent>
@@ -198,6 +221,8 @@ const Footer = () => {
                 tag="h4"
                 page="common"
                 className="text-white font-semibold mb-3 text-sm"
+                enableFormatting={enableHomeFormatting}
+                allowBullets={enableHomeFormatting}
               >
                 {getCommon('common-footer-stay-connected', 'Stay Connected')}
               </EditableContent>
@@ -217,6 +242,8 @@ const Footer = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-footer-subscribe', 'Subscribe')}
                   </EditableContent>
@@ -233,6 +260,8 @@ const Footer = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-footer-agent-login', 'Agent Login')}
                   </EditableContent>
@@ -246,6 +275,8 @@ const Footer = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-footer-employee-login', 'Employee Login')}
                   </EditableContent>
@@ -259,6 +290,8 @@ const Footer = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-footer-admin-login', 'Administrator')}
                   </EditableContent>
@@ -277,6 +310,8 @@ const Footer = () => {
                 blockType="text"
                 tag="span"
                 page="common"
+              enableFormatting={enableHomeFormatting}
+              allowBullets={enableHomeFormatting}
               >
                 {getCommon('common-footer-copyright', `© ${new Date().getFullYear()} Tabalt Ltd. All rights reserved.`)}
               </EditableContent>
@@ -288,6 +323,8 @@ const Footer = () => {
                   blockType="text"
                   tag="span"
                   page="common"
+                enableFormatting={enableHomeFormatting}
+                allowBullets={enableHomeFormatting}
                 >
                   {getCommon('common-footer-terms', 'Terms of Service')}
                 </EditableContent>
@@ -298,6 +335,8 @@ const Footer = () => {
                   blockType="text"
                   tag="span"
                   page="common"
+                enableFormatting={enableHomeFormatting}
+                allowBullets={enableHomeFormatting}
                 >
                   {getCommon('common-footer-privacy', 'Privacy Policy')}
                 </EditableContent>
@@ -308,6 +347,8 @@ const Footer = () => {
                   blockType="text"
                   tag="span"
                   page="common"
+                enableFormatting={enableHomeFormatting}
+                allowBullets={enableHomeFormatting}
                 >
                   {getCommon('common-footer-data-deletion', 'Data Deletion')}
                 </EditableContent>

@@ -84,6 +84,7 @@ const Header = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
+  const enableHomeFormatting = isHomePage;
 
   return (
     <>
@@ -113,6 +114,8 @@ const Header = () => {
                     tag="span"
                     page="common"
                     className="text-[10px] font-medium mt-0.5 text-center text-gray-600"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-logo-subtitle', 'Sam Studios')}
                   </EditableContent>
@@ -125,6 +128,8 @@ const Header = () => {
                     tag="span"
                     page="common"
                     className="text-xl font-bold group-hover:text-blue-600 transition-colors text-gray-900"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-logo-title', 'Tabalt')}
                   </EditableContent>
@@ -134,6 +139,8 @@ const Header = () => {
                     tag="span"
                     page="common"
                     className="text-[10px] font-medium mt-0.5 text-center text-gray-600"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-logo-subtitle', 'Sam Studios')}
                   </EditableContent>
@@ -159,6 +166,8 @@ const Header = () => {
                 blockType="text"
                 tag="span"
                 page="common"
+                enableFormatting={enableHomeFormatting}
+                allowBullets={enableHomeFormatting}
               >
                 {getCommon('common-nav-home', 'Home')}
               </EditableContent>
@@ -179,6 +188,8 @@ const Header = () => {
                   blockType="text"
                   tag="span"
                   page="common"
+                  enableFormatting={enableHomeFormatting}
+                  allowBullets={enableHomeFormatting}
                 >
                   {getCommon(link.key, link.name)}
                 </EditableContent>
@@ -198,6 +209,8 @@ const Header = () => {
                 blockType="text"
                 tag="span"
                 page="common"
+                enableFormatting={enableHomeFormatting}
+                allowBullets={enableHomeFormatting}
               >
                 {getCommon('common-nav-wfh-hrm', 'WFH-HRM')}
               </EditableContent>
@@ -219,6 +232,8 @@ const Header = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-nav-dashboard', 'Dashboard')}
                   </EditableContent>
@@ -235,6 +250,8 @@ const Header = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-nav-signup', 'Sign up')}
                   </EditableContent>
@@ -248,6 +265,8 @@ const Header = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-nav-customer-login', 'Customer Login')}
                   </EditableContent>
@@ -268,6 +287,8 @@ const Header = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-nav-dashboard', 'Dashboard')}
                   </EditableContent>
@@ -282,6 +303,8 @@ const Header = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-nav-signup', 'Sign up')}
                   </EditableContent>
@@ -301,6 +324,8 @@ const Header = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-nav-dashboard', 'Dashboard')}
                   </EditableContent>
@@ -315,6 +340,8 @@ const Header = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-nav-signup', 'Sign up')}
                   </EditableContent>
@@ -367,6 +394,8 @@ const Header = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon(link.key, link.name)}
                   </EditableContent>
@@ -386,6 +415,8 @@ const Header = () => {
                   blockType="text"
                   tag="span"
                   page="common"
+                  enableFormatting={enableHomeFormatting}
+                  allowBullets={enableHomeFormatting}
                 >
                   {getCommon('common-nav-wfh-hrm', 'WFH-HRM')}
                 </EditableContent>
@@ -401,6 +432,8 @@ const Header = () => {
                   blockType="text"
                   tag="span"
                   page="common"
+                  enableFormatting={enableHomeFormatting}
+                  allowBullets={enableHomeFormatting}
                 >
                   {getCommon('common-nav-home', 'Home')}
                 </EditableContent>
@@ -416,6 +449,8 @@ const Header = () => {
                     blockType="text"
                     tag="span"
                     page="common"
+                    enableFormatting={enableHomeFormatting}
+                    allowBullets={enableHomeFormatting}
                   >
                     {getCommon('common-nav-dashboard', 'Dashboard')}
                   </EditableContent>
@@ -432,6 +467,8 @@ const Header = () => {
                       blockType="text"
                       tag="span"
                       page="common"
+                      enableFormatting={enableHomeFormatting}
+                      allowBullets={enableHomeFormatting}
                     >
                       {getCommon('common-nav-signup', 'Sign up')}
                     </EditableContent>
@@ -446,6 +483,8 @@ const Header = () => {
                       blockType="text"
                       tag="span"
                       page="common"
+                      enableFormatting={enableHomeFormatting}
+                      allowBullets={enableHomeFormatting}
                     >
                       {getCommon('common-nav-customer-login', 'Customer Login')}
                     </EditableContent>

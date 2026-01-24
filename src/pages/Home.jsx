@@ -70,13 +70,13 @@ const Home = () => {
   ];
 
   const bottomNavLinks = [
-    { label: 'Home', to: '/' },
-    { label: 'About Us', to: '/about-us' },
-    { label: 'Ask Sam', to: '/ask-sam' },
-    { label: 'WFH-HRM', to: '/solutions/hiring' },
-    { label: 'Case Studies', to: '/case-studies' },
-    { label: 'Contact Us', to: '/contact-us' },
-    { label: 'Customer Login', to: '/customer/login' },
+    { label: 'Home', to: '/', contentKey: 'home-bottom-nav-home' },
+    { label: 'About Us', to: '/about-us', contentKey: 'home-bottom-nav-about-us' },
+    { label: 'Ask Sam', to: '/ask-sam', contentKey: 'home-bottom-nav-ask-sam' },
+    { label: 'WFH-HRM', to: '/solutions/hiring', contentKey: 'home-bottom-nav-wfh-hrm' },
+    { label: 'Case Studies', to: '/case-studies', contentKey: 'home-bottom-nav-case-studies' },
+    { label: 'Contact Us', to: '/contact-us', contentKey: 'home-bottom-nav-contact-us' },
+    { label: 'Customer Login', to: '/customer/login', contentKey: 'home-bottom-nav-customer-login' },
   ];
 
   const handleBottomNavClick = () => {
@@ -402,7 +402,15 @@ const Home = () => {
                 onClick={handleBottomNavClick}
                 className="transition-colors hover:text-gray-900"
               >
-                {link.label}
+                <EditableContent
+                  blockId={link.contentKey}
+                  blockType="text"
+                  tag="span"
+                  enableFormatting
+                  allowBullets
+                >
+                  {getHome(link.contentKey, link.label)}
+                </EditableContent>
               </Link>
             ))}
           </div>
