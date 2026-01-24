@@ -18,7 +18,11 @@ const EmployeeLogin = () => {
     const loadCompanies = async () => {
       try {
         const response = await api.get('/hiring-pro/companies');
-        setCompanies(response.data.companies || []);
+        const allCompanies = response.data.companies || [];
+        const visibleCompanies = allCompanies.filter(
+          (company) => String(company?.name || '').trim().toLowerCase() !== 'bucky'
+        );
+        setCompanies(visibleCompanies);
       } catch (err) {
         setCompanies([]);
       }

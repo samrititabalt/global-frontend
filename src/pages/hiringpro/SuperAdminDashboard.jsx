@@ -13,7 +13,11 @@ const SuperAdminDashboard = () => {
     const response = await api.get('/hiring-pro/super/companies', {
       headers: { Authorization: `Bearer ${authToken}` }
     });
-    setCompanies(response.data.companies || []);
+    const allCompanies = response.data.companies || [];
+    const visibleCompanies = allCompanies.filter(
+      (company) => String(company?.name || '').trim().toLowerCase() !== 'bucky'
+    );
+    setCompanies(visibleCompanies);
   };
 
   const handleLogin = async (e) => {
