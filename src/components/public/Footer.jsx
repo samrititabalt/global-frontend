@@ -138,21 +138,6 @@ const Footer = () => {
                         {getCommon('common-footer-employee-login', 'Employee Login')}
                       </EditableContent>
                     </Link>
-                    <Link
-                      to="/admin/login"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    >
-                      <EditableContent
-                        blockId="common-footer-admin-login"
-                        blockType="text"
-                        tag="span"
-                        page="common"
-                        enableFormatting={enableHomeFormatting}
-                        allowBullets={enableHomeFormatting}
-                      >
-                        {getCommon('common-footer-admin-login', 'Admin Login')}
-                      </EditableContent>
-                    </Link>
                   </div>
                 )}
               </React.Fragment>
@@ -249,62 +234,13 @@ const Footer = () => {
                   </EditableContent>
                 </button>
               </form>
-            {isHomePage && (
-              <div className="mt-4 flex flex-row flex-nowrap items-center justify-center gap-2">
-                <Link
-                  to="/agent/login"
-                  className="px-3 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 text-xs whitespace-nowrap"
-                >
-                  <EditableContent
-                    blockId="common-footer-agent-login"
-                    blockType="text"
-                    tag="span"
-                    page="common"
-                    enableFormatting={enableHomeFormatting}
-                    allowBullets={enableHomeFormatting}
-                  >
-                    {getCommon('common-footer-agent-login', 'Agent Login')}
-                  </EditableContent>
-                </Link>
-                <Link
-                  to="/hiring-pro/employee-login"
-                  className="px-3 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 text-xs whitespace-nowrap"
-                >
-                  <EditableContent
-                    blockId="common-footer-employee-login"
-                    blockType="text"
-                    tag="span"
-                    page="common"
-                    enableFormatting={enableHomeFormatting}
-                    allowBullets={enableHomeFormatting}
-                  >
-                    {getCommon('common-footer-employee-login', 'Employee Login')}
-                  </EditableContent>
-                </Link>
-                <Link
-                  to="/admin/login"
-                  className="px-3 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs whitespace-nowrap"
-                >
-                  <EditableContent
-                    blockId="common-footer-admin-login"
-                    blockType="text"
-                    tag="span"
-                    page="common"
-                    enableFormatting={enableHomeFormatting}
-                    allowBullets={enableHomeFormatting}
-                  >
-                    {getCommon('common-footer-admin-login', 'Administrator')}
-                  </EditableContent>
-                </Link>
-              </div>
-            )}
             </div>
           </div>
         </div>
 
         <div className="border-t border-gray-800 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="text-sm text-gray-400">
+          <div className="flex flex-col md:flex-row justify-between items-start space-y-4 md:space-y-0">
+            <div className="text-sm text-gray-400 flex flex-col items-start gap-3">
               <EditableContent
                 blockId="common-footer-copyright"
                 blockType="text"
@@ -315,6 +251,40 @@ const Footer = () => {
               >
                 {getCommon('common-footer-copyright', `© ${new Date().getFullYear()} Tabalt Ltd. All rights reserved.`)}
               </EditableContent>
+              {isHomePage && (
+                <div className="flex flex-row flex-nowrap items-center justify-start gap-2">
+                  <Link
+                    to="/agent/login"
+                    className="px-2 py-1 bg-green-600 text-white rounded-md font-semibold hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 text-[10px] whitespace-nowrap"
+                  >
+                    <EditableContent
+                      blockId="common-footer-agent-login"
+                      blockType="text"
+                      tag="span"
+                      page="common"
+                      enableFormatting={enableHomeFormatting}
+                      allowBullets={enableHomeFormatting}
+                    >
+                      {getCommon('common-footer-agent-login', 'Agent Login')}
+                    </EditableContent>
+                  </Link>
+                  <Link
+                    to="/hiring-pro/employee-login"
+                    className="px-2 py-1 bg-purple-600 text-white rounded-md font-semibold hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 text-[10px] whitespace-nowrap"
+                  >
+                    <EditableContent
+                      blockId="common-footer-employee-login"
+                      blockType="text"
+                      tag="span"
+                      page="common"
+                      enableFormatting={enableHomeFormatting}
+                      allowBullets={enableHomeFormatting}
+                    >
+                      {getCommon('common-footer-employee-login', 'Employee Login')}
+                    </EditableContent>
+                  </Link>
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap justify-center md:justify-end space-x-6 text-sm">
               <Link to="/terms-of-service" className="hover:text-white transition-colors">
