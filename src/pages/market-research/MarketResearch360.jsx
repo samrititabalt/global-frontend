@@ -243,7 +243,6 @@ const MarketResearch360 = () => {
           </>
         )}
       </main>
-      <Header />
       <Footer />
     </div>
   );
