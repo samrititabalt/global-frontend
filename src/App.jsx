@@ -111,9 +111,10 @@ import AdminIndicator from './components/admin/AdminIndicator';
 const AppRoutes = () => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+  const isMarketResearch360 = location.pathname.startsWith('/market-research-360');
 
   return (
-    <div className={isHomePage ? 'pt-0' : 'pt-[60px]'}>
+    <div className={isHomePage || isMarketResearch360 ? 'pt-0' : 'pt-[60px]'}>
       <Routes>
             {/* Public Routes */}
             {/* public routes  */}

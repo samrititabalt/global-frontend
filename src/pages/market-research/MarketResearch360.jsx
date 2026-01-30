@@ -98,7 +98,7 @@ const MarketResearch360 = () => {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <main className="pt-24">
+      <main className="pt-0">
         {!isUnlocked ? (
           <section className="max-w-xl mx-auto px-6 py-24 text-center">
             <ShieldCheck className="w-12 h-12 text-blue-600 mx-auto mb-6" />
@@ -122,12 +122,12 @@ const MarketResearch360 = () => {
         ) : (
           <>
             <section className="bg-white">
-              <div className="max-w-6xl mx-auto px-6 pt-10 pb-4">
+              <div className="max-w-6xl mx-auto px-6 pt-0 pb-4">
                 <div className="relative overflow-hidden rounded-3xl border border-gray-200 shadow-sm">
                   <img
                     src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=2000&h=900&fit=crop"
                     alt="Market researchers collecting data"
-                    className="w-full h-[320px] md:h-[420px] object-cover"
+                    className="w-full h-[360px] md:h-[460px] object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-tr from-slate-900/40 via-slate-900/10 to-transparent"></div>
                 </div>
