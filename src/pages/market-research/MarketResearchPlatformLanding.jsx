@@ -30,7 +30,7 @@ const MarketResearchPlatformLanding = () => {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <main className="pt-24">
+      <main className="pt-0">
         {!access.allowed ? (
           <section className="max-w-2xl mx-auto px-6 py-20 text-center">
             <ShieldCheck className="w-12 h-12 text-blue-600 mx-auto mb-4" />
@@ -47,7 +47,7 @@ const MarketResearchPlatformLanding = () => {
           </section>
         ) : (
           <>
-            <section className="max-w-6xl mx-auto px-6 py-16">
+            <section className="max-w-6xl mx-auto px-6 pt-2 pb-12">
               <span className="text-xs uppercase tracking-[0.3em] text-blue-600">MR 360 Platform</span>
               <h1 className="text-4xl font-bold text-gray-900 mt-4">
                 MR 360 Platform — {displayName}
