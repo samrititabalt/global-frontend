@@ -7,7 +7,7 @@ const Services = () => {
   const services = [
     {
       icon: Headphones,
-      title: 'Data Collection',
+      title: 'Data Collection & Fieldwork Support',
       description: 'Fieldwork execution with trained market researchers using surveys, interviews, and panels.',
       features: [
         'Qualitative and quantitative surveys',
@@ -19,7 +19,7 @@ const Services = () => {
     },
     {
       icon: FileText,
-      title: 'Building Reports',
+      title: 'Market Research Reporting & Insights',
       description: 'Decision-ready reports designed for leadership, category owners, and brand teams.',
       features: [
         'Market research reports',
@@ -31,7 +31,7 @@ const Services = () => {
     },
     {
       icon: BarChart3,
-      title: 'Ad Hoc Research',
+      title: 'Ad Hoc Research & Analyst Support',
       description: 'Rapid, flexible research support for urgent questions and one-off insight requests.',
       features: [
         'Custom research requests',

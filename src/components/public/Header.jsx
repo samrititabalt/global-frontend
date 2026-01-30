@@ -20,8 +20,9 @@ const Header = () => {
   const { content: commonContent } = usePageContent('common', { cacheBuster: isHomePage });
   const getCommon = (key, fallback) => getBlockContent(commonContent, key) || fallback;
   // Check if user is a customer/agent
-  const isCustomer = isAuthenticated && user?.role === 'customer';
-  const isAgent = isAuthenticated && user?.role === 'agent';
+  const userRole = user?.role;
+  const isCustomer = isAuthenticated && userRole === 'customer';
+  const isAgent = isAuthenticated && userRole === 'agent';
   const hasEmployeeDashboard = chatbotRole === 'employee' || employeeAccess;
   const dashboardLink = hasEmployeeDashboard
     ? '/hiring-pro/employee'
@@ -196,25 +197,6 @@ const Header = () => {
               </Link>
             ))}
             
-            <Link
-              to="/solutions/hiring"
-              className={`text-sm font-semibold transition-colors ${
-                isActive('/solutions/hiring')
-                  ? 'text-blue-600'
-                  : 'text-gray-700 hover:text-gray-900'
-              }`}
-            >
-              <EditableContent
-                blockId="common-nav-wfh-hrm"
-                blockType="text"
-                tag="span"
-                page="common"
-                enableFormatting={enableHomeFormatting}
-                allowBullets={enableHomeFormatting}
-              >
-                {getCommon('common-nav-wfh-hrm', 'WFH-HRM')}
-              </EditableContent>
-            </Link>
             {/* Buttons - Always visible */}
             {isCustomer || isAgent ? (
               <div className="flex items-center gap-3">
@@ -401,27 +383,6 @@ const Header = () => {
                   </EditableContent>
                 </Link>
               ))}
-              <Link
-                to="/solutions/hiring"
-                className={`block text-base font-semibold py-2 ${
-                  isActive('/solutions/hiring')
-                    ? 'text-blue-600'
-                    : 'text-gray-700 hover:text-gray-900'
-                }`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <EditableContent
-                  blockId="common-nav-wfh-hrm"
-                  blockType="text"
-                  tag="span"
-                  page="common"
-                  enableFormatting={enableHomeFormatting}
-                  allowBullets={enableHomeFormatting}
-                >
-                  {getCommon('common-nav-wfh-hrm', 'WFH-HRM')}
-                </EditableContent>
-              </Link>
-
               <Link
                 to="/"
                 className="block w-full text-gray-700 hover:text-gray-900 font-medium text-center py-3 px-6 rounded-lg hover:bg-gray-100 transition-all"

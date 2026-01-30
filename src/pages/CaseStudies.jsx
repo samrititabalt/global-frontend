@@ -24,10 +24,10 @@ const CaseStudies = () => {
             className="text-center"
           >
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
-              Real Impact with <span className="text-blue-600">WFH-HRM</span>
+              Real Impact with <span className="text-blue-600">Market Research</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Explore how our HR platform and Ask Sam helped companies scale, hire, and stay compliant.
+              Explore how Ask Sam and MR 360 delivered data collection, insights, and reporting for leading brands.
             </p>
           </motion.div>
         </div>

@@ -6,217 +6,228 @@ import {
   Users,
   ShieldCheck,
   Rocket,
-  BarChart3,
   Clock,
   HeartHandshake,
   Laptop,
   Globe,
   ChevronDown
 } from 'lucide-react';
-import hrServices from '../../data/hrServices';
 
 const CaseStudies = () => {
   const [expandedStudy, setExpandedStudy] = useState(null);
 
   const caseStudies = [
     {
-      company: 'NovaFin (Anonymized)',
-      industry: 'Fintech',
-      challenge: 'Scaling HR for a 20-person startup while preparing for rapid growth after seed funding.',
+      company: 'NovaPulse (Anonymized)',
+      industry: 'Retail',
+      challenge: 'Large-scale data collection across 12 UK regions to understand shopper behavior.',
       subservices: [
-        'HR function setup from scratch',
-        'Role & responsibility definition',
-        'Headcount & hiring plan',
-        'Offer letter templates'
+        'Qualitative surveys',
+        'Quantitative surveys',
+        'Online panels',
+        'Phone interviews',
+        'Mystery shopping'
       ],
-      wfhHrmSolution: 'WFH-HRM centralized HR policies, hiring plans, and templates to get the team hiring-ready in under three weeks.',
-      askSamImpact: 'Ask Sam agents sourced early pipelines and coordinated interviews so founders stayed focused on product.',
+      wfhHrmSolution: 'MR 360 orchestrated fieldwork, sample quotas, and survey logic in one platform.',
+      askSamImpact: 'Ask Sam researchers executed interviews, validated responses, and cleaned the dataset.',
       outcomes: [
-        { metric: '3 weeks', label: 'Time to HR setup' },
-        { metric: '18 roles', label: 'Pipeline built' },
-        { metric: '40%', label: 'Faster hiring cycle' },
-        { metric: '0', label: 'Compliance gaps' }
+        { metric: '18k', label: 'Responses captured' },
+        { metric: '4 weeks', label: 'Fieldwork window' },
+        { metric: '12', label: 'Regions covered' },
+        { metric: '96%', label: 'Data quality score' }
       ],
-      quote: 'WFH‑HRM gave us structure overnight, and Ask Sam kept the hiring machine running.',
-      summary: 'A full HR foundation built before the first growth sprint, enabling confident hiring.',
+      quote: 'We finally had reliable, large-scale shopper data in one quarter.',
+      summary: 'Nationwide data collection delivered with high-quality response validation.',
       icon: Rocket
     },
     {
-      company: 'CipherLab',
-      industry: 'B2B SaaS',
-      challenge: 'Closing five hard-to-fill engineering roles within three weeks.',
+      company: 'BlueHarbor Health',
+      industry: 'Healthcare',
+      challenge: 'Multi-country qualitative and quantitative study to understand patient preferences.',
       subservices: [
-        'Resume sourcing',
-        'Interview coordination',
-        'Candidate screening',
-        'Offer negotiation & closure'
+        'Qualitative surveys',
+        'Quantitative surveys',
+        'Consumer interviews',
+        'Category deep dives'
       ],
-      wfhHrmSolution: 'WFH-HRM structured the hiring workflow, automated scheduling, and created role-specific scorecards.',
-      askSamImpact: 'Ask Sam handled candidate outreach and follow-ups, keeping the funnel active 7 days a week.',
+      wfhHrmSolution: 'MR 360 managed multi-market survey rollout and centralized reporting.',
+      askSamImpact: 'Ask Sam analysts handled interview guides, transcription, and insight synthesis.',
       outcomes: [
-        { metric: '5 roles', label: 'Closed in 3 weeks' },
-        { metric: '72 hrs', label: 'Average time-to-screen' },
-        { metric: '2x', label: 'Interview throughput' },
-        { metric: '92%', label: 'Offer acceptance rate' }
+        { metric: '6 markets', label: 'Countries covered' },
+        { metric: '2,400', label: 'Participants' },
+        { metric: '3 weeks', label: 'Insight delivery' },
+        { metric: '8', label: 'Segments mapped' }
       ],
-      quote: 'Ask Sam kept our pipeline warm while WFH‑HRM delivered the hiring engine.',
-      summary: 'Accelerated hiring velocity without expanding internal HR headcount.',
+      quote: 'We turned complex patient feedback into a clear roadmap.',
+      summary: 'Multi-country insights powered a patient-centered product strategy.',
       icon: Users
     },
     {
-      company: 'CloudLedger',
-      industry: 'Remote-first SaaS',
-      challenge: 'Payroll compliance overhaul across US, UK, and India with inconsistent salary structures.',
+      company: 'CipherView',
+      industry: 'Fintech',
+      challenge: 'Always-on competitor intelligence and category insights for a fast-moving market.',
       subservices: [
-        'Monthly payroll processing',
-        'Salary structuring',
-        'PF, ESIC, PT compliance',
-        'Payroll audits'
+        'Competitor analysis',
+        'Trend reports',
+        'Category insights',
+        'Quarterly sector updates'
       ],
-      wfhHrmSolution: 'WFH-HRM standardized payroll workflows, compliance calendars, and audit trails.',
-      askSamImpact: 'Ask Sam agents verified documentation, validated payroll runs, and resolved employee queries.',
+      wfhHrmSolution: 'MR 360 delivered competitor tracking dashboards and quarterly briefings.',
+      askSamImpact: 'Ask Sam researchers monitored market signals and drafted executive summaries.',
       outcomes: [
-        { metric: '30 days', label: 'Compliance alignment' },
-        { metric: '98%', label: 'Payroll accuracy' },
-        { metric: '45%', label: 'Time saved monthly' },
-        { metric: '0', label: 'Penalty notices' }
+        { metric: '15', label: 'Competitors tracked' },
+        { metric: '4', label: 'Quarterly reports' },
+        { metric: '20%', label: 'Faster strategy cycles' },
+        { metric: '1 hub', label: 'Unified intelligence' }
       ],
-      quote: 'We went from chaos to compliance in one payroll cycle.',
-      summary: 'Global payroll compliance achieved with automated controls and support.',
+      quote: 'We finally had a clear competitor pulse every quarter.',
+      summary: 'Continuous intelligence supported strategic positioning updates.',
       icon: ShieldCheck
     },
     {
-      company: 'BrightLane',
-      industry: 'SaaS',
-      challenge: 'Creating HR policies and employment contracts for a newly funded company.',
+      company: 'BrightShelf',
+      industry: 'CPG',
+      challenge: 'Tracking new product launches and performance across retail channels.',
       subservices: [
-        'HR policy handbook creation',
-        'Employment contract drafting',
-        'Basic HR compliance setup',
-        'Org chart creation'
+        'Product performance summaries',
+        'Retail audits',
+        'Consumer interviews',
+        'Trend tracking'
       ],
-      wfhHrmSolution: 'WFH-HRM delivered policy templates, compliant contracts, and org structure guidance.',
-      askSamImpact: 'Ask Sam coordinated legal reviews and ensured all hires had signed documentation before start dates.',
+      wfhHrmSolution: 'MR 360 consolidated launch data, pricing, and distribution metrics.',
+      askSamImpact: 'Ask Sam conducted audits and competitor benchmarking in-store.',
       outcomes: [
-        { metric: '2 weeks', label: 'Policy rollout' },
-        { metric: '100%', label: 'Signed contract coverage' },
-        { metric: '35%', label: 'Faster onboarding' },
-        { metric: '0', label: 'Policy gaps' }
+        { metric: '32', label: 'Launches tracked' },
+        { metric: '5', label: 'Retail channels' },
+        { metric: '6 weeks', label: 'Launch insights' },
+        { metric: '12%', label: 'Forecast accuracy lift' }
       ],
-      quote: 'We launched policies in record time and stayed investor-ready.',
-      summary: 'An HR compliance foundation that supported rapid expansion.',
+      quote: 'Launch tracking became measurable and actionable.',
+      summary: 'Product launch performance visibility across channels.',
       icon: Briefcase
     },
     {
-      company: 'PulseCart',
-      industry: 'E-commerce',
-      challenge: 'Reducing attrition and improving engagement across a 120-person team.',
+      company: 'UrbanCart',
+      industry: 'Retail & Logistics',
+      challenge: 'Capturing shopper insights and execution quality through mystery shopping.',
       subservices: [
-        'Engagement surveys (simple & quick)',
-        'Recognition & reward programs',
-        'Wellness initiatives',
-        'Retention strategy design'
+        'Mystery shopping',
+        'Retail audits',
+        'Shopper insights',
+        'Phone interviews'
       ],
-      wfhHrmSolution: 'WFH-HRM unified engagement tracking, feedback loops, and retention dashboards.',
-      askSamImpact: 'Ask Sam ran pulse survey follow-ups and coordinated recognition programs.',
+      wfhHrmSolution: 'MR 360 structured the mystery shopping program and aggregated findings.',
+      askSamImpact: 'Ask Sam researchers executed visits and compiled insight summaries.',
       outcomes: [
-        { metric: '22%', label: 'Attrition reduction' },
-        { metric: '3x', label: 'Engagement participation' },
-        { metric: '18%', label: 'eNPS uplift' },
-        { metric: '60 days', label: 'Retention turnaround' }
+        { metric: '120', label: 'Store visits' },
+        { metric: '4.6/5', label: 'Service score' },
+        { metric: '18%', label: 'Experience uplift' },
+        { metric: '30 days', label: 'Program cycle' }
       ],
-      quote: 'Engagement became measurable and actionable within a month.',
-      summary: 'Higher retention driven by continuous engagement and recognition.',
+      quote: 'We now know exactly what happens in-store.',
+      summary: 'Shopper insights improved service consistency and conversion.',
       icon: HeartHandshake
     },
     {
-      company: 'VertexWorks',
-      industry: 'Hybrid Tech',
-      challenge: 'Setting up an HR tech stack and automation for a 200-person hybrid workforce.',
+      company: 'Atlas Mobility',
+      industry: 'Automotive',
+      challenge: 'Market sizing and forecasting for a new EV category launch.',
       subservices: [
-        'HRMS selection & setup',
-        'Attendance tool integration',
-        'HR process automation',
-        'HR dashboards & reports'
+        'Market research reports',
+        'Trend reports',
+        'Category insights',
+        'SWOT analysis'
       ],
-      wfhHrmSolution: 'WFH-HRM integrated HRMS, attendance, and analytics into a single workflow.',
-      askSamImpact: 'Ask Sam supported data migration, SOP rollout, and employee training.',
+      wfhHrmSolution: 'MR 360 modeled market size, growth forecasts, and category shifts.',
+      askSamImpact: 'Ask Sam analysts validated assumptions and drafted investor-ready summaries.',
       outcomes: [
-        { metric: '45 days', label: 'Tech stack rollout' },
-        { metric: '60%', label: 'Manual task reduction' },
-        { metric: '90%', label: 'Self-service adoption' },
-        { metric: '1 hub', label: 'Unified HR reporting' }
+        { metric: '5-year', label: 'Forecast built' },
+        { metric: '3', label: 'Scenarios modeled' },
+        { metric: '40%', label: 'Faster planning' },
+        { metric: '1', label: 'Go-to-market roadmap' }
       ],
-      quote: 'Our HR ops went from spreadsheet chaos to automated clarity.',
-      summary: 'A modern HR tech backbone with measurable efficiency gains.',
+      quote: 'Forecasting became a board-level strength.',
+      summary: 'Market sizing and outlook guided launch strategy.',
       icon: Laptop
     },
     {
-      company: 'Shopora',
-      industry: 'Retail & Logistics',
-      challenge: 'Managing onboarding and exits for a fast-growing operations team.',
+      company: 'EcoGrid Energy',
+      industry: 'Energy',
+      challenge: 'End-to-end market research program with ongoing ad hoc insights.',
       subservices: [
-        'New hire onboarding checklist',
-        'Documentation & compliance collection',
-        'Exit interviews',
-        'Full & final settlement coordination'
+        'Market research reports',
+        'Ad hoc research',
+        'Competitor analysis',
+        'Quarterly sector updates'
       ],
-      wfhHrmSolution: 'WFH-HRM standardized onboarding, documentation flows, and exit protocols.',
-      askSamImpact: 'Ask Sam coordinated paperwork, scheduling, and knowledge handover plans.',
+      wfhHrmSolution: 'MR 360 centralized insights, reporting cadence, and trend monitoring.',
+      askSamImpact: 'Ask Sam researchers handled rapid requests and analyst briefings.',
       outcomes: [
-        { metric: '50%', label: 'Faster onboarding' },
-        { metric: '100%', label: 'Document compliance' },
-        { metric: '28%', label: 'Reduced exit delays' },
-        { metric: '4.7/5', label: 'New hire satisfaction' }
+        { metric: '12', label: 'Insight briefs/year' },
+        { metric: '4', label: 'Quarterly packs' },
+        { metric: '2 wks', label: 'Average turnaround' },
+        { metric: '1 team', label: 'Dedicated researchers' }
       ],
-      quote: 'Onboarding and exits finally feel seamless and consistent.',
-      summary: 'Operational continuity protected during rapid hiring and offboarding.',
+      quote: 'We finally had a research engine that never stops.',
+      summary: 'Always-on market intelligence and rapid research support.',
       icon: Clock
     },
     {
-      company: 'HelixCare',
-      industry: 'Healthcare Services',
-      challenge: 'Mitigating legal and compliance risk during rapid expansion.',
+      company: 'PulseWare',
+      industry: 'SaaS',
+      challenge: 'Ad hoc research support for investor updates and strategy planning.',
       subservices: [
-        'Labor law compliance management',
-        'Compliance calendar creation',
-        'Policy audits',
-        'Employment law advisory'
+        'Rapid insight generation',
+        'Desk research',
+        'Analyst support',
+        'One-off deep dives'
       ],
-      wfhHrmSolution: 'WFH-HRM delivered a compliance calendar, audit-ready documentation, and policy updates.',
-      askSamImpact: 'Ask Sam managed audit logistics and coordinated with external legal advisors.',
+      wfhHrmSolution: 'MR 360 captured research requests and delivered structured briefs.',
+      askSamImpact: 'Ask Sam analysts executed deep dives and summarized findings.',
       outcomes: [
-        { metric: '0', label: 'Compliance penalties' },
-        { metric: '35%', label: 'Audit prep time reduced' },
-        { metric: '100%', label: 'Policy coverage' },
-        { metric: '4 audits', label: 'Cleared successfully' }
+        { metric: '14', label: 'Insight briefs' },
+        { metric: '72 hrs', label: 'Fastest delivery' },
+        { metric: '8', label: 'Deep dives' },
+        { metric: '100%', label: 'On-time delivery' }
       ],
-      quote: 'We passed every audit with confidence.',
-      summary: 'Legal risk reduced with proactive compliance operations.',
+      quote: 'We now have analyst support on demand.',
+      summary: 'Rapid research enabled faster leadership decisions.',
       icon: ShieldCheck
     },
     {
-      company: 'GlobalAid',
-      industry: 'NGO',
-      challenge: 'Providing HR leadership for a distributed nonprofit without hiring a full-time team.',
+      company: 'Lush',
+      industry: 'Beauty & Personal Care',
+      challenge: 'Quarterly category insights and consumer trend tracking across EMEA.',
       subservices: [
-        'Virtual HR manager services',
-        'HR advisory for founders',
-        'Culture building for growing teams',
-        'HR SOP documentation'
+        'Category insights',
+        'Quarterly sector updates',
+        'Consumer insights',
+        'Trend reports'
       ],
-      wfhHrmSolution: 'WFH-HRM enabled a virtual HR desk with policies, SOPs, and culture initiatives.',
-      askSamImpact: 'Ask Sam coordinated regional hiring and managed HR communications across time zones.',
+      wfhHrmSolution: 'MR 360 delivered quarterly insight decks and competitive tracking.',
+      askSamImpact: 'Ask Sam researchers validated findings with expert interviews.',
       outcomes: [
-        { metric: '6 regions', label: 'HR coverage' },
-        { metric: '30%', label: 'Lower HR costs' },
-        { metric: '25%', label: 'Faster hiring' },
-        { metric: '5.0', label: 'Leadership satisfaction' }
+        { metric: '4', label: 'Quarterly reports' },
+        { metric: '6', label: 'Markets tracked' },
+        { metric: '28', label: 'Consumer signals' },
+        { metric: '92%', label: 'Stakeholder satisfaction' }
       ],
-      quote: 'We gained a full HR function without the overhead.',
-      summary: 'Scalable HR leadership delivered through a virtual model.',
+      quote: 'Our category decisions are now backed by evidence, not instinct.',
+      summary: 'Ongoing consumer and category intelligence across key markets.',
       icon: Globe
     },
+  ];
+
+  const mrServiceCoverage = [
+    { name: 'Data Collection & Fieldwork Support', detail: 'Qualitative + quantitative surveys, panels, interviews' },
+    { name: 'Market Research Reporting & Insights', detail: 'Category deep dives, quarterly insight packs' },
+    { name: 'Ad Hoc Research & Analyst Support', detail: 'Rapid insight briefs and desk research' },
+    { name: 'Competitor & Category Intelligence', detail: 'Monitoring moves, pricing, and category shifts' },
+    { name: 'Consumer & Shopper Insights', detail: 'Attitudes, preferences, and behavior tracking' },
+    { name: 'Mystery Shopping Programs', detail: 'In-store and online experience audits' },
+    { name: 'Trend Tracking', detail: 'Quarterly trends and market shifts' },
+    { name: 'Market Sizing & Forecasting', detail: 'Scenario planning and outlook modeling' },
+    { name: 'Product Launch Tracking', detail: 'Performance summaries and launch diagnostics' },
   ];
 
   return (
@@ -278,11 +289,11 @@ const CaseStudies = () => {
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-2">How WFH-HRM helped</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">How MR 360 helped</h4>
                     <p className="text-sm text-gray-600">{study.wfhHrmSolution}</p>
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Ask Sam acceleration</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Ask Sam research support</h4>
                     <p className="text-sm text-gray-600">{study.askSamImpact}</p>
                   </div>
                   <div>
@@ -313,21 +324,21 @@ const CaseStudies = () => {
       <section className="mt-16 bg-white/80 border border-gray-200 rounded-3xl p-8 shadow-lg">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Full HR capability coverage</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Full market research coverage</h3>
             <p className="text-gray-600">
-              WFH-HRM delivers 12 HR service categories with 110 subservices tailored to every stage of growth.
+              MR 360 + Ask Sam deliver data collection, reporting, and on-demand research across industries.
             </p>
           </div>
           <span className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700 text-sm font-semibold">
-            110 subservices in total
+            End-to-end MR services
           </span>
         </div>
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {hrServices.map((service) => (
+          {mrServiceCoverage.map((service) => (
             <div key={service.name} className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="font-semibold text-gray-900">{service.name}</p>
               <p className="text-xs text-gray-500 mt-1">
-                {service.subServices.length} sub-services
+                {service.detail}
               </p>
             </div>
           ))}
@@ -343,20 +354,20 @@ const CaseStudies = () => {
       >
         <h3 className="text-3xl font-bold mb-4">Want results like these?</h3>
         <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-          Let our HR experts and Ask Sam agents build your next hiring success story.
+          Let our researchers and Ask Sam analysts build your next market research success story.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             to="/contact-us"
             className="inline-flex items-center justify-center bg-white text-gray-900 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl"
           >
-            Talk to our HR team
+            Talk to our research team
           </Link>
           <Link
-            to="/solutions/hiring"
+            to="/market-research-360"
             className="inline-flex items-center justify-center bg-transparent text-white px-8 py-4 rounded-lg font-semibold text-lg border border-white/40 hover:bg-white/10 transition-all"
           >
-            Explore WFH-HRM
+            Explore MR 360
           </Link>
         </div>
       </motion.div>

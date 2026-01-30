@@ -12,7 +12,9 @@ import { useAuth } from '../context/AuthContext';
 
 const Home2 = () => {
   const { user, isAuthenticated } = useAuth();
-  const isAdmin = isAuthenticated && user?.role === 'admin';
+  const userRole = user?.role;
+  const isAdmin = isAuthenticated && userRole === 'admin';
+  const canSeeRestrictedButtons = isAuthenticated && ['admin', 'employee', 'agent'].includes(userRole);
   const { content: pageContent } = usePageContent(null, { cacheBuster: true });
   const getHome = (key, fallback) => getBlockContent(pageContent, key) || fallback;
   
@@ -74,12 +76,11 @@ const Home2 = () => {
 
   const bottomNavLinks = [
     { label: 'Home', to: '/', contentKey: 'home-bottom-nav-home' },
-    { label: 'About Us', to: '/about-us', contentKey: 'home-bottom-nav-about-us' },
+    { label: 'About Us', to: '/about-us', contentKey: 'home-bottom-nav-about-us', restricted: true },
     { label: 'Ask Sam', to: '/ask-sam', contentKey: 'home-bottom-nav-ask-sam' },
-    { label: 'WFH-HRM', to: '/solutions/hiring', contentKey: 'home-bottom-nav-wfh-hrm' },
     { label: 'Case Studies', to: '/case-studies', contentKey: 'home-bottom-nav-case-studies' },
     { label: 'Contact Us', to: '/contact-us', contentKey: 'home-bottom-nav-contact-us' },
-  ];
+  ].filter((link) => !link.restricted || canSeeRestrictedButtons);
 
   const bottomNavActions = [
     { label: 'Customer Login', to: '/customer/login', contentKey: 'home-bottom-nav-customer-login' },
@@ -441,7 +442,7 @@ const Home2 = () => {
                   </EditableContent>
                 </Link>
               ))}
-              {isAdmin && (
+              {canSeeRestrictedButtons && (
                 <Link
                   to="/home-2"
                   onClick={handleBottomNavClick}

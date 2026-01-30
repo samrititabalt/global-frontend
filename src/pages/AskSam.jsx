@@ -207,13 +207,13 @@ const AskSam = () => {
                 <span className="text-blue-600">Ask Sam</span>
               </h1>
               <p className="text-lg text-gray-500 mb-4 font-medium">
-                WFH-HRM + Hiring + Staff Augmentation
+                Market Research Assistant + Human Researchers
               </p>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto md:mx-0 mb-4">
-                Your real-time HR assistant and hiring co-pilot for fast, compliant growth.
+                Your real-time market research co-pilot for fast, reliable insights.
               </p>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto md:mx-0">
-                Ask Sam connects WFH-HRM with expert recruiters and talent partners to close hard-to-fill roles, scale teams quickly, and reduce hiring costs by 40 to 70 percent. From sourcing niche talent to coordinating interviews and HR documentation, we deliver the HR support you need across 12 service categories and 110 subservices.
+                Ask Sam connects you with real researchers, analysts, and fieldwork specialists to handle data collection, market research reporting, ad hoc research, competitor intelligence, category insights, consumer and shopper insights, mystery shopping, and trend tracking. We combine human expertise with MR 360 tools to deliver decision-ready insights on demand.
               </p>
             </div>
           </motion.div>
