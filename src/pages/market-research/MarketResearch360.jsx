@@ -121,6 +121,18 @@ const MarketResearch360 = () => {
           </section>
         ) : (
           <>
+            <section className="bg-white">
+              <div className="max-w-6xl mx-auto px-6 pt-10 pb-4">
+                <div className="relative overflow-hidden rounded-3xl border border-gray-200 shadow-sm">
+                  <img
+                    src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=2000&h=900&fit=crop"
+                    alt="Market researchers collecting data"
+                    className="w-full h-[320px] md:h-[420px] object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-slate-900/40 via-slate-900/10 to-transparent"></div>
+                </div>
+              </div>
+            </section>
             <section className="relative overflow-hidden bg-slate-900 text-white">
               <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,_#1e40af_0%,_transparent_55%)]"></div>
               <div className="max-w-6xl mx-auto px-6 py-20 relative z-10">
