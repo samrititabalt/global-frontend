@@ -97,6 +97,7 @@ const MarketResearch360 = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <Header />
       <main className="pt-0">
         {!isUnlocked ? (
           <section className="max-w-xl mx-auto px-6 py-24 text-center">
