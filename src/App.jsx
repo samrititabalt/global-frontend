@@ -102,6 +102,7 @@ import MarketResearch360 from './pages/market-research/MarketResearch360';
 import MarketResearchPlatformLanding from './pages/market-research/MarketResearchPlatformLanding';
 import MarketResearchPublicDashboard from './pages/market-research/MarketResearchPublicDashboard';
 import MarketResearchAdminDashboard from './pages/market-research/MarketResearchAdminDashboard';
+import Home2 from './pages/Home2';
 
 // Admin Components
 import { EditModeProvider } from './components/admin/EditModeToggle';
@@ -179,6 +180,7 @@ const AppRoutes = () => {
             <Route path="/market-research-360/:company" element={<MarketResearchPlatformLanding />} />
             <Route path="/market-research-360/:company/public" element={<MarketResearchPublicDashboard />} />
             <Route path="/market-research-360/:company/admin" element={<MarketResearchAdminDashboard />} />
+            <Route path="/home-2" element={<Home2 />} />
             
             {/* Shared Chart View - Public */}
             <Route path="/share/chart/:shareId" element={<SharedChartView />} />

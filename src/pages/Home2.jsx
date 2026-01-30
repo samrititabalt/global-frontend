@@ -10,7 +10,7 @@ import EditableContent from '../components/admin/EditableContent';
 import { usePageContent, getBlockContent } from '../hooks/usePageContent';
 import { useAuth } from '../context/AuthContext';
 
-const Home = () => {
+const Home2 = () => {
   const { user, isAuthenticated } = useAuth();
   const isAdmin = isAuthenticated && user?.role === 'admin';
   const { content: pageContent } = usePageContent(null, { cacheBuster: true });
@@ -469,5 +469,4 @@ const Home = () => {
   );
 };
 
-export default Home;
-
+export default Home2;
