@@ -5,9 +5,6 @@ import {
   CheckCircle2, 
   TrendingUp, 
   Users, 
-  Shield, 
-  Zap, 
-  Award, 
   ArrowRight,
   BarChart3,
   Clock,
@@ -18,101 +15,101 @@ const WhyUs = () => {
   const differentiators = [
     {
       icon: Users,
-      title: 'Close Hard-to-Fill Roles',
-      description: 'WFH-HRM workflow design plus Ask Sam recruiters deliver shortlists fast for tech, non-tech, and specialist roles.',
+      title: 'Data Collection & Fieldwork Support',
+      description: 'Market researchers run surveys, panels, interviews, and mystery shopping with reliable field execution.',
       color: 'bg-blue-100 text-blue-600',
     },
     {
-      icon: Shield,
-      title: 'Niche Talent Sourcing',
-      description: 'Access a global talent pool and pre-vetted HR, recruitment, and operational professionals across industries.',
+      icon: BarChart3,
+      title: 'Market Research Reporting & Insights',
+      description: 'Decision-ready reports, category deep dives, and quarterly insight packs built for leadership teams.',
       color: 'bg-green-100 text-green-600',
     },
     {
-      icon: Zap,
-      title: 'Staff Augmentation Pods',
-      description: 'Onshore and offshore staffing options with dedicated or shared teams for immediate scale and reliable coverage.',
+      icon: TrendingUp,
+      title: 'Competitor & Category Intelligence',
+      description: 'Monitor competitor moves, category shifts, and pricing activity with ongoing research coverage.',
       color: 'bg-purple-100 text-purple-600',
     },
     {
-      icon: Award,
-      title: 'HR Advisory & Documentation',
-      description: 'Policies, contracts, onboarding, and compliance support aligned to 12 HR service categories and 110 subservices.',
+      icon: Heart,
+      title: 'Consumer & Shopper Insights',
+      description: 'Capture attitudes, preferences, and behaviors to guide product, brand, and channel decisions.',
       color: 'bg-orange-100 text-orange-600',
     },
   ];
 
   const benefits = [
     {
-      icon: TrendingUp,
-      title: 'Reduce Hiring Time',
-      description: 'Move from requisition to shortlist in days, not weeks, with coordinated sourcing and screening.',
+      icon: Clock,
+      title: 'Faster Insight Cycles',
+      description: 'Move from brief to insight in weeks with coordinated data collection and analyst support.',
+    },
+    {
+      icon: Users,
+      title: 'Dedicated Researcher',
+      description: 'One researcher owns your account, validates data, and fills gaps manually.',
     },
     {
       icon: BarChart3,
-      title: 'Lower HR Costs',
-      description: 'Cut hiring costs by 40 to 70 percent while keeping quality and compliance high.',
+      title: 'Decision-Ready Reporting',
+      description: 'Reports, dashboards, and summaries tailored for leadership and category teams.',
     },
     {
-      icon: Clock,
-      title: 'Access Global Talent',
-      description: 'Source onshore or offshore talent across UK, Europe, US, India, APAC, and LATAM.',
-    },
-    {
-      icon: Heart,
-      title: 'Scale Teams Quickly',
-      description: 'Support SMEs, startups, and global teams with flexible staffing and HR expertise.',
+      icon: TrendingUp,
+      title: 'Always-On Intelligence',
+      description: 'Quarterly trends, competitor moves, and consumer shifts tracked continuously.',
     },
   ];
 
   const stats = [
-    { number: '40-70%', label: 'Hiring Cost Reduction', description: 'Lower total hiring spend with shared talent pods' },
-    { number: '12', label: 'HR Service Categories', description: 'End-to-end HR coverage inside WFH-HRM' },
-    { number: '110', label: 'HR Subservices', description: 'From onboarding to compliance and retention' },
-    { number: '10 days', label: 'Average Shortlist Time', description: 'Role intake to qualified candidates' },
+    { number: '50+', label: 'Industries Covered', description: 'Cross-sector coverage with dedicated researchers' },
+    { number: '10k+', label: 'Sector-Level Reports', description: 'Category, competitor, and consumer insights' },
+    { number: '4-6 wks', label: 'Insight Delivery', description: 'From brief to board-ready report' },
+    { number: '1', label: 'Dedicated Researcher', description: 'Aligned to your brand and category' },
   ];
 
   const process = [
     {
       step: '01',
-      title: 'Submit HR Requirements',
-      description: 'Share your role, team plan, or HR request directly in WFH-HRM.',
+      title: 'Submit Research Brief',
+      description: 'Share your category, market, and decision goals with Ask Sam.',
     },
     {
       step: '02',
-      title: 'Ask Sam Analyzes Needs',
-      description: 'We define the success profile, scope, and ideal sourcing strategy.',
+      title: 'Research Design & Scope',
+      description: 'We define methodology, sample, and reporting outputs with your team.',
     },
     {
       step: '03',
-      title: 'Talent Sourcing Begins',
-      description: 'WFH-HRM and Ask Sam source onshore or offshore talent and screen candidates.',
+      title: 'Fieldwork & Data Collection',
+      description: 'Surveys, interviews, panels, and audits executed by researchers.',
     },
     {
       step: '04',
-      title: 'Interviews to Finalists',
-      description: 'We coordinate interviews, calibrate feedback, and deliver final candidates fast.',
+      title: 'Analysis & Reporting',
+      description: 'Insights, dashboards, and executive summaries delivered on schedule.',
     },
   ];
 
   const testimonials = [
     {
-      quote: 'Onshore resources across the UK, Europe, and US for roles that require local context and time zone coverage.',
-      author: 'Onshore Resources',
-      role: 'UK, Europe, US',
-      company: 'Dedicated or shared teams',
+      quote: 'Dedicated researchers validate survey results and triangulate insights with desk research.',
+      author: 'Dedicated Researcher',
+      role: 'Hands-on analysis',
+      company: 'Market research teams',
     },
     {
-      quote: 'Offshore delivery across India, APAC, and LATAM for 24/7 capacity and significant cost efficiencies.',
-      author: 'Offshore Resources',
-      role: 'India, APAC, LATAM',
-      company: 'Scalable hiring pods',
+      quote: 'Quarterly trend reports keep leadership aligned on category shifts and competitor moves.',
+      author: 'Quarterly Intelligence',
+      role: 'Ongoing tracking',
+      company: 'Category leadership',
     },
     {
-      quote: 'Flexible staffing across HR, recruitment, admin, finance, and operations with up to 70 percent savings.',
-      author: 'Staff Augmentation',
-      role: 'Dedicated or shared',
-      company: '40-70% lower costs',
+      quote: 'Ad hoc requests turn into insight briefs within days, not weeks.',
+      author: 'Rapid Insights',
+      role: 'On-demand analysis',
+      company: 'Growth teams',
     },
   ];
 
@@ -153,7 +150,7 @@ const WhyUs = () => {
             What <span className="text-blue-600">Ask Sam</span> Does
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Strategic HR and hiring support that turns requirements into qualified candidates and compliant HR workflows.
+            Market research execution that turns questions into fieldwork, insights, and board-ready reports.
           </p>
         </motion.div>
 
@@ -194,7 +191,7 @@ const WhyUs = () => {
             Why Companies Use <span className="text-blue-600">Ask Sam</span>
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Benefit-driven hiring outcomes powered by WFH-HRM and a global talent network.
+            Research velocity, accuracy, and an expert researcher assigned to your market category.
           </p>
         </motion.div>
 
@@ -234,7 +231,7 @@ const WhyUs = () => {
             How <span className="text-blue-600">Ask Sam</span> Works
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            A clear, fast hiring and HR workflow that brings you qualified candidates quickly.
+            A structured market research workflow that delivers insights on schedule.
           </p>
         </motion.div>
 
@@ -273,10 +270,10 @@ const WhyUs = () => {
           className="text-center mb-12"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Staff <span className="text-blue-400">Augmentation Options</span>
+            Research <span className="text-blue-400">Delivery Options</span>
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Flexible onshore and offshore delivery models built for cost, speed, and quality.
+            Dedicated researchers supported by the MR 360 platform for always-on market intelligence.
           </p>
         </motion.div>
 
@@ -316,10 +313,10 @@ const WhyUs = () => {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Ready to Build Your HR Advantage?
+            Ready to Activate Market Research?
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Partner with Ask Sam for hiring velocity, compliant HR support, and access to WFH-HRM's 12 service categories and 110 subservices.
+            Partner with Ask Sam for researcher-led insights, rapid fieldwork, and market intelligence you can act on.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

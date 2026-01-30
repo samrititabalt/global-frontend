@@ -1,74 +1,44 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Headphones, Shield, BarChart3, Users, FileText, Settings } from 'lucide-react';
+import { Headphones, BarChart3, FileText } from 'lucide-react';
 
 const Services = () => {
   const services = [
     {
       icon: Headphones,
-      title: 'Hard-to-Fill Role Closure',
-      description: 'Targeted hiring support to fill critical roles faster with high-quality shortlists and aligned hiring plans.',
+      title: 'Data Collection',
+      description: 'Fieldwork execution with trained market researchers using surveys, interviews, and panels.',
       features: [
-        'Tech, non-tech, and specialist roles',
-        'Role intake and success profiles',
-        'Shortlist delivery in days',
-        'Offer negotiation support',
-      ],
-    },
-    {
-      icon: Shield,
-      title: 'Niche Talent Sourcing',
-      description: 'Global reach with pre-vetted recruiters and operators to find scarce or specialized talent.',
-      features: [
-        'Industry-specific pipelines',
-        'Pre-vetted talent networks',
-        'Onshore and offshore options',
-        'Diversity and quality screening',
-      ],
-    },
-    {
-      icon: BarChart3,
-      title: 'Staff Augmentation',
-      description: 'Flexible staffing models for fast scale with dedicated or shared resources across regions.',
-      features: [
-        'UK, Europe, US onshore teams',
-        'India, APAC, LATAM offshore teams',
-        'Dedicated or shared pods',
-        '40 to 70 percent cost savings',
-      ],
-    },
-    {
-      icon: Users,
-      title: 'Recruitment Automation & Screening',
-      description: 'WFH-HRM automation plus Ask Sam agents keep your pipeline moving with speed and accuracy.',
-      features: [
-        'ATS-ready candidate screening',
-        'Structured interview coordination',
-        'Assessment and scorecards',
-        'Weekly hiring reporting',
+        'Qualitative and quantitative surveys',
+        'Online panels and respondent recruitment',
+        'Phone interviews and call programs',
+        'Mystery shopping and retail audits',
+        'Consumer interviews and intercepts',
       ],
     },
     {
       icon: FileText,
-      title: 'HR Advisory & Documentation',
-      description: 'Compliant HR documentation and advisory support that scales with your growth.',
+      title: 'Building Reports',
+      description: 'Decision-ready reports designed for leadership, category owners, and brand teams.',
       features: [
-        'Policies and handbooks',
-        'Contracts and offer letters',
-        'Onboarding and exit support',
-        'Compliance-ready workflows',
+        'Market research reports',
+        'Category insights and deep dives',
+        'Competitor analysis and benchmarking',
+        'Trend reports and quarterly updates',
+        'SWOT analysis and opportunity scans',
       ],
     },
     {
-      icon: Settings,
-      title: 'WFH-HRM Integration',
-      description: 'Ask Sam connects to WFH-HRM for end-to-end HR coverage and measurable outcomes.',
+      icon: BarChart3,
+      title: 'Ad Hoc Research',
+      description: 'Rapid, flexible research support for urgent questions and one-off insight requests.',
       features: [
-        '12 HR service categories',
-        '110 HR subservices',
-        'Unified HR analytics',
-        'Global hiring governance',
+        'Custom research requests',
+        'Rapid insight generation',
+        'Desk research and synthesis',
+        'Analyst support and briefings',
+        'Researcher-assisted insights',
       ],
     },
   ];
@@ -114,9 +84,9 @@ const Services = () => {
         transition={{ duration: 0.6 }}
         className="mt-20 bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-12 text-center text-white"
       >
-        <h3 className="text-3xl font-bold mb-4">Ready to Hire Faster?</h3>
+        <h3 className="text-3xl font-bold mb-4">Ready to Activate Market Research?</h3>
         <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-          Tell us your hiring goals and we will map the right Ask Sam support and WFH-HRM services.
+          Tell us your research goals and we will map the right Ask Sam market research support.
         </p>
         <Link
           to="/contact-us"
