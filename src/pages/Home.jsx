@@ -76,7 +76,11 @@ const Home = () => {
     { label: 'WFH-HRM', to: '/solutions/hiring', contentKey: 'home-bottom-nav-wfh-hrm' },
     { label: 'Case Studies', to: '/case-studies', contentKey: 'home-bottom-nav-case-studies' },
     { label: 'Contact Us', to: '/contact-us', contentKey: 'home-bottom-nav-contact-us' },
+  ];
+
+  const bottomNavActions = [
     { label: 'Customer Login', to: '/customer/login', contentKey: 'home-bottom-nav-customer-login' },
+    { label: 'MR 360', to: '/market-research-360', contentKey: 'home-bottom-nav-mr-360' },
   ];
 
   const handleBottomNavClick = () => {
@@ -394,25 +398,47 @@ const Home = () => {
 
       <section className="bg-white border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center justify-center gap-6 py-6 text-sm font-semibold text-gray-700">
-            {bottomNavLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                onClick={handleBottomNavClick}
-                className="transition-colors hover:text-gray-900"
-              >
-                <EditableContent
-                  blockId={link.contentKey}
-                  blockType="text"
-                  tag="span"
-                  enableFormatting
-                  allowBullets
+          <div className="flex flex-col md:flex-row items-center md:justify-between gap-4 py-6 text-sm font-semibold text-gray-700">
+            <div className="flex flex-wrap items-center justify-center gap-6">
+              {bottomNavLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={handleBottomNavClick}
+                  className="transition-colors hover:text-gray-900"
                 >
-                  {getHome(link.contentKey, link.label)}
-                </EditableContent>
-              </Link>
-            ))}
+                  <EditableContent
+                    blockId={link.contentKey}
+                    blockType="text"
+                    tag="span"
+                    enableFormatting
+                    allowBullets
+                  >
+                    {getHome(link.contentKey, link.label)}
+                  </EditableContent>
+                </Link>
+              ))}
+            </div>
+            <div className="flex items-center gap-3">
+              {bottomNavActions.map((action) => (
+                <Link
+                  key={action.to}
+                  to={action.to}
+                  onClick={handleBottomNavClick}
+                  className="px-4 py-2 rounded-full border border-gray-300 text-gray-800 hover:bg-gray-100 transition"
+                >
+                  <EditableContent
+                    blockId={action.contentKey}
+                    blockType="text"
+                    tag="span"
+                    enableFormatting
+                    allowBullets
+                  >
+                    {getHome(action.contentKey, action.label)}
+                  </EditableContent>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>

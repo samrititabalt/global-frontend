@@ -98,6 +98,10 @@ import ResumeBuilderCreate from './pages/customer/ResumeBuilderCreate';
 import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 import TermsOfService from './pages/legal/TermsOfService';
 import DataDeletion from './pages/legal/DataDeletion';
+import MarketResearch360 from './pages/market-research/MarketResearch360';
+import MarketResearchPlatformLanding from './pages/market-research/MarketResearchPlatformLanding';
+import MarketResearchPublicDashboard from './pages/market-research/MarketResearchPublicDashboard';
+import MarketResearchAdminDashboard from './pages/market-research/MarketResearchAdminDashboard';
 
 // Admin Components
 import { EditModeProvider } from './components/admin/EditModeToggle';
@@ -170,6 +174,10 @@ const AppRoutes = () => {
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/data-deletion" element={<DataDeletion />} />
+            <Route path="/market-research-360" element={<MarketResearch360 />} />
+            <Route path="/market-research-360/:company" element={<MarketResearchPlatformLanding />} />
+            <Route path="/market-research-360/:company/public" element={<MarketResearchPublicDashboard />} />
+            <Route path="/market-research-360/:company/admin" element={<MarketResearchAdminDashboard />} />
             
             {/* Shared Chart View - Public */}
             <Route path="/share/chart/:shareId" element={<SharedChartView />} />

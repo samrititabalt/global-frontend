@@ -11,6 +11,7 @@ import AgentManagement from '../../components/admin/AgentManagement';
 import ResumeBuilderUsage from '../../components/admin/ResumeBuilderUsage';
 import SamStudiosAccessCRM from '../../components/admin/SamStudiosAccessCRM';
 import UserAccessCodes from '../../components/admin/UserAccessCodes';
+import MarketResearchAccessCodes from '../../components/admin/MarketResearchAccessCodes';
 import hrServices from '../../data/hrServices';
 
 const AdminDashboard = () => {
@@ -29,6 +30,7 @@ const AdminDashboard = () => {
   const [crmTab, setCrmTab] = useState('leads');
   const [openSections, setOpenSections] = useState({
     userAccessCodes: false,
+    marketResearchAccessCodes: false,
     recentTransactions: false,
     crmModule: false,
     samStudiosAccess: false,
@@ -775,6 +777,13 @@ const AdminDashboard = () => {
           title="User Access Codes (5-Digit Login IDs)"
         >
           <UserAccessCodes />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          sectionKey="marketResearchAccessCodes"
+          title="Market Research Platform Access Codes"
+        >
+          <MarketResearchAccessCodes />
         </CollapsibleSection>
 
         <CollapsibleSection
