@@ -17,6 +17,7 @@ const Header = () => {
   const { user, isAuthenticated } = useAuth();
   // Check if we're on the home page
   const isHomePage = location.pathname === '/';
+  const isMarketResearch360 = location.pathname.startsWith('/market-research-360');
   const { content: commonContent } = usePageContent('common', { cacheBuster: isHomePage });
   const getCommon = (key, fallback) => getBlockContent(commonContent, key) || fallback;
   // Check if user is a customer/agent
@@ -90,7 +91,9 @@ const Header = () => {
     <>
       {/* Regular Header - Always visible, compact size */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 ${
+        className={`${
+          isMarketResearch360 ? 'sticky top-0' : 'fixed top-0'
+        } left-0 right-0 z-50 ${
           isHomePage
             ? 'bg-transparent shadow-none pointer-events-none'
             : 'bg-white shadow-md backdrop-blur-md bg-white/95'
