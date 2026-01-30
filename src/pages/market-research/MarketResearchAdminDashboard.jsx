@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ShieldCheck, MessageSquareText, PhoneCall } from 'lucide-react';
+import { ShieldCheck, MessageSquare, PhoneCall } from 'lucide-react';
 import Header from '../../components/public/Header';
 import Footer from '../../components/public/Footer';
 import { useAuth } from '../../context/AuthContext';
@@ -82,7 +82,7 @@ const MarketResearchAdminDashboard = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                   <div className="flex items-center gap-3 mb-3">
-                    <MessageSquareText className="w-6 h-6 text-blue-600" />
+                    <MessageSquare className="w-6 h-6 text-blue-600" />
                     <h2 className="text-xl font-semibold text-gray-900">Ask Sam Interface</h2>
                   </div>
                   <p className="text-gray-600 mb-4">
