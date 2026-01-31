@@ -60,6 +60,7 @@ const CompanyAdminDashboard = () => {
   const [signatureFile, setSignatureFile] = useState(null);
   const [signaturePreview, setSignaturePreview] = useState('');
   const [editingOfferId, setEditingOfferId] = useState(null);
+  const [offerActionSuccess, setOfferActionSuccess] = useState('');
   const [ndaPages, setNdaPages] = useState([]);
   const [activeNdaPage, setActiveNdaPage] = useState(0);
   const [error, setError] = useState('');
@@ -264,6 +265,19 @@ const CompanyAdminDashboard = () => {
       setTimeout(() => window.URL.revokeObjectURL(url), 1000);
     } catch (err) {
       setOfferActionError(err.response?.data?.message || 'Unable to download offer letter');
+    }
+  };
+
+  const handleSendOffer = async (offerId) => {
+    setOfferActionError('');
+    setOfferActionSuccess('');
+    try {
+      const response = await api.post(`/hiring-pro/company/offer-letters/${offerId}/send`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOfferActionSuccess(response.data?.message || 'Document sent successfully');
+    } catch (err) {
+      setOfferActionError(err.response?.data?.message || 'Unable to send document');
     }
   };
 
@@ -1583,6 +1597,7 @@ const CompanyAdminDashboard = () => {
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
         <h3 className="text-xl font-semibold text-gray-900 mb-4">Documents</h3>
         {offerActionError && <div className="mb-3 text-sm text-red-600">{offerActionError}</div>}
+        {offerActionSuccess && <div className="mb-3 text-sm text-green-600">{offerActionSuccess}</div>}
         <div className="space-y-3">
           {offerLetters.map(letter => (
             <div key={letter._id} className="rounded-lg border border-gray-200 p-4">
@@ -1619,6 +1634,13 @@ const CompanyAdminDashboard = () => {
                         className="rounded-lg border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:border-gray-400"
                       >
                         Download
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSendOffer(letter._id)}
+                        className="rounded-lg border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:border-gray-400"
+                      >
+                        Send
                       </button>
                     </>
                   ) : (
