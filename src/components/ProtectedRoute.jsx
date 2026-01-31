@@ -40,8 +40,10 @@ const ProtectedRoute = ({ children, role }) => {
 
   // Special exception: Allow spbajaj25@gmail.com to access admin and customer routes
   const isOwnerEmail = user.email && user.email.toLowerCase() === 'spbajaj25@gmail.com';
-  const canAccess = user.role === role || 
-                   (isOwnerEmail && role === 'admin') || 
+  const isAdmin = user.role === 'admin';
+  const canAccess = isAdmin ||
+                   user.role === role ||
+                   (isOwnerEmail && role === 'admin') ||
                    (isOwnerEmail && role === 'customer');
   
   if (!canAccess) {

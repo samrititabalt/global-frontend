@@ -23,6 +23,7 @@ const Header = () => {
   const userRole = user?.role;
   const isCustomer = isAuthenticated && userRole === 'customer';
   const isAgent = isAuthenticated && userRole === 'agent';
+  const isAdmin = isAuthenticated && userRole === 'admin';
   const hasEmployeeDashboard = chatbotRole === 'employee' || employeeAccess;
   const dashboardLink = hasEmployeeDashboard
     ? '/hiring-pro/employee'
@@ -196,6 +197,27 @@ const Header = () => {
                 </EditableContent>
               </Link>
             ))}
+            {isAdmin && (
+              <Link
+                to="/solutions/hiring"
+                className={`text-sm font-semibold transition-colors ${
+                  isActive('/solutions/hiring')
+                    ? 'text-blue-600'
+                    : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
+                <EditableContent
+                  blockId="common-nav-wfh-hrm"
+                  blockType="text"
+                  tag="span"
+                  page="common"
+                  enableFormatting={enableHomeFormatting}
+                  allowBullets={enableHomeFormatting}
+                >
+                  {getCommon('common-nav-wfh-hrm', 'WFH-HRM')}
+                </EditableContent>
+              </Link>
+            )}
             
             {/* Buttons - Always visible */}
             {isCustomer || isAgent ? (
