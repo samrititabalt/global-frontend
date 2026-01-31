@@ -29,6 +29,8 @@ const CompanyAdminDashboard = () => {
   const [salaryCurrency, setSalaryCurrency] = useState('USD');
   const [salaryGenerating, setSalaryGenerating] = useState(false);
   const [salarySaving, setSalarySaving] = useState(false);
+  const [salaryTemplateSaving, setSalaryTemplateSaving] = useState(false);
+  const [salaryTemplateStatus, setSalaryTemplateStatus] = useState('');
   const [expenseTemplate, setExpenseTemplate] = useState(null);
   const [expenseTemplateSaving, setExpenseTemplateSaving] = useState(false);
   const [expenseTemplateGenerating, setExpenseTemplateGenerating] = useState(false);
@@ -57,6 +59,7 @@ const CompanyAdminDashboard = () => {
   const [documentLogoPreview, setDocumentLogoPreview] = useState('');
   const [signatureFile, setSignatureFile] = useState(null);
   const [signaturePreview, setSignaturePreview] = useState('');
+  const [editingOfferId, setEditingOfferId] = useState(null);
   const [ndaPages, setNdaPages] = useState([]);
   const [activeNdaPage, setActiveNdaPage] = useState(0);
   const [error, setError] = useState('');
@@ -184,12 +187,24 @@ const CompanyAdminDashboard = () => {
       if (documentLogoFile) payload.append('documentLogo', documentLogoFile);
       if (signatureFile) payload.append('signature', signatureFile);
 
-      const response = await api.post('/hiring-pro/company/offer-letter', payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setOfferLetters(prev => [response.data.offerLetter, ...prev]);
+      const response = editingOfferId
+        ? await api.put(`/hiring-pro/company/offer-letters/${editingOfferId}`, payload, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        : await api.post('/hiring-pro/company/offer-letter', payload, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+      if (editingOfferId) {
+        setOfferLetters(prev => prev.map((letter) => (
+          letter._id === response.data.offerLetter._id ? response.data.offerLetter : letter
+        )));
+      } else {
+        setOfferLetters(prev => [response.data.offerLetter, ...prev]);
+      }
       setOfferContent('');
       setOfferWarnings([]);
+      setEditingOfferId(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to save document');
     }
@@ -264,6 +279,48 @@ const CompanyAdminDashboard = () => {
       candidateName: selected.name || prev.candidateName,
       employeeCode: selected.employeeCode || ''
     }));
+  };
+
+  const handleEditOffer = (letter) => {
+    setOfferActionError('');
+    setOfferForm({
+      candidateName: letter.candidateName || '',
+      title: letter.documentTitle || letter.roleTitle || '',
+      employeeId: letter.employeeId || '',
+      employeeCode: letter.employeeCode || '',
+      documentType: letter.documentType || 'Offer Letter',
+      customDocumentType: letter.customDocumentType || '',
+      documentDate: letter.documentDate || ''
+    });
+    setOfferContent(letter.content || '');
+    setOfferWarnings([]);
+    setEditingOfferId(letter._id);
+    setDocumentLogoFile(null);
+    setSignatureFile(null);
+    setDocumentLogoPreview(letter.documentLogoUrl || '');
+    setSignaturePreview(letter.adminSignatureUrl || '');
+    if ((letter.documentType || '').toLowerCase().includes('nda')) {
+      syncNdaPages(letter.content || '');
+    }
+  };
+
+  const handleCancelOfferEdit = () => {
+    setEditingOfferId(null);
+    setOfferContent('');
+    setOfferWarnings([]);
+    setDocumentLogoFile(null);
+    setSignatureFile(null);
+    setDocumentLogoPreview('');
+    setSignaturePreview('');
+    setOfferForm({
+      candidateName: '',
+      title: '',
+      employeeId: '',
+      employeeCode: '',
+      documentType: 'Offer Letter',
+      customDocumentType: '',
+      documentDate: ''
+    });
   };
 
   const isNdaDocument = offerForm.documentType === 'NDA';
@@ -381,6 +438,26 @@ const CompanyAdminDashboard = () => {
       setError(err.response?.data?.message || 'Unable to save salary breakup');
     } finally {
       setSalarySaving(false);
+    }
+  };
+
+  const handleSaveSalaryTemplate = async () => {
+    if (!salaryBreakup) return;
+    setSalaryTemplateSaving(true);
+    setSalaryTemplateStatus('');
+    setError('');
+    try {
+      const normalized = normalizeSalaryBreakup(salaryBreakup);
+      await api.put('/hiring-pro/company/salary-template', {
+        salaryBreakup: normalized
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSalaryTemplateStatus('Salary template saved as default for all employees.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to save salary template');
+    } finally {
+      setSalaryTemplateSaving(false);
     }
   };
 
@@ -840,8 +917,17 @@ const CompanyAdminDashboard = () => {
                   onClick={handleSaveOffer}
                   className="rounded-lg bg-indigo-600 text-white px-4 py-2 font-semibold"
                 >
-                  Save Document
+                  {editingOfferId ? 'Update Document' : 'Save Document'}
                 </button>
+                {editingOfferId && (
+                  <button
+                    type="button"
+                    onClick={handleCancelOfferEdit}
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700"
+                  >
+                    Cancel Edit
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -989,8 +1075,19 @@ const CompanyAdminDashboard = () => {
                     >
                       {salarySaving ? 'Saving...' : 'Save & Push'}
                     </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveSalaryTemplate}
+                      disabled={!salaryBreakup || salaryTemplateSaving}
+                      className="rounded-md border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:border-gray-400 disabled:opacity-60"
+                    >
+                      {salaryTemplateSaving ? 'Saving...' : 'Save as Standard Template'}
+                    </button>
                   </div>
                 </div>
+                {salaryTemplateStatus && (
+                  <p className="mt-2 text-xs text-green-600">{salaryTemplateStatus}</p>
+                )}
                 {salaryBreakup ? (
                   <div className="mt-4 space-y-3">
                     {salaryBreakup.components.map((component, index) => (
@@ -1527,6 +1624,13 @@ const CompanyAdminDashboard = () => {
                   ) : (
                     <span className="text-xs text-gray-500">Document not ready</span>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => handleEditOffer(letter)}
+                    className="rounded-lg border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:border-gray-400"
+                  >
+                    Edit
+                  </button>
                   <button
                     onClick={() => handleDeleteOffer(letter._id)}
                     className="rounded-lg border border-red-200 px-3 py-1 text-sm font-semibold text-red-600 hover:border-red-300"
