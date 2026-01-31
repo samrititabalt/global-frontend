@@ -78,6 +78,7 @@ const Home2 = () => {
     { label: 'Home', to: '/', contentKey: 'home-bottom-nav-home' },
     { label: 'About Us', to: '/about-us', contentKey: 'home-bottom-nav-about-us', restricted: true },
     { label: 'Ask Sam', to: '/ask-sam', contentKey: 'home-bottom-nav-ask-sam' },
+    { label: 'WFH-HRM', to: '/solutions/hiring', contentKey: 'home-bottom-nav-wfh-hrm', restricted: true },
     { label: 'Case Studies', to: '/case-studies', contentKey: 'home-bottom-nav-case-studies' },
     { label: 'Contact Us', to: '/contact-us', contentKey: 'home-bottom-nav-contact-us' },
   ].filter((link) => !link.restricted || canSeeRestrictedButtons);
