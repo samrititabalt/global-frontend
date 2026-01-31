@@ -33,6 +33,7 @@ const AccessProButton = ({ proPath, customerProPath, agentProPath, serviceKey, c
 
   const isCustomer = isAuthenticated && user?.role === 'customer';
   const isAgent = isAuthenticated && user?.role === 'agent';
+  const isAdmin = isAuthenticated && user?.role === 'admin';
   const isAgentPro = isAgent && user?.pro_access_enabled;
 
   const resolvedServiceKey = useMemo(() => {
@@ -58,8 +59,8 @@ const AccessProButton = ({ proPath, customerProPath, agentProPath, serviceKey, c
     return !!entry?.enabled;
   }, [accessMap, isCustomer, resolvedServiceKey]);
 
-  if ((isCustomer && hasCustomerAccess) || isAgentPro) {
-    const targetPath = isCustomer ? resolvedCustomerPath : resolvedAgentPath;
+  if (isAdmin || (isCustomer && hasCustomerAccess) || isAgentPro) {
+    const targetPath = isAdmin ? resolvedCustomerPath : isCustomer ? resolvedCustomerPath : resolvedAgentPath;
     return (
       <Link
         to={targetPath}
