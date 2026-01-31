@@ -33,7 +33,7 @@ const AccessProButton = ({ proPath, customerProPath, agentProPath, serviceKey, c
 
   const isCustomer = isAuthenticated && user?.role === 'customer';
   const isAgent = isAuthenticated && user?.role === 'agent';
-  const isAdmin = isAuthenticated && user?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
   const isAgentPro = isAgent && user?.pro_access_enabled;
 
   const resolvedServiceKey = useMemo(() => {

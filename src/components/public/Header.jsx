@@ -84,6 +84,25 @@ const Header = () => {
     { name: 'Case Studies', path: '/case-studies', key: 'common-nav-case-studies' },
     { name: 'Contact Us', path: '/contact-us', key: 'common-nav-contact' },
   ];
+  const adminTools = [
+    { name: 'Ask Sam', path: '/ask-sam' },
+    { name: 'MR 360', path: '/market-research-360' },
+    { name: 'Sam Reports', path: '/solutions/sam-reports' },
+    { name: 'Sam Reports Pro', path: '/solutions/sam-reports-pro' },
+    { name: "Sam's Smart Reports", path: '/solutions/sams-smart-reports' },
+    { name: 'Expense Monitor', path: '/solutions/expense-monitor' },
+    { name: 'Forecasts', path: '/solutions/forecasts' },
+    { name: 'Risk & Fraud', path: '/solutions/risk-fraud' },
+    { name: 'Merge Spreadsheets', path: '/solutions/merge-spreadsheets' },
+    { name: 'LinkedIn Helper', path: '/solutions/linkedin-helper' },
+    { name: 'Industry Solutions', path: '/solutions/industry-solutions' },
+    { name: 'Document Converter', path: '/solutions/document-converter' },
+    { name: 'Resume Builder', path: '/resume-builder' },
+    { name: 'WFH-HRM', path: '/solutions/hiring' },
+    { name: 'Hiring Pro Access', path: '/customer/hiring-pro' },
+    { name: 'Company Portal', path: '/hiring-pro/company-admin' },
+    { name: 'Employee Portal', path: '/hiring-pro/employee' },
+  ];
 
   const isActive = (path) => location.pathname === path;
   const enableHomeFormatting = isHomePage;
@@ -99,7 +118,7 @@ const Header = () => {
         }`}
       >
         <nav className="w-full px-4 sm:px-6 lg:px-8 py-2">
-          <div className={`flex items-center min-h-[60px] ${isHomePage ? 'justify-end' : 'justify-between'}`}>
+          <div className={`flex items-center min-h-[60px] ${isHomePage && isAdmin ? 'justify-between' : isHomePage ? 'justify-end' : 'justify-between'}`}>
             {!isHomePage && (
               <Link to="/" className="flex items-start gap-3 group pt-1">
               {!logoError ? (
@@ -279,7 +298,67 @@ const Header = () => {
             )}
           </div>
           )}
-          {isHomePage && (
+          {isHomePage && isAdmin && (
+            <div className="hidden md:flex items-center pointer-events-auto gap-3">
+              <div className="relative group">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-gray-800 bg-white/90 backdrop-blur px-4 py-2 rounded-lg shadow-sm border border-gray-200 hover:bg-white transition-all"
+                >
+                  Sam Studios
+                  <span className="text-xs text-gray-500">▼</span>
+                </button>
+                <div className="absolute left-0 mt-2 w-64 rounded-xl border border-gray-200 bg-white shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all">
+                  <div className="max-h-96 overflow-auto py-2">
+                    {adminTools.map((tool) => (
+                      <Link
+                        key={tool.path}
+                        to={tool.path}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                      >
+                        {tool.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <Link
+                to="/admin/dashboard"
+                className="bg-gray-900 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl border-2 border-gray-900 hover:border-gray-800 whitespace-nowrap text-sm"
+              >
+                Admin Dashboard
+              </Link>
+            </div>
+          )}
+          {isHomePage && isAdmin && (
+            <div className="flex md:hidden items-center pointer-events-auto">
+              <details className="relative">
+                <summary className="list-none bg-white/90 backdrop-blur px-4 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-800 shadow-sm cursor-pointer">
+                  Sam Studios
+                </summary>
+                <div className="absolute right-0 mt-2 w-64 rounded-xl border border-gray-200 bg-white shadow-xl">
+                  <div className="max-h-80 overflow-auto py-2">
+                    {adminTools.map((tool) => (
+                      <Link
+                        key={tool.path}
+                        to={tool.path}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                      >
+                        {tool.name}
+                      </Link>
+                    ))}
+                    <Link
+                      to="/admin/dashboard"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                    >
+                      Admin Dashboard
+                    </Link>
+                  </div>
+                </div>
+              </details>
+            </div>
+          )}
+          {isHomePage && !isAdmin && (
             <div className="hidden md:flex items-center pointer-events-auto">
               {dashboardLink ? (
                 <Link
@@ -316,7 +395,7 @@ const Header = () => {
               )}
             </div>
           )}
-          {isHomePage && (
+          {isHomePage && !isAdmin && (
             <div className="flex md:hidden items-center pointer-events-auto">
               {dashboardLink ? (
                 <Link

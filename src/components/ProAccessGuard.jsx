@@ -23,6 +23,10 @@ const ProAccessGuard = ({ requiredRole, children }) => {
     );
   }
 
+  if (user.role === 'admin') {
+    return children;
+  }
+
   if (requiredRole === 'agent') {
     if (user.role !== 'agent' || !user.pro_access_enabled) {
       return (
